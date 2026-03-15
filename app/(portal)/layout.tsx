@@ -20,7 +20,7 @@ export default async function PortalLayout({
   const { data: landlord } = await supabase
     .from("landlords")
     .select("full_name")
-    .eq("user_id", user.id)
+    .eq("id", user.id)
     .single();
 
   if (!landlord) {
