@@ -205,6 +205,44 @@ body {
   }
 }
 
+/* Properties grid */
+.properties-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.5rem;
+}
+@media (max-width: 768px) {
+  .properties-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Payments KPI grid */
+.payments-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+}
+@media (max-width: 1024px) {
+  .payments-kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 480px) {
+  .payments-kpi-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Table header */
+.table-header {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  font-weight: 500;
+}
+
 /* Trust section quote mark */
 .trust-section-bg::before {
   content: '\201C';

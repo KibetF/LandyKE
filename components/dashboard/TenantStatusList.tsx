@@ -1,3 +1,4 @@
+import Link from "next/link";
 import StatusPill from "@/components/ui/StatusPill";
 
 interface TenantStatus {
@@ -38,7 +39,8 @@ export default function TenantStatusList({
         >
           Tenant Payment Status
         </h3>
-        <a
+        <Link
+          href="/tenants"
           className="uppercase cursor-pointer"
           style={{
             fontSize: "0.7rem",
@@ -48,7 +50,7 @@ export default function TenantStatusList({
           }}
         >
           All Tenants →
-        </a>
+        </Link>
       </div>
       <div style={{ padding: "0.5rem" }}>
         {tenants.map((t) => (

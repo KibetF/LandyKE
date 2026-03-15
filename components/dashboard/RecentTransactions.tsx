@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 interface Transaction {
   title: string;
   detail: string;
@@ -33,7 +35,8 @@ export default function RecentTransactions({
         >
           Recent Transactions
         </h3>
-        <a
+        <Link
+          href="/payments"
           className="uppercase cursor-pointer"
           style={{
             fontSize: "0.7rem",
@@ -43,7 +46,7 @@ export default function RecentTransactions({
           }}
         >
           Export →
-        </a>
+        </Link>
       </div>
       <div style={{ padding: "0.5rem" }}>
         {transactions.map((txn, i) => (

@@ -1,11 +1,13 @@
 interface StatusPillProps {
-  status: "paid" | "pending" | "overdue";
+  status: "paid" | "pending" | "overdue" | "active" | "inactive";
 }
 
 const statusStyles: Record<string, { background: string; color: string }> = {
   paid: { background: "var(--green-light)", color: "var(--green)" },
   pending: { background: "var(--amber-light)", color: "#7a5c00" },
   overdue: { background: "var(--red-light)", color: "var(--red-soft)" },
+  active: { background: "var(--green-light)", color: "var(--green)" },
+  inactive: { background: "var(--red-light)", color: "var(--red-soft)" },
 };
 
 export default function StatusPill({ status }: StatusPillProps) {

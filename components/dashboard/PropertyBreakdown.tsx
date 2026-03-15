@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 interface PropertyData {
   name: string;
   location: string;
@@ -34,7 +36,8 @@ export default function PropertyBreakdown({
         >
           By Property
         </h3>
-        <a
+        <Link
+          href="/properties"
           className="uppercase cursor-pointer"
           style={{
             fontSize: "0.7rem",
@@ -44,7 +47,7 @@ export default function PropertyBreakdown({
           }}
         >
           Manage →
-        </a>
+        </Link>
       </div>
       <div style={{ padding: "0.5rem" }}>
         {properties.map((p, i) => (

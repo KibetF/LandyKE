@@ -20,10 +20,10 @@ const navItems = [
   { href: "/properties", label: "My Properties", icon: Home },
   { href: "/tenants", label: "Tenants", icon: Users },
   { href: "/payments", label: "Payments", icon: CreditCard },
-  { href: "#", label: "Reports", icon: FileText },
-  { href: "#", label: "Maintenance", icon: Wrench },
-  { href: "#", label: "Documents", icon: FileIcon },
-  { href: "#", label: "Settings", icon: Settings },
+  { href: "/reports", label: "Reports", icon: FileText },
+  { href: "/maintenance", label: "Maintenance", icon: Wrench },
+  { href: "/documents", label: "Documents", icon: FileIcon },
+  { href: "/settings", label: "Settings", icon: Settings },
 ];
 
 interface SidebarProps {

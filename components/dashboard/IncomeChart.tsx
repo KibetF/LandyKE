@@ -8,6 +8,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+import Link from "next/link";
 import type { MonthlyIncome } from "@/types";
 
 interface IncomeChartProps {
@@ -38,7 +39,8 @@ export default function IncomeChart({ data }: IncomeChartProps) {
         >
           Monthly Income — Last 6 Months
         </h3>
-        <a
+        <Link
+          href="/payments"
           className="uppercase cursor-pointer"
           style={{
             fontSize: "0.7rem",
@@ -48,7 +50,7 @@ export default function IncomeChart({ data }: IncomeChartProps) {
           }}
         >
           Full Report →
-        </a>
+        </Link>
       </div>
       <div style={{ padding: "1.5rem", height: "220px" }}>
         <ResponsiveContainer width="100%" height="100%">
