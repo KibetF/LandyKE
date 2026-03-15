@@ -306,6 +306,39 @@ body {
   }
 }
 
+/* About & Contact responsive grids */
+.about-grid,
+.contact-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5rem;
+  align-items: start;
+}
+
+@media (max-width: 1024px) {
+  .about-grid,
+  .contact-grid {
+    grid-template-columns: 1fr;
+    gap: 3rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .values-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .form-row {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* Contact form focus */
+#contact input:focus,
+#contact select:focus,
+#contact textarea:focus {
+  border-color: var(--gold);
+}
+
 /* Trust section quote mark */
 .trust-section-bg::before {
   content: '\201C';
