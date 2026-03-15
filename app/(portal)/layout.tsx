@@ -1,0 +1,43 @@
+import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
+import Sidebar from "@/components/dashboard/Sidebar";
+
+export default async function PortalLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/login");
+  }
+
+  // Get landlord name — redirect if no landlord profile exists
+  const { data: landlord } = await supabase
+    .from("landlords")
+    .select("full_name")
+    .eq("id", user.id)
+    .single();
+
+  if (!landlord) {
+    redirect("/unauthorized");
+  }
+
+  const userName = landlord.full_name || user.email || "User";
+
+  return (
+    <div className="flex" style={{ minHeight: "100vh", background: "#f7f5f2" }}>
+      <Sidebar userName={userName} />
+      <main
+        className="flex-1 overflow-y-auto"
+        style={{ padding: "2.5rem 3rem" }}
+      >
+        {children}
+      </main>
+    </div>
+  );
+}

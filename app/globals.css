@@ -1,26 +1,138 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --ink: #0f0e0b;
+  --cream: #f5f0e8;
+  --warm: #ede6d6;
+  --gold: #c8963e;
+  --gold-light: #e8b96a;
+  --rust: #8b3a2a;
+  --sage: #4a5c4e;
+  --muted: #7a7468;
+  --white: #ffffff;
+  --green: #2d6a4f;
+  --green-light: #e8f4ee;
+  --red-soft: #8b2e2e;
+  --red-light: #fdf0f0;
+  --amber-light: #fdf6e8;
+
+  --font-serif: var(--font-cormorant);
+  --font-sans: var(--font-dm-sans);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-ink: var(--ink);
+  --color-cream: var(--cream);
+  --color-warm: var(--warm);
+  --color-gold: var(--gold);
+  --color-gold-light: var(--gold-light);
+  --color-rust: var(--rust);
+  --color-sage: var(--sage);
+  --color-muted: var(--muted);
+  --color-green: var(--green);
+  --color-green-light: var(--green-light);
+  --color-red-soft: var(--red-soft);
+  --color-red-light: var(--red-light);
+  --color-amber-light: var(--amber-light);
+  --font-sans: var(--font-dm-sans);
+  --font-serif: var(--font-cormorant);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), sans-serif;
+  background: var(--cream);
+  color: var(--ink);
+  overflow-x: hidden;
+}
+
+/* Utility for section tags with line before */
+.section-tag::before {
+  content: '';
+  display: block;
+  width: 20px;
+  height: 1px;
+  background: var(--gold);
+}
+
+/* Float animation for hero card */
+@keyframes floatCard {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-12px); }
+}
+
+/* Fade slide up animation */
+@keyframes fadeSlideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Service card bottom border animation */
+.service-card::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: var(--gold);
+  transition: width 0.4s ease;
+}
+.service-card:hover::after {
+  width: 100%;
+}
+
+/* KPI top border variants */
+.kpi::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--warm);
+}
+.kpi-gold::before { background: var(--gold) !important; }
+.kpi-green::before { background: var(--green) !important; }
+.kpi-rust::before { background: var(--rust) !important; }
+.kpi-sage::before { background: var(--sage) !important; }
+
+/* Status pill styles */
+.status-pill {
+  font-size: 0.6rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 0.25rem 0.6rem;
+  border-radius: 20px;
+  font-weight: 500;
+}
+
+/* Steps connecting line */
+.steps-container::before {
+  content: '';
+  position: absolute;
+  top: 2rem;
+  left: 10%;
+  right: 10%;
+  height: 1px;
+  background: linear-gradient(to right, transparent, var(--gold), var(--gold), transparent);
+  z-index: 0;
+}
+
+/* Trust section quote mark */
+.trust-section-bg::before {
+  content: '\201C';
+  position: absolute;
+  top: -1rem;
+  left: 3rem;
+  font-family: var(--font-serif), serif;
+  font-size: 20rem;
+  color: rgba(200,150,62,0.06);
+  line-height: 1;
+  pointer-events: none;
 }
