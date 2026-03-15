@@ -31,10 +31,10 @@ export default async function PortalLayout({
   const userName = landlord.full_name || user.email || "User";
 
   return (
-    <div className="flex" style={{ minHeight: "100vh", background: "#f7f5f2" }}>
+    <div className="flex portal-layout" style={{ minHeight: "100vh", background: "#f7f5f2" }}>
       <Sidebar userName={userName} />
       <main
-        className="flex-1 overflow-y-auto"
+        className="flex-1 overflow-y-auto portal-main"
         style={{ padding: "2.5rem 3rem" }}
       >
         {children}

@@ -147,7 +147,7 @@ export default async function DashboardPage() {
     <>
       {/* Header */}
       <div
-        className="flex justify-between items-start"
+        className="flex justify-between items-start dashboard-header"
         style={{ marginBottom: "2.5rem" }}
       >
         <div>
@@ -196,6 +196,7 @@ export default async function DashboardPage() {
 
       {/* Chart + Properties */}
       <div
+        className="dashboard-grid-2"
         style={{
           display: "grid",
           gridTemplateColumns: "1.6fr 1fr",
@@ -209,6 +210,7 @@ export default async function DashboardPage() {
 
       {/* Tenants + Transactions */}
       <div
+        className="dashboard-grid-2"
         style={{
           display: "grid",
           gridTemplateColumns: "1.6fr 1fr",

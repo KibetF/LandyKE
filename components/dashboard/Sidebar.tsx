@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   Home,
@@ -32,18 +32,17 @@ interface SidebarProps {
 
 export default function Sidebar({ userName }: SidebarProps) {
   const pathname = usePathname();
-  const router = useRouter();
   const initial = userName.charAt(0).toUpperCase();
 
   async function handleLogout() {
     const supabase = createClient();
     await supabase.auth.signOut();
-    router.push("/login");
+    window.location.href = "/login";
   }
 
   return (
     <aside
-      className="flex flex-col"
+      className="flex flex-col portal-sidebar"
       style={{
         background: "var(--ink)",
         padding: "2rem 0",
@@ -56,6 +55,7 @@ export default function Sidebar({ userName }: SidebarProps) {
     >
       {/* User info */}
       <div
+        className="sidebar-user"
         style={{
           padding: "0 1.5rem 1.5rem",
           borderBottom: "1px solid rgba(245,240,232,0.08)",
@@ -107,7 +107,7 @@ export default function Sidebar({ userName }: SidebarProps) {
             <Link
               key={item.label}
               href={item.href}
-              className="flex items-center no-underline"
+              className={`flex items-center no-underline ${isActive ? "" : "sidebar-link"}`}
               style={{
                 gap: "0.75rem",
                 padding: "0.7rem 0.75rem",
@@ -130,10 +130,10 @@ export default function Sidebar({ userName }: SidebarProps) {
       </nav>
 
       {/* Sign Out */}
-      <div style={{ padding: "0 0.75rem", marginBottom: "0.5rem" }}>
+      <div className="sidebar-signout-wrap" style={{ padding: "0 0.75rem", marginBottom: "0.5rem" }}>
         <button
           onClick={handleLogout}
-          className="flex items-center"
+          className="flex items-center sidebar-signout"
           style={{
             gap: "0.75rem",
             padding: "0.7rem 0.75rem",
@@ -155,6 +155,7 @@ export default function Sidebar({ userName }: SidebarProps) {
 
       {/* Footer */}
       <div
+        className="sidebar-footer"
         style={{
           padding: "1rem 1.5rem",
           borderTop: "1px solid rgba(245,240,232,0.08)",

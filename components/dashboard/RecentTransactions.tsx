@@ -12,6 +12,7 @@ export default function RecentTransactions({
 }) {
   return (
     <div
+      className="card-hover"
       style={{
         background: "var(--white)",
         borderRadius: "8px",

@@ -124,6 +124,87 @@ body {
   z-index: 0;
 }
 
+/* Sidebar nav hover */
+.sidebar-link:hover {
+  background: rgba(200,150,62,0.08) !important;
+  color: rgba(245,240,232,0.7) !important;
+}
+
+.sidebar-signout:hover {
+  background: rgba(200,150,62,0.08) !important;
+  color: #e8b96a !important;
+}
+
+/* Card hover lift */
+.card-hover {
+  transition: box-shadow 0.2s, transform 0.2s;
+}
+.card-hover:hover {
+  box-shadow: 0 8px 24px rgba(15,14,11,0.06);
+  transform: translateY(-1px);
+}
+
+/* Property / tenant row hover */
+.row-hover:hover {
+  background: var(--cream) !important;
+}
+
+/* Responsive dashboard grid */
+@media (max-width: 1024px) {
+  .dashboard-grid-2 {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .kpi-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+  .dashboard-header {
+    flex-direction: column !important;
+    gap: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .kpi-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* Portal layout responsive */
+@media (max-width: 768px) {
+  .portal-layout {
+    flex-direction: column !important;
+  }
+  .portal-sidebar {
+    position: relative !important;
+    width: 100% !important;
+    min-width: 100% !important;
+    height: auto !important;
+    padding: 1rem 0 !important;
+    flex-direction: row !important;
+    overflow-x: auto;
+  }
+  .portal-sidebar .sidebar-user { display: none; }
+  .portal-sidebar nav {
+    display: flex !important;
+    flex-direction: row !important;
+    gap: 0.25rem;
+    padding: 0 0.5rem !important;
+    overflow-x: auto;
+  }
+  .portal-sidebar nav a {
+    white-space: nowrap;
+    margin-bottom: 0 !important;
+  }
+  .portal-sidebar .sidebar-signout-wrap,
+  .portal-sidebar .sidebar-footer { display: none; }
+  .portal-main {
+    padding: 1.5rem 1rem !important;
+  }
+}
+
 /* Trust section quote mark */
 .trust-section-bg::before {
   content: '\201C';

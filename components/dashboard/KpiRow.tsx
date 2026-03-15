@@ -44,6 +44,7 @@ export default function KpiRow({ data }: { data: KpiData }) {
 
   return (
     <div
+      className="kpi-grid"
       style={{
         display: "grid",
         gridTemplateColumns: "repeat(4, 1fr)",
@@ -54,7 +55,7 @@ export default function KpiRow({ data }: { data: KpiData }) {
       {kpis.map((k) => (
         <div
           key={k.label}
-          className={`kpi ${k.color} relative overflow-hidden`}
+          className={`kpi ${k.color} relative overflow-hidden card-hover`}
           style={{
             background: "var(--white)",
             borderRadius: "8px",

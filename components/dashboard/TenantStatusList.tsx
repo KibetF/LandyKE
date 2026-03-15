@@ -17,6 +17,7 @@ export default function TenantStatusList({
 }) {
   return (
     <div
+      className="card-hover"
       style={{
         background: "var(--white)",
         borderRadius: "8px",
@@ -53,7 +54,7 @@ export default function TenantStatusList({
         {tenants.map((t) => (
           <div
             key={t.name}
-            className="items-center cursor-pointer"
+            className="items-center cursor-pointer row-hover"
             style={{
               display: "grid",
               gridTemplateColumns: "auto 1fr auto auto",

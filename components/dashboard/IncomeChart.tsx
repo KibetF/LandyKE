@@ -17,6 +17,7 @@ interface IncomeChartProps {
 export default function IncomeChart({ data }: IncomeChartProps) {
   return (
     <div
+      className="card-hover"
       style={{
         background: "var(--white)",
         borderRadius: "8px",

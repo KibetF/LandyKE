@@ -13,6 +13,7 @@ export default function PropertyBreakdown({
 }) {
   return (
     <div
+      className="card-hover"
       style={{
         background: "var(--white)",
         borderRadius: "8px",
@@ -49,7 +50,7 @@ export default function PropertyBreakdown({
         {properties.map((p, i) => (
           <div
             key={p.name}
-            className="flex justify-between items-center cursor-pointer"
+            className="flex justify-between items-center cursor-pointer row-hover"
             style={{
               padding: "0.9rem 1rem",
               borderRadius: "6px",
