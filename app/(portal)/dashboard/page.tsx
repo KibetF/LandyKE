@@ -67,19 +67,20 @@ export default async function DashboardPage() {
   if (user) {
     const { data: landlord } = await supabase
       .from("landlords")
-      .select("full_name")
-      .eq("id", user.id)
+      .select("id, full_name")
+      .eq("user_id", user.id)
       .single();
 
     if (landlord) {
       userName = landlord.full_name.split(" ")[0];
     }
 
-    // Fetch properties
+    // Fetch properties using the landlord's table id (not auth user id)
+    const landlordId = landlord?.id;
     const { data: dbProperties } = await supabase
       .from("properties")
       .select("*")
-      .eq("landlord_id", user.id);
+      .eq("landlord_id", landlordId);
 
     if (dbProperties && dbProperties.length > 0) {
       // Use real data if available
