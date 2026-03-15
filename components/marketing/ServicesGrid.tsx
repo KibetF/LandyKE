@@ -1,4 +1,6 @@
-const services = [
+import { Sparkles, SprayCan, HardHat, Wrench } from "lucide-react";
+
+const managementServices = [
   {
     icon: "🏠",
     title: "Tenant Acquisition",
@@ -31,9 +33,33 @@ const services = [
   },
 ];
 
+const careServices = [
+  {
+    Icon: Sparkles,
+    title: "Regular Cleaning",
+    desc: "Scheduled cleaning for common areas, corridors, and vacant units on weekly/bi-weekly cadence.",
+  },
+  {
+    Icon: SprayCan,
+    title: "Deep Cleaning",
+    desc: "Intensive move-in/move-out sanitisation — carpet treatment, kitchen degreasing, bathroom descaling.",
+  },
+  {
+    Icon: HardHat,
+    title: "After-Construction Cleaning",
+    desc: "Post-build cleanup — debris removal, dust extraction, window polishing, floor treatment.",
+  },
+  {
+    Icon: Wrench,
+    title: "General Repairs & Upkeep",
+    desc: "Plumbing, electrical, painting, carpentry via vetted contractor network + preventive maintenance.",
+  },
+];
+
 export default function ServicesGrid() {
   return (
-    <section id="services" style={{ padding: "7rem 5rem" }}>
+    <section id="services" className="marketing-section">
+      {/* Group 1 — Property Management */}
       <div
         className="section-tag flex items-center uppercase"
         style={{
@@ -62,15 +88,8 @@ export default function ServicesGrid() {
           handled end-to-end
         </em>
       </h2>
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(3, 1fr)",
-          gap: "2px",
-          background: "var(--warm)",
-        }}
-      >
-        {services.map((s) => (
+      <div className="services-grid-3">
+        {managementServices.map((s) => (
           <div
             key={s.title}
             className="service-card relative overflow-hidden"
@@ -89,6 +108,77 @@ export default function ServicesGrid() {
             >
               {s.icon}
             </span>
+            <h3
+              className="font-serif"
+              style={{
+                fontSize: "1.4rem",
+                fontWeight: 600,
+                marginBottom: "0.8rem",
+              }}
+            >
+              {s.title}
+            </h3>
+            <p
+              style={{
+                fontSize: "0.85rem",
+                color: "var(--muted)",
+                lineHeight: 1.7,
+                fontWeight: 300,
+              }}
+            >
+              {s.desc}
+            </p>
+          </div>
+        ))}
+      </div>
+
+      {/* Group 2 — Property Care */}
+      <div
+        className="section-tag flex items-center uppercase"
+        style={{
+          fontSize: "0.7rem",
+          letterSpacing: "0.18em",
+          color: "var(--gold)",
+          fontWeight: 500,
+          marginBottom: "1rem",
+          marginTop: "5rem",
+          gap: "0.6rem",
+        }}
+      >
+        Property Care
+      </div>
+      <h2
+        className="font-serif"
+        style={{
+          fontSize: "clamp(2.2rem, 3.5vw, 3.2rem)",
+          fontWeight: 300,
+          lineHeight: 1.1,
+          maxWidth: "600px",
+          marginBottom: "4rem",
+        }}
+      >
+        Maintenance services,{" "}
+        <em style={{ fontStyle: "italic", color: "var(--gold)" }}>
+          handled with care
+        </em>
+      </h2>
+      <div className="services-grid-4">
+        {careServices.map((s) => (
+          <div
+            key={s.title}
+            className="service-card relative overflow-hidden"
+            style={{
+              background: "var(--cream)",
+              padding: "3rem 2.5rem",
+              transition: "background 0.3s",
+            }}
+          >
+            <s.Icon
+              size={28}
+              color="var(--gold)"
+              strokeWidth={1.5}
+              style={{ marginBottom: "1.5rem" }}
+            />
             <h3
               className="font-serif"
               style={{

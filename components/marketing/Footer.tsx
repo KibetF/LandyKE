@@ -56,6 +56,7 @@ export default function Footer() {
               "Financial Reports",
               "Maintenance",
               "Lease Management",
+              "Cleaning Services",
             ].map((item) => (
               <li key={item} style={{ marginBottom: "0.6rem" }}>
                 <a

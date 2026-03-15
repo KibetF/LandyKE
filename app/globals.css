@@ -243,6 +243,69 @@ body {
   font-weight: 500;
 }
 
+/* Marketing section padding */
+.marketing-section {
+  padding: 7rem 5rem;
+}
+
+/* Services grids */
+.services-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2px;
+  background: var(--warm);
+}
+.services-grid-4 {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 2px;
+  background: var(--warm);
+}
+
+/* Portfolio grid */
+.portfolio-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+}
+.portfolio-card {
+  transition: box-shadow 0.3s, transform 0.3s;
+}
+.portfolio-card:hover {
+  box-shadow: 0 12px 32px rgba(15,14,11,0.1);
+  transform: translateY(-4px);
+}
+.portfolio-img {
+  transition: transform 0.4s ease;
+}
+.portfolio-card:hover .portfolio-img {
+  transform: scale(1.03);
+}
+
+@media (max-width: 1024px) {
+  .portfolio-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .services-grid-4 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .marketing-section {
+    padding: 4rem 1.5rem;
+  }
+  .portfolio-grid {
+    grid-template-columns: 1fr;
+  }
+  .services-grid-3 {
+    grid-template-columns: 1fr;
+  }
+  .services-grid-4 {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* Trust section quote mark */
 .trust-section-bg::before {
   content: '\201C';

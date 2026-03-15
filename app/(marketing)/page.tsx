@@ -1,6 +1,7 @@
 import HeroSection from "@/components/marketing/HeroSection";
 import StatsBelt from "@/components/marketing/StatsBelt";
 import ServicesGrid from "@/components/marketing/ServicesGrid";
+import PortfolioSection from "@/components/marketing/PortfolioSection";
 import HowItWorks from "@/components/marketing/HowItWorks";
 import TrustSection from "@/components/marketing/TrustSection";
 import CtaBand from "@/components/marketing/CtaBand";
@@ -12,6 +13,7 @@ export default function HomePage() {
       <HeroSection />
       <StatsBelt />
       <ServicesGrid />
+      <PortfolioSection />
       <HowItWorks />
       <TrustSection />
       <CtaBand />
