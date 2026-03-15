@@ -18,6 +18,7 @@ export default async function PortalLayout({
 
   // Get landlord name — redirect if no landlord profile exists
   const { data: landlord } = await supabase
+    .schema("landyke")
     .from("landlords")
     .select("full_name")
     .eq("id", user.id)

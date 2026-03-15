@@ -66,6 +66,7 @@ export default async function DashboardPage() {
 
   if (user) {
     const { data: landlord } = await supabase
+      .schema("landyke")
       .from("landlords")
       .select("id, full_name")
       .eq("user_id", user.id)
@@ -78,6 +79,7 @@ export default async function DashboardPage() {
     // Fetch properties using the landlord's table id (not auth user id)
     const landlordId = landlord?.id;
     const { data: dbProperties } = await supabase
+      .schema("landyke")
       .from("properties")
       .select("*")
       .eq("landlord_id", landlordId);
@@ -85,6 +87,7 @@ export default async function DashboardPage() {
     if (dbProperties && dbProperties.length > 0) {
       // Use real data if available
       const { data: dbPayments } = await supabase
+        .schema("landyke")
         .from("payments")
         .select("*, tenants(full_name, unit_number, monthly_rent, property_id)")
         .in(
@@ -107,6 +110,7 @@ export default async function DashboardPage() {
         );
 
         const { data: allTenants } = await supabase
+          .schema("landyke")
           .from("tenants")
           .select("*")
           .in(
