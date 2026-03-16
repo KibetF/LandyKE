@@ -5,10 +5,11 @@ export default function Navbar() {
     <nav
       className="fixed top-0 left-0 right-0 z-100 flex justify-between items-center"
       style={{
-        padding: "1.4rem 4rem",
+        padding: "0 4rem",
+        height: "72px",
         background: "rgba(245, 240, 232, 0.92)",
         backdropFilter: "blur(12px)",
-        borderBottom: "1px solid rgba(200,150,62,0.15)",
+        borderBottom: "1px solid rgba(0,0,0,0.06)",
       }}
     >
       <div
@@ -26,7 +27,7 @@ export default function Navbar() {
         <li>
           <a
             href="#services"
-            className="no-underline uppercase"
+            className="nav-link no-underline uppercase"
             style={{
               fontSize: "0.8rem",
               fontWeight: 500,
@@ -41,7 +42,7 @@ export default function Navbar() {
         <li>
           <a
             href="#portfolio"
-            className="no-underline uppercase"
+            className="nav-link no-underline uppercase"
             style={{
               fontSize: "0.8rem",
               fontWeight: 500,
@@ -56,7 +57,7 @@ export default function Navbar() {
         <li>
           <a
             href="#about"
-            className="no-underline uppercase"
+            className="nav-link no-underline uppercase"
             style={{
               fontSize: "0.8rem",
               fontWeight: 500,
@@ -71,7 +72,7 @@ export default function Navbar() {
         <li>
           <a
             href="#contact"
-            className="no-underline uppercase"
+            className="nav-link no-underline uppercase"
             style={{
               fontSize: "0.8rem",
               fontWeight: 500,
@@ -86,7 +87,7 @@ export default function Navbar() {
         <li>
           <Link
             href="/login"
-            className="no-underline uppercase"
+            className="client-login-btn no-underline uppercase"
             style={{
               background: "var(--ink)",
               color: "var(--cream)",
@@ -95,7 +96,7 @@ export default function Navbar() {
               fontSize: "0.75rem",
               letterSpacing: "0.1em",
               fontWeight: 500,
-              transition: "background 0.2s",
+              transition: "all 0.2s",
             }}
           >
             Client Login

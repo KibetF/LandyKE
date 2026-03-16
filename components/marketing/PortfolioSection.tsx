@@ -1,4 +1,5 @@
 import { MapPin, Building2, Users } from "lucide-react";
+import ScrollReveal from "@/components/ui/ScrollReveal";
 
 const properties = [
   {
@@ -54,118 +55,156 @@ const properties = [
 export default function PortfolioSection() {
   return (
     <section id="portfolio" className="marketing-section">
-      <div
-        className="section-tag flex items-center uppercase"
-        style={{
-          fontSize: "0.7rem",
-          letterSpacing: "0.18em",
-          color: "var(--gold)",
-          fontWeight: 500,
-          marginBottom: "1rem",
-          gap: "0.6rem",
-        }}
-      >
-        Our Portfolio
-      </div>
-      <h2
-        className="font-serif"
-        style={{
-          fontSize: "clamp(2.2rem, 3.5vw, 3.2rem)",
-          fontWeight: 300,
-          lineHeight: 1.1,
-          maxWidth: "600px",
-          marginBottom: "4rem",
-        }}
-      >
-        Properties under our{" "}
-        <em style={{ fontStyle: "italic", color: "var(--gold)" }}>
-          stewardship
-        </em>
-      </h2>
+      <ScrollReveal>
+        <div
+          className="section-tag flex items-center uppercase"
+          style={{
+            fontSize: "0.7rem",
+            letterSpacing: "0.18em",
+            color: "var(--gold)",
+            fontWeight: 500,
+            marginBottom: "1rem",
+            gap: "0.6rem",
+          }}
+        >
+          Our Portfolio
+        </div>
+        <h2
+          className="font-serif"
+          style={{
+            fontSize: "clamp(2.2rem, 3.5vw, 3.2rem)",
+            fontWeight: 300,
+            lineHeight: 1.1,
+            maxWidth: "600px",
+            marginBottom: "4rem",
+          }}
+        >
+          Properties under our{" "}
+          <em style={{ fontStyle: "italic", color: "var(--gold)" }}>
+            stewardship
+          </em>
+        </h2>
+      </ScrollReveal>
       <div className="portfolio-grid">
-        {properties.map((p) => (
-          <div
-            key={p.name}
-            className="portfolio-card card-hover"
-            style={{
-              background: "var(--white)",
-              borderRadius: "12px",
-              overflow: "hidden",
-            }}
-          >
+        {properties.map((p, i) => (
+          <ScrollReveal key={p.name} delay={Math.min(i + 1, 4)}>
             <div
-              className="portfolio-img"
+              className="portfolio-card card-hover"
               style={{
-                height: "200px",
-                background: p.gradient,
-                position: "relative",
+                background: "var(--white)",
+                borderRadius: "12px",
+                overflow: "hidden",
+                border: "1px solid transparent",
               }}
             >
-              <span
-                style={{
-                  position: "absolute",
-                  top: "1rem",
-                  left: "1rem",
-                  fontSize: "0.6rem",
-                  letterSpacing: "0.1em",
-                  textTransform: "uppercase",
-                  padding: "0.3rem 0.8rem",
-                  borderRadius: "20px",
-                  background: "rgba(245,240,232,0.15)",
-                  color: "var(--cream)",
-                  fontWeight: 500,
-                  backdropFilter: "blur(4px)",
-                }}
-              >
-                {p.type}
-              </span>
-            </div>
-            <div style={{ padding: "1.5rem" }}>
-              <h3
-                className="font-serif"
-                style={{
-                  fontSize: "1.3rem",
-                  fontWeight: 600,
-                  marginBottom: "0.4rem",
-                }}
-              >
-                {p.name}
-              </h3>
               <div
-                className="flex items-center"
+                className="portfolio-img"
                 style={{
-                  gap: "0.35rem",
-                  color: "var(--muted)",
-                  fontSize: "0.8rem",
-                  marginBottom: "1rem",
+                  height: "220px",
+                  background: p.gradient,
+                  position: "relative",
                 }}
               >
-                <MapPin size={14} strokeWidth={1.5} />
-                {p.location}
-              </div>
-              <div
-                style={{
-                  height: "1px",
-                  background: "var(--warm)",
-                  marginBottom: "1rem",
-                }}
-              />
-              <div
-                className="flex justify-between"
-                style={{ fontSize: "0.78rem", color: "var(--muted)" }}
-              >
-                <span className="flex items-center" style={{ gap: "0.35rem" }}>
-                  <Building2 size={14} strokeWidth={1.5} />
-                  {p.units} Units
-                </span>
-                <span className="flex items-center" style={{ gap: "0.35rem" }}>
-                  <Users size={14} strokeWidth={1.5} />
-                  {p.occupancy}% Occupied
+                {/* Overlay gradient */}
+                <div
+                  style={{
+                    position: "absolute",
+                    inset: 0,
+                    background: "linear-gradient(to top, rgba(0,0,0,0.5), transparent 60%)",
+                    pointerEvents: "none",
+                  }}
+                />
+                <span
+                  style={{
+                    position: "absolute",
+                    top: "1rem",
+                    left: "1rem",
+                    fontSize: "0.6rem",
+                    letterSpacing: "0.1em",
+                    textTransform: "uppercase",
+                    padding: "0.3rem 0.8rem",
+                    borderRadius: "20px",
+                    background: "rgba(201,146,26,0.9)",
+                    color: "#fff",
+                    fontWeight: 500,
+                    zIndex: 1,
+                  }}
+                >
+                  {p.type}
                 </span>
               </div>
+              <div style={{ padding: "1.5rem" }}>
+                <h3
+                  className="font-serif"
+                  style={{
+                    fontSize: "1.3rem",
+                    fontWeight: 600,
+                    marginBottom: "0.4rem",
+                  }}
+                >
+                  {p.name}
+                </h3>
+                <div
+                  className="flex items-center"
+                  style={{
+                    gap: "0.35rem",
+                    color: "var(--muted)",
+                    fontSize: "0.8rem",
+                    marginBottom: "1rem",
+                  }}
+                >
+                  <MapPin size={14} strokeWidth={1.5} />
+                  {p.location}
+                </div>
+                <div
+                  style={{
+                    borderTop: "1px solid #eee",
+                    paddingTop: "1rem",
+                  }}
+                />
+                <div
+                  className="flex justify-between"
+                  style={{ fontSize: "0.78rem", color: "var(--muted)" }}
+                >
+                  <span className="flex items-center" style={{ gap: "0.35rem" }}>
+                    <Building2 size={14} strokeWidth={1.5} />
+                    {p.units} Units
+                  </span>
+                  <span
+                    className="flex items-center"
+                    style={{ gap: "0.35rem", fontWeight: 600, color: "var(--ink)" }}
+                  >
+                    <Users size={14} strokeWidth={1.5} />
+                    {p.occupancy}% Occupied
+                  </span>
+                </div>
+              </div>
             </div>
-          </div>
+          </ScrollReveal>
         ))}
+      </div>
+
+      {/* View All Properties button */}
+      <div style={{ textAlign: "center", marginTop: "3rem" }}>
+        <a
+          href="#contact"
+          className="no-underline uppercase"
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            height: "48px",
+            padding: "0 2rem",
+            border: "1.5px solid var(--gold)",
+            borderRadius: "2px",
+            color: "var(--gold)",
+            fontSize: "0.8rem",
+            fontWeight: 500,
+            letterSpacing: "0.1em",
+            transition: "all 0.25s",
+          }}
+        >
+          View All Properties
+        </a>
       </div>
     </section>
   );

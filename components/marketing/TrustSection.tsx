@@ -120,7 +120,7 @@ export default function TrustSection() {
                 style={{
                   background: "rgba(245,240,232,0.05)",
                   border: "1px solid rgba(245,240,232,0.1)",
-                  borderRadius: "6px",
+                  borderRadius: "12px",
                   padding: "1.5rem",
                   transition: "all 0.3s",
                 }}
@@ -182,9 +182,9 @@ export default function TrustSection() {
               key={i}
               style={{
                 background: "rgba(245,240,232,0.04)",
-                borderLeft: "2px solid var(--gold)",
-                padding: "1.5rem 2rem",
-                borderRadius: "0 6px 6px 0",
+                borderLeft: "3px solid var(--gold)",
+                padding: "24px",
+                borderRadius: "0 8px 8px 0",
               }}
             >
               <p

@@ -68,7 +68,7 @@ export default function AboutSection() {
             style={{
               display: "flex",
               flexDirection: "column",
-              gap: "1.2rem",
+              gap: "1.5rem",
             }}
           >
             <p
@@ -119,8 +119,6 @@ export default function AboutSection() {
               gridTemplateColumns: "repeat(3, 1fr)",
               gap: "1.5rem",
               marginTop: "2.5rem",
-              paddingTop: "2rem",
-              borderTop: "1px solid var(--warm)",
             }}
           >
             {[
@@ -128,11 +126,17 @@ export default function AboutSection() {
               { num: "4", label: "Cities" },
               { num: "47+", label: "Properties" },
             ].map((s) => (
-              <div key={s.label}>
+              <div
+                key={s.label}
+                style={{
+                  borderTop: "2px solid var(--gold)",
+                  paddingTop: "1rem",
+                }}
+              >
                 <span
                   className="font-serif block"
                   style={{
-                    fontSize: "2rem",
+                    fontSize: "2.5rem",
                     fontWeight: 300,
                     color: "var(--gold)",
                     lineHeight: 1,
@@ -171,16 +175,30 @@ export default function AboutSection() {
               className="card-hover"
               style={{
                 background: "var(--white)",
-                borderRadius: "8px",
+                borderRadius: "12px",
                 padding: "2rem",
+                boxShadow: "0 4px 20px rgba(0,0,0,0.06)",
+                border: "1px solid rgba(201,146,26,0.15)",
               }}
             >
-              <v.Icon
-                size={24}
-                color="var(--gold)"
-                strokeWidth={1.5}
-                style={{ marginBottom: "1.2rem" }}
-              />
+              <div
+                style={{
+                  width: "48px",
+                  height: "48px",
+                  borderRadius: "50%",
+                  background: "rgba(201,146,26,0.1)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  marginBottom: "1.2rem",
+                }}
+              >
+                <v.Icon
+                  size={24}
+                  color="var(--gold)"
+                  strokeWidth={1.5}
+                />
+              </div>
               <h4
                 className="font-serif"
                 style={{

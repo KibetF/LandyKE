@@ -1,3 +1,5 @@
+import ScrollReveal from "@/components/ui/ScrollReveal";
+
 const steps = [
   {
     num: "01",
@@ -23,35 +25,37 @@ const steps = [
 
 export default function HowItWorks() {
   return (
-    <section style={{ padding: "7rem 5rem", background: "var(--white)" }}>
-      <div
-        className="section-tag flex items-center uppercase"
-        style={{
-          fontSize: "0.7rem",
-          letterSpacing: "0.18em",
-          color: "var(--gold)",
-          fontWeight: 500,
-          marginBottom: "1rem",
-          gap: "0.6rem",
-        }}
-      >
-        The Process
-      </div>
-      <h2
-        className="font-serif"
-        style={{
-          fontSize: "clamp(2.2rem, 3.5vw, 3.2rem)",
-          fontWeight: 300,
-          lineHeight: 1.1,
-          maxWidth: "600px",
-          marginBottom: "4rem",
-        }}
-      >
-        From onboarding to{" "}
-        <em style={{ fontStyle: "italic", color: "var(--gold)" }}>
-          passive income
-        </em>
-      </h2>
+    <section style={{ padding: "5rem 5rem 3.5rem", background: "var(--white)" }}>
+      <ScrollReveal>
+        <div
+          className="section-tag flex items-center uppercase"
+          style={{
+            fontSize: "0.7rem",
+            letterSpacing: "0.18em",
+            color: "var(--gold)",
+            fontWeight: 500,
+            marginBottom: "1rem",
+            gap: "0.6rem",
+          }}
+        >
+          The Process
+        </div>
+        <h2
+          className="font-serif"
+          style={{
+            fontSize: "clamp(2.2rem, 3.5vw, 3.2rem)",
+            fontWeight: 300,
+            lineHeight: 1.1,
+            maxWidth: "600px",
+            marginBottom: "4rem",
+          }}
+        >
+          From onboarding to{" "}
+          <em style={{ fontStyle: "italic", color: "var(--gold)" }}>
+            passive income
+          </em>
+        </h2>
+      </ScrollReveal>
       <div
         className="steps-container relative"
         style={{
@@ -61,49 +65,50 @@ export default function HowItWorks() {
           marginTop: "1rem",
         }}
       >
-        {steps.map((s) => (
-          <div
-            key={s.num}
-            className="text-center relative z-1"
-            style={{ padding: "0 2rem 3rem" }}
-          >
+        {steps.map((s, i) => (
+          <ScrollReveal key={s.num} delay={Math.min(i + 1, 4)}>
             <div
-              className="font-serif flex items-center justify-center"
-              style={{
-                width: "4rem",
-                height: "4rem",
-                borderRadius: "50%",
-                background: "var(--cream)",
-                border: "1px solid var(--gold)",
-                color: "var(--gold)",
-                fontSize: "1.4rem",
-                fontWeight: 600,
-                margin: "0 auto 1.5rem",
-              }}
+              className="relative z-1"
+              style={{ padding: "0 2rem 3rem" }}
             >
-              {s.num}
+              <div
+                className="font-serif flex items-center justify-center"
+                style={{
+                  width: "4rem",
+                  height: "4rem",
+                  borderRadius: "50%",
+                  background: "#fdf8f0",
+                  border: "2px solid var(--gold)",
+                  color: "var(--gold)",
+                  fontSize: "1.4rem",
+                  fontWeight: 600,
+                  margin: "0 auto 1.5rem",
+                }}
+              >
+                {s.num}
+              </div>
+              <h4
+                className="font-serif text-center"
+                style={{
+                  fontSize: "1.1rem",
+                  fontWeight: 600,
+                  marginBottom: "0.5rem",
+                }}
+              >
+                {s.title}
+              </h4>
+              <p
+                style={{
+                  fontSize: "0.8rem",
+                  color: "var(--muted)",
+                  lineHeight: 1.7,
+                  fontWeight: 300,
+                }}
+              >
+                {s.desc}
+              </p>
             </div>
-            <h4
-              className="font-serif"
-              style={{
-                fontSize: "1.1rem",
-                fontWeight: 600,
-                marginBottom: "0.5rem",
-              }}
-            >
-              {s.title}
-            </h4>
-            <p
-              style={{
-                fontSize: "0.8rem",
-                color: "var(--muted)",
-                lineHeight: 1.7,
-                fontWeight: 300,
-              }}
-            >
-              {s.desc}
-            </p>
-          </div>
+          </ScrollReveal>
         ))}
       </div>
     </section>

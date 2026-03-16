@@ -3,12 +3,13 @@ import Link from "next/link";
 export default function HeroSection() {
   return (
     <section
-      className="relative overflow-hidden"
+      className="relative overflow-hidden hero-grid"
       style={{
-        minHeight: "100vh",
+        minHeight: "calc(100vh - 72px)",
         display: "grid",
         gridTemplateColumns: "1fr 1fr",
-        paddingTop: "5rem",
+        alignItems: "center",
+        paddingTop: "72px",
       }}
     >
       {/* Background grid pattern */}
@@ -69,7 +70,7 @@ export default function HeroSection() {
             fontSize: "1rem",
             color: "var(--muted)",
             lineHeight: 1.7,
-            maxWidth: "420px",
+            maxWidth: "480px",
             marginBottom: "2.5rem",
             fontWeight: 300,
           }}
@@ -82,36 +83,42 @@ export default function HeroSection() {
         <div className="flex" style={{ gap: "1rem" }}>
           <Link
             href="/login"
-            className="inline-block no-underline uppercase"
+            className="no-underline uppercase"
             style={{
               background: "var(--ink)",
               color: "var(--cream)",
-              padding: "1rem 2rem",
+              height: "52px",
+              padding: "0 2rem",
               fontFamily: "var(--font-sans), sans-serif",
               fontSize: "0.8rem",
               fontWeight: 500,
-              letterSpacing: "0.08em",
+              letterSpacing: "0.1em",
               border: "none",
               borderRadius: "2px",
               transition: "all 0.25s",
+              display: "inline-flex",
+              alignItems: "center",
             }}
           >
             Enter Client Portal
           </Link>
           <a
             href="#services"
-            className="inline-block no-underline uppercase"
+            className="no-underline uppercase"
             style={{
               background: "transparent",
               color: "var(--ink)",
-              padding: "1rem 2rem",
+              height: "52px",
+              padding: "0 2rem",
               fontFamily: "var(--font-sans), sans-serif",
               fontSize: "0.8rem",
               fontWeight: 500,
-              letterSpacing: "0.08em",
+              letterSpacing: "0.1em",
               border: "1px solid rgba(15,14,11,0.25)",
               borderRadius: "2px",
               transition: "all 0.25s",
+              display: "inline-flex",
+              alignItems: "center",
             }}
           >
             Our Services
@@ -127,9 +134,8 @@ export default function HeroSection() {
         <div
           style={{
             background: "var(--white)",
-            borderRadius: "8px",
-            boxShadow:
-              "0 40px 80px rgba(15,14,11,0.12), 0 0 0 1px rgba(200,150,62,0.1)",
+            borderRadius: "16px",
+            boxShadow: "0 24px 64px rgba(0,0,0,0.10)",
             padding: "2rem",
             width: "100%",
             maxWidth: "480px",
@@ -162,9 +168,22 @@ export default function HeroSection() {
                 padding: "0.25rem 0.6rem",
                 borderRadius: "20px",
                 fontWeight: 500,
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "0.35rem",
               }}
             >
-              ● Live
+              <span
+                style={{
+                  display: "inline-block",
+                  width: "6px",
+                  height: "6px",
+                  borderRadius: "50%",
+                  background: "var(--green)",
+                  animation: "pulse 2s ease-in-out infinite",
+                }}
+              />
+              Live
             </span>
           </div>
 

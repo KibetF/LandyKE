@@ -72,6 +72,83 @@ body {
   to { opacity: 1; transform: translateY(0); }
 }
 
+/* Pulse animation for LIVE badge */
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(1.5); }
+}
+
+/* Scroll reveal classes */
+.scroll-reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+}
+.scroll-reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+.scroll-delay-1 { transition-delay: 100ms; }
+.scroll-delay-2 { transition-delay: 200ms; }
+.scroll-delay-3 { transition-delay: 300ms; }
+.scroll-delay-4 { transition-delay: 400ms; }
+
+/* Prefers reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .scroll-reveal {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Nav link sliding gold underline */
+.nav-link {
+  position: relative;
+}
+.nav-link::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 0;
+  height: 1.5px;
+  background: var(--gold);
+  transition: width 0.3s ease;
+}
+.nav-link:hover::after {
+  width: 100%;
+}
+
+/* Button hover states */
+.client-login-btn:hover {
+  background: var(--gold) !important;
+  transform: scale(1.03);
+  box-shadow: 0 4px 12px rgba(200,150,62,0.3);
+}
+
+.contact-submit:hover {
+  background: var(--gold) !important;
+}
+
+.footer-link:hover {
+  color: var(--gold) !important;
+}
+
+/* Card interactive class */
+.card-interactive {
+  cursor: pointer;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.card-interactive:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.08);
+}
+
 /* Service card bottom border animation */
 .service-card::after {
   content: '';
@@ -112,7 +189,7 @@ body {
   font-weight: 500;
 }
 
-/* Steps connecting line */
+/* Steps connecting line — dashed gold */
 .steps-container::before {
   content: '';
   position: absolute;
@@ -120,7 +197,8 @@ body {
   left: 10%;
   right: 10%;
   height: 1px;
-  background: linear-gradient(to right, transparent, var(--gold), var(--gold), transparent);
+  border-top: 1.5px dashed var(--gold);
+  background: none;
   z-index: 0;
 }
 
@@ -147,6 +225,11 @@ body {
 /* Property / tenant row hover */
 .row-hover:hover {
   background: var(--cream) !important;
+}
+
+/* Portfolio card hover border */
+.portfolio-card:hover {
+  border-color: rgba(200,150,62,0.4);
 }
 
 /* Responsive dashboard grid */
@@ -245,21 +328,19 @@ body {
 
 /* Marketing section padding */
 .marketing-section {
-  padding: 7rem 5rem;
+  padding: 5rem 5rem;
 }
 
 /* Services grids */
 .services-grid-3 {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 2px;
-  background: var(--warm);
+  gap: 1.5rem;
 }
 .services-grid-4 {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 2px;
-  background: var(--warm);
+  gap: 1.5rem;
 }
 
 /* Portfolio grid */
@@ -269,7 +350,7 @@ body {
   gap: 1.5rem;
 }
 .portfolio-card {
-  transition: box-shadow 0.3s, transform 0.3s;
+  transition: box-shadow 0.3s, transform 0.3s, border-color 0.3s;
 }
 .portfolio-card:hover {
   box-shadow: 0 12px 32px rgba(15,14,11,0.1);
@@ -304,6 +385,31 @@ body {
   .services-grid-4 {
     grid-template-columns: 1fr;
   }
+
+  /* Hero responsive stacking */
+  .hero-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Stats belt 2x2 */
+  .stats-belt-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  /* Steps vertical */
+  .steps-container {
+    grid-template-columns: 1fr !important;
+  }
+  .steps-container::before {
+    left: 2rem !important;
+    right: auto !important;
+    top: 0 !important;
+    bottom: 0 !important;
+    width: 1px;
+    height: auto !important;
+    border-top: none !important;
+    border-left: 1.5px dashed var(--gold) !important;
+  }
 }
 
 /* About & Contact responsive grids */
@@ -337,6 +443,7 @@ body {
 #contact select:focus,
 #contact textarea:focus {
   border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(200,150,62,0.1);
 }
 
 /* Trust section quote mark */
@@ -347,7 +454,7 @@ body {
   left: 3rem;
   font-family: var(--font-serif), serif;
   font-size: 20rem;
-  color: rgba(200,150,62,0.06);
+  color: rgba(200,150,62,0.15);
   line-height: 1;
   pointer-events: none;
 }

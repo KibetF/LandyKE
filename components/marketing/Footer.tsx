@@ -6,6 +6,7 @@ export default function Footer() {
       <footer
         style={{
           background: "var(--ink)",
+          borderTop: "4px solid var(--gold)",
           padding: "4rem 5rem",
           display: "grid",
           gridTemplateColumns: "2fr 1fr 1fr 1fr",
@@ -61,7 +62,7 @@ export default function Footer() {
               <li key={item} style={{ marginBottom: "0.6rem" }}>
                 <a
                   href="#"
-                  className="no-underline"
+                  className="footer-link no-underline"
                   style={{
                     fontSize: "0.8rem",
                     color: "rgba(245,240,232,0.45)",
@@ -97,7 +98,7 @@ export default function Footer() {
               <li key={item} style={{ marginBottom: "0.6rem" }}>
                 <a
                   href="#"
-                  className="no-underline"
+                  className="footer-link no-underline"
                   style={{
                     fontSize: "0.8rem",
                     color: "rgba(245,240,232,0.45)",
@@ -126,7 +127,7 @@ export default function Footer() {
             <li style={{ marginBottom: "0.6rem" }}>
               <Link
                 href="/login"
-                className="no-underline"
+                className="footer-link no-underline"
                 style={{
                   fontSize: "0.8rem",
                   color: "rgba(245,240,232,0.45)",
@@ -140,7 +141,7 @@ export default function Footer() {
               <li key={item} style={{ marginBottom: "0.6rem" }}>
                 <a
                   href="#"
-                  className="no-underline"
+                  className="footer-link no-underline"
                   style={{
                     fontSize: "0.8rem",
                     color: "rgba(245,240,232,0.45)",
@@ -170,6 +171,7 @@ export default function Footer() {
         className="flex justify-between"
         style={{
           background: "rgba(0,0,0,0.3)",
+          borderTop: "1px solid rgba(255,255,255,0.1)",
           padding: "1.2rem 5rem",
           fontSize: "0.7rem",
           color: "rgba(245,240,232,0.25)",

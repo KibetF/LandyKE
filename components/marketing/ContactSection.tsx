@@ -98,7 +98,7 @@ export default function ContactSection() {
                     width: "40px",
                     height: "40px",
                     borderRadius: "8px",
-                    background: "var(--white)",
+                    background: "rgba(201,146,26,0.1)",
                   }}
                 >
                   <c.Icon size={18} color="var(--gold)" strokeWidth={1.5} />
@@ -134,8 +134,9 @@ export default function ContactSection() {
         <div
           style={{
             background: "var(--white)",
-            borderRadius: "12px",
+            borderRadius: "16px",
             padding: "2.5rem",
+            boxShadow: "0 8px 40px rgba(0,0,0,0.08)",
           }}
         >
           <form
@@ -171,15 +172,15 @@ export default function ContactSection() {
                   placeholder="John Kamau"
                   style={{
                     width: "100%",
-                    padding: "0.8rem 1rem",
-                    border: "1px solid var(--warm)",
-                    borderRadius: "6px",
+                    padding: "14px 16px",
+                    border: "1px solid #e5ddd0",
+                    borderRadius: "8px",
                     fontSize: "0.85rem",
                     fontFamily: "var(--font-sans), sans-serif",
-                    background: "var(--cream)",
+                    background: "#fdf8f4",
                     color: "var(--ink)",
                     outline: "none",
-                    transition: "border-color 0.2s",
+                    transition: "border-color 0.2s, box-shadow 0.2s",
                   }}
                 />
               </div>
@@ -201,15 +202,15 @@ export default function ContactSection() {
                   placeholder="+254 7XX XXX XXX"
                   style={{
                     width: "100%",
-                    padding: "0.8rem 1rem",
-                    border: "1px solid var(--warm)",
-                    borderRadius: "6px",
+                    padding: "14px 16px",
+                    border: "1px solid #e5ddd0",
+                    borderRadius: "8px",
                     fontSize: "0.85rem",
                     fontFamily: "var(--font-sans), sans-serif",
-                    background: "var(--cream)",
+                    background: "#fdf8f4",
                     color: "var(--ink)",
                     outline: "none",
-                    transition: "border-color 0.2s",
+                    transition: "border-color 0.2s, box-shadow 0.2s",
                   }}
                 />
               </div>
@@ -233,15 +234,15 @@ export default function ContactSection() {
                 placeholder="john@example.com"
                 style={{
                   width: "100%",
-                  padding: "0.8rem 1rem",
-                  border: "1px solid var(--warm)",
-                  borderRadius: "6px",
+                  padding: "14px 16px",
+                  border: "1px solid #e5ddd0",
+                  borderRadius: "8px",
                   fontSize: "0.85rem",
                   fontFamily: "var(--font-sans), sans-serif",
-                  background: "var(--cream)",
+                  background: "#fdf8f4",
                   color: "var(--ink)",
                   outline: "none",
-                  transition: "border-color 0.2s",
+                  transition: "border-color 0.2s, box-shadow 0.2s",
                 }}
               />
             </div>
@@ -262,15 +263,15 @@ export default function ContactSection() {
               <select
                 style={{
                   width: "100%",
-                  padding: "0.8rem 1rem",
-                  border: "1px solid var(--warm)",
-                  borderRadius: "6px",
+                  padding: "14px 16px",
+                  border: "1px solid #e5ddd0",
+                  borderRadius: "8px",
                   fontSize: "0.85rem",
                   fontFamily: "var(--font-sans), sans-serif",
-                  background: "var(--cream)",
+                  background: "#fdf8f4",
                   color: "var(--muted)",
                   outline: "none",
-                  transition: "border-color 0.2s",
+                  transition: "border-color 0.2s, box-shadow 0.2s",
                   appearance: "none",
                 }}
               >
@@ -301,31 +302,32 @@ export default function ContactSection() {
                 placeholder="Tell us about your property — type, number of units, current situation..."
                 style={{
                   width: "100%",
-                  padding: "0.8rem 1rem",
-                  border: "1px solid var(--warm)",
-                  borderRadius: "6px",
+                  padding: "14px 16px",
+                  border: "1px solid #e5ddd0",
+                  borderRadius: "8px",
                   fontSize: "0.85rem",
                   fontFamily: "var(--font-sans), sans-serif",
-                  background: "var(--cream)",
+                  background: "#fdf8f4",
                   color: "var(--ink)",
                   outline: "none",
                   resize: "vertical",
-                  transition: "border-color 0.2s",
+                  transition: "border-color 0.2s, box-shadow 0.2s",
                 }}
               />
             </div>
 
             <button
               type="submit"
-              className="uppercase"
+              className="contact-submit uppercase"
               style={{
+                width: "100%",
                 background: "var(--ink)",
                 color: "var(--cream)",
-                padding: "1rem 2rem",
+                height: "52px",
                 fontFamily: "var(--font-sans), sans-serif",
                 fontSize: "0.8rem",
                 fontWeight: 500,
-                letterSpacing: "0.08em",
+                letterSpacing: "0.1em",
                 border: "none",
                 borderRadius: "4px",
                 cursor: "pointer",
