@@ -55,8 +55,8 @@ export default function Navbar() {
           </a>
         </li>
         <li>
-          <a
-            href="#about"
+          <Link
+            href="/about"
             className="nav-link no-underline uppercase"
             style={{
               fontSize: "0.8rem",
@@ -67,7 +67,7 @@ export default function Navbar() {
             }}
           >
             About
-          </a>
+          </Link>
         </li>
         <li>
           <a
