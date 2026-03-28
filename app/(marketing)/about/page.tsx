@@ -1,4 +1,4 @@
-import { Shield, Eye, Handshake, TrendingUp, MapPin, Users, Building2, Award } from "lucide-react";
+import { Shield, Eye, Handshake, TrendingUp, MapPin, Building2 } from "lucide-react";
 import Footer from "@/components/marketing/Footer";
 import TeamAvatar from "@/components/marketing/TeamAvatar";
 
@@ -8,7 +8,7 @@ const team = [
     role: "Chief Executive Officer",
     initials: "FK",
     image: "/team/fred-kibet.jpg",
-    bio: "Fred founded LandyKe with a vision to professionalise property management across Kenya. With a background in real estate and technology, he leads the company's strategic direction, ensuring every landlord — local or diaspora — receives transparent, reliable service. Under his leadership, LandyKe has grown from a single-city operation to a multi-region property management firm trusted by dozens of clients.",
+    bio: "Fred founded LandyKe with a vision to professionalise property management in Eldoret. With a background in real estate and technology, he leads the company's strategic direction, ensuring every landlord — local or diaspora — receives transparent, reliable service. Under his leadership, LandyKe has grown into a trusted property management firm with a growing portfolio across Eldoret.",
     gradient: "linear-gradient(135deg, var(--ink), var(--sage))",
   },
   {
@@ -43,7 +43,7 @@ const values = [
   {
     Icon: Handshake,
     title: "Local Expertise",
-    desc: "Deep knowledge of Kenyan property law, KRA compliance, and regional rental markets across Nairobi, Eldoret, Kisumu, and Mombasa.",
+    desc: "Deep knowledge of Kenyan property law, KRA compliance, and the Eldoret rental market — from CBD commercial units to residential estates.",
   },
   {
     Icon: TrendingUp,
@@ -54,11 +54,11 @@ const values = [
 
 const milestones = [
   { year: "2021", event: "Founded in Eldoret, Uasin Gishu County" },
-  { year: "2022", event: "Expanded operations to Nairobi and Kisumu" },
+  { year: "2022", event: "Onboarded first commercial property — Sanshin House" },
   { year: "2023", event: "Launched the LandyKe client portal for real-time reporting" },
-  { year: "2024", event: "Reached 30+ properties under management" },
-  { year: "2025", event: "Extended coverage to Mombasa and the coastal region" },
-  { year: "2026", event: "Managing 47+ properties across four major cities" },
+  { year: "2024", event: "Expanded to manage Action Flats and Rock Center Parkview" },
+  { year: "2025", event: "Added Eldoville Villa and Elbros Business Park to the portfolio" },
+  { year: "2026", event: "Managing 6 properties and 78+ units across Eldoret" },
 ];
 
 export default function AboutPage() {
@@ -117,9 +117,9 @@ export default function AboutPage() {
             LandyKe was founded in 2021 in Eldoret with a simple observation:
             Kenyan landlords — especially those in the diaspora — deserve
             professional, transparent property management without the constant
-            worry. Today we manage properties across four major cities, serving
-            both local and diaspora landlords with structured processes,
-            vetted contractor networks, and a digital-first approach.
+            worry. Today we manage a growing portfolio of properties across
+            Eldoret, serving both local and diaspora landlords with structured
+            processes, vetted contractor networks, and a digital-first approach.
           </p>
         </div>
       </section>
@@ -138,9 +138,9 @@ export default function AboutPage() {
       >
         {[
           { num: "2021", label: "Founded" },
-          { num: "4", label: "Cities" },
-          { num: "47+", label: "Properties Managed" },
-          { num: "18", label: "Landlord Clients" },
+          { num: "6", label: "Properties" },
+          { num: "78+", label: "Units Managed" },
+          { num: "4", label: "Landlord Clients" },
         ].map((s, i, arr) => (
           <div
             key={s.label}
@@ -192,8 +192,8 @@ export default function AboutPage() {
                 marginBottom: "2rem",
               }}
             >
-              From Eldoret to{" "}
-              <em style={{ fontStyle: "italic", color: "var(--gold)" }}>four cities</em>
+              Rooted in{" "}
+              <em style={{ fontStyle: "italic", color: "var(--gold)" }}>Eldoret</em>
             </h2>
             <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
               <p style={{ fontSize: "0.9rem", color: "var(--muted)", lineHeight: 1.8, fontWeight: 300 }}>
@@ -454,25 +454,27 @@ export default function AboutPage() {
             marginBottom: "4rem",
           }}
         >
-          Where we{" "}
-          <em style={{ fontStyle: "italic", color: "var(--gold)" }}>operate</em>
+          Our{" "}
+          <em style={{ fontStyle: "italic", color: "var(--gold)" }}>portfolio</em>
         </h2>
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(4, 1fr)",
+            gridTemplateColumns: "repeat(3, 1fr)",
             gap: "1.5rem",
           }}
-          className="services-grid-4"
+          className="services-grid-3"
         >
           {[
-            { city: "Nairobi", areas: "Kilimani, Karen, Westlands, Kileleshwa", properties: 18 },
-            { city: "Eldoret", areas: "CBD, Pioneer, Elgon View, Langas", properties: 14 },
-            { city: "Kisumu", areas: "Milimani, Tom Mboya, Kondele", properties: 9 },
-            { city: "Mombasa", areas: "Nyali, Bamburi, Tudor", properties: 6 },
-          ].map((c) => (
+            { name: "Elbros Business Park", location: "Near Royalton, Eldoret", type: "Mixed-Use", units: 18 },
+            { name: "Sanshin House", location: "Sinai, Eldoret", type: "Commercial", units: 12 },
+            { name: "Action Flats Phase 1", location: "Action, Eldoret", type: "Mixed-Use", units: 16 },
+            { name: "Action Flats Phase 2", location: "Action, Eldoret", type: "Residential", units: 14 },
+            { name: "Rock Center Parkview", location: "Rock Center, Eldoret", type: "Residential", units: 10 },
+            { name: "Eldoville Villa", location: "Eldoville, Eldoret", type: "Residential", units: 8 },
+          ].map((p) => (
             <div
-              key={c.city}
+              key={p.name}
               className="card-hover"
               style={{
                 background: "var(--white)",
@@ -482,30 +484,35 @@ export default function AboutPage() {
                 border: "1px solid rgba(201,146,26,0.15)",
               }}
             >
-              <div className="flex items-center" style={{ gap: "0.5rem", marginBottom: "1rem" }}>
-                <MapPin size={20} color="var(--gold)" strokeWidth={1.5} />
+              <div className="flex items-center" style={{ gap: "0.5rem", marginBottom: "0.5rem" }}>
+                <Building2 size={20} color="var(--gold)" strokeWidth={1.5} />
                 <h4
                   className="font-serif"
-                  style={{ fontSize: "1.3rem", fontWeight: 600 }}
+                  style={{ fontSize: "1.1rem", fontWeight: 600 }}
                 >
-                  {c.city}
+                  {p.name}
                 </h4>
               </div>
-              <p style={{ fontSize: "0.8rem", color: "var(--muted)", lineHeight: 1.7, fontWeight: 300, marginBottom: "1rem" }}>
-                {c.areas}
-              </p>
+              <div className="flex items-center" style={{ gap: "0.4rem", marginBottom: "1rem" }}>
+                <MapPin size={14} color="var(--muted)" strokeWidth={1.5} />
+                <span style={{ fontSize: "0.75rem", color: "var(--muted)", fontWeight: 300 }}>
+                  {p.location}
+                </span>
+              </div>
               <div
                 style={{
                   borderTop: "1px solid var(--warm)",
                   paddingTop: "0.8rem",
                   display: "flex",
+                  justifyContent: "space-between",
                   alignItems: "center",
-                  gap: "0.4rem",
                 }}
               >
-                <Building2 size={14} color="var(--gold)" strokeWidth={1.5} />
+                <span style={{ fontSize: "0.7rem", color: "var(--gold)", fontWeight: 500, letterSpacing: "0.05em" }}>
+                  {p.type}
+                </span>
                 <span style={{ fontSize: "0.75rem", color: "var(--muted)", fontWeight: 500 }}>
-                  {c.properties} properties
+                  {p.units} units
                 </span>
               </div>
             </div>

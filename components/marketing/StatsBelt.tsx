@@ -3,10 +3,10 @@
 import { useCountUp } from "@/hooks/useCountUp";
 
 const stats = [
-  { num: "47", label: "Properties Under Management" },
-  { num: "312", label: "Active Tenancies" },
+  { num: "6", label: "Properties Under Management" },
+  { num: "78", label: "Units Managed" },
   { num: "96%", label: "Average Occupancy Rate" },
-  { num: "18", label: "Landlord Clients" },
+  { num: "4", label: "Landlord Clients" },
 ];
 
 function parseNumeric(val: string): { target: number; suffix: string } {

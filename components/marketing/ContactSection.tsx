@@ -176,12 +176,13 @@ export default function ContactSection() {
                   name="location"
                   style={{ ...fieldInputStyle, appearance: "none", color: "var(--muted)" }}
                 >
-                  <option value="">Select a city</option>
-                  <option value="nairobi">Nairobi</option>
-                  <option value="eldoret">Eldoret</option>
-                  <option value="kisumu">Kisumu</option>
-                  <option value="mombasa">Mombasa</option>
-                  <option value="other">Other</option>
+                  <option value="">Select an area</option>
+                  <option value="cbd">Eldoret CBD</option>
+                  <option value="pioneer">Pioneer / Elgon View</option>
+                  <option value="action">Action</option>
+                  <option value="langas">Langas</option>
+                  <option value="sinai">Sinai</option>
+                  <option value="other">Other Area</option>
                 </select>
               </div>
 

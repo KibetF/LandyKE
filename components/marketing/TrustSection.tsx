@@ -8,20 +8,20 @@ const clients = [
   {
     initial: "J",
     name: "John K.",
-    detail: "Nairobi, Karen",
+    detail: "Eldoret, Elgon View",
     badge: "2 properties · 8 units",
   },
   {
     initial: "A",
     name: "Amina S.",
-    detail: "Mombasa · Dubai",
-    badge: "6 properties · 24 units",
+    detail: "Eldoret · Dubai",
+    badge: "1 property · 18 units",
   },
   {
     initial: "P",
     name: "Peter O.",
-    detail: "Kisumu, Milimani",
-    badge: "3 properties · 14 units",
+    detail: "Eldoret, Pioneer",
+    badge: "1 property · 14 units",
   },
 ];
 
@@ -34,12 +34,12 @@ const testimonials = [
   {
     quote:
       '"The monthly report is professional enough to hand straight to my accountant. They know exactly what to declare without asking me any questions. The service pays for itself."',
-    cite: "— Robert M., Portfolio Landlord, Nairobi",
+    cite: "— Robert M., Portfolio Landlord, Eldoret",
   },
   {
     quote:
       '"I tried managing my tenants myself for two years. Chasing rent was exhausting. LandyKe has 96% collection rates every month — better than I ever managed on my own."',
-    cite: "— Eunice A., Residential Landlord, Kisumu",
+    cite: "— Eunice A., Residential Landlord, Eldoret",
   },
 ];
 
@@ -103,8 +103,8 @@ export default function TrustSection() {
               marginBottom: "2.5rem",
             }}
           >
-            From single rental units in Eldoret to multi-property portfolios in
-            Nairobi, our clients range from first-time landlords to seasoned
+            From single rental units to multi-property portfolios across
+            Eldoret, our clients range from first-time landlords to seasoned
             investors who want professional management without the headache.
           </p>
           <div

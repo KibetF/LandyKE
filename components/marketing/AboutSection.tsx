@@ -14,7 +14,7 @@ const values = [
   {
     Icon: Handshake,
     title: "Local Expertise",
-    desc: "Deep knowledge of Kenyan property law, KRA compliance, and regional rental markets across Nairobi, Eldoret, Kisumu, and Mombasa.",
+    desc: "Deep knowledge of Kenyan property law, KRA compliance, and the Eldoret rental market — from CBD commercial units to residential estates.",
   },
   {
     Icon: TrendingUp,
@@ -93,8 +93,8 @@ export default function AboutSection() {
                 fontWeight: 300,
               }}
             >
-              Today we manage properties across four major cities, serving both
-              local and diaspora landlords. Every property under our stewardship
+              Today we manage a growing portfolio of properties across Eldoret,
+              serving both local and diaspora landlords. Every property under our stewardship
               benefits from structured processes, vetted contractor networks, and
               a digital-first approach to reporting and communication.
             </p>
@@ -123,8 +123,8 @@ export default function AboutSection() {
           >
             {[
               { num: "2021", label: "Founded" },
-              { num: "4", label: "Cities" },
-              { num: "47+", label: "Properties" },
+              { num: "6", label: "Properties" },
+              { num: "78+", label: "Units Managed" },
             ].map((s) => (
               <div
                 key={s.label}

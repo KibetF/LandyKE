@@ -45,7 +45,7 @@ export default function HeroSection() {
               background: "var(--gold)",
             }}
           />
-          Nairobi · Eldoret · Kisumu
+          Eldoret, Kenya
         </div>
 
         <h1
