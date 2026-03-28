@@ -1,9 +1,24 @@
 import Link from "next/link";
 
+const companyLinks: { label: string; href: string }[] = [
+  { label: "About Us", href: "/about" },
+  { label: "Our Team", href: "/about" },
+  { label: "Coverage Areas", href: "/#portfolio" },
+  { label: "Careers", href: "/#contact" },
+  { label: "Contact", href: "/#contact" },
+];
+
+const footerLinkStyle = {
+  fontSize: "0.8rem",
+  color: "rgba(245,240,232,0.45)",
+  transition: "color 0.2s",
+} as const;
+
 export default function Footer() {
   return (
     <>
       <footer
+        className="marketing-footer"
         style={{
           background: "var(--ink)",
           borderTop: "4px solid var(--gold)",
@@ -60,17 +75,13 @@ export default function Footer() {
               "Cleaning Services",
             ].map((item) => (
               <li key={item} style={{ marginBottom: "0.6rem" }}>
-                <a
-                  href="#"
+                <Link
+                  href="/#services"
                   className="footer-link no-underline"
-                  style={{
-                    fontSize: "0.8rem",
-                    color: "rgba(245,240,232,0.45)",
-                    transition: "color 0.2s",
-                  }}
+                  style={footerLinkStyle}
                 >
                   {item}
-                </a>
+                </Link>
               </li>
             ))}
           </ul>
@@ -88,25 +99,15 @@ export default function Footer() {
             Company
           </h5>
           <ul className="list-none">
-            {[
-              "About Us",
-              "Our Team",
-              "Coverage Areas",
-              "Careers",
-              "Contact",
-            ].map((item) => (
-              <li key={item} style={{ marginBottom: "0.6rem" }}>
-                <a
-                  href="#"
+            {companyLinks.map((item) => (
+              <li key={item.label} style={{ marginBottom: "0.6rem" }}>
+                <Link
+                  href={item.href}
                   className="footer-link no-underline"
-                  style={{
-                    fontSize: "0.8rem",
-                    color: "rgba(245,240,232,0.45)",
-                    transition: "color 0.2s",
-                  }}
+                  style={footerLinkStyle}
                 >
-                  {item}
-                </a>
+                  {item.label}
+                </Link>
               </li>
             ))}
           </ul>
@@ -128,30 +129,29 @@ export default function Footer() {
               <Link
                 href="/login"
                 className="footer-link no-underline"
-                style={{
-                  fontSize: "0.8rem",
-                  color: "rgba(245,240,232,0.45)",
-                  transition: "color 0.2s",
-                }}
+                style={footerLinkStyle}
               >
                 Login
               </Link>
             </li>
-            {["Reset Password", "Support"].map((item) => (
-              <li key={item} style={{ marginBottom: "0.6rem" }}>
-                <a
-                  href="#"
-                  className="footer-link no-underline"
-                  style={{
-                    fontSize: "0.8rem",
-                    color: "rgba(245,240,232,0.45)",
-                    transition: "color 0.2s",
-                  }}
-                >
-                  {item}
-                </a>
-              </li>
-            ))}
+            <li style={{ marginBottom: "0.6rem" }}>
+              <Link
+                href="/login"
+                className="footer-link no-underline"
+                style={footerLinkStyle}
+              >
+                Reset Password
+              </Link>
+            </li>
+            <li style={{ marginBottom: "0.6rem" }}>
+              <Link
+                href="mailto:hello@landyke.co.ke"
+                className="footer-link no-underline"
+                style={footerLinkStyle}
+              >
+                Support
+              </Link>
+            </li>
           </ul>
           <div style={{ marginTop: "1.5rem" }}>
             <p
@@ -168,7 +168,7 @@ export default function Footer() {
         </div>
       </footer>
       <div
-        className="flex justify-between"
+        className="footer-bottom flex justify-between"
         style={{
           background: "rgba(0,0,0,0.3)",
           borderTop: "1px solid rgba(255,255,255,0.1)",
@@ -178,8 +178,17 @@ export default function Footer() {
           letterSpacing: "0.05em",
         }}
       >
-        <span>© 2026 LandyKe Property Management. All rights reserved.</span>
-        <span>Privacy Policy · Terms of Service · EAAB Registered</span>
+        <span>&copy; 2026 LandyKe Property Management. All rights reserved.</span>
+        <span>
+          <Link href="/privacy" className="no-underline" style={{ color: "rgba(245,240,232,0.25)", transition: "color 0.2s" }}>
+            Privacy Policy
+          </Link>
+          {" · "}
+          <Link href="/terms" className="no-underline" style={{ color: "rgba(245,240,232,0.25)", transition: "color 0.2s" }}>
+            Terms of Service
+          </Link>
+          {" · EARB Registered"}
+        </span>
       </div>
     </>
   );

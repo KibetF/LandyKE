@@ -4,6 +4,7 @@ import IncomeChart from "@/components/dashboard/IncomeChart";
 import PropertyBreakdown from "@/components/dashboard/PropertyBreakdown";
 import TenantStatusList from "@/components/dashboard/TenantStatusList";
 import RecentTransactions from "@/components/dashboard/RecentTransactions";
+import MonthSelector from "@/components/dashboard/MonthSelector";
 
 // Dummy data fallback matching the HTML exactly
 const fallbackIncomeData = [
@@ -170,25 +171,7 @@ export default async function DashboardPage() {
             Here&apos;s your portfolio snapshot for March 2026
           </p>
         </div>
-        <select
-          style={{
-            background: "var(--white)",
-            border: "1px solid var(--warm)",
-            padding: "0.6rem 1.2rem",
-            fontFamily: "var(--font-sans), sans-serif",
-            fontSize: "0.8rem",
-            color: "var(--ink)",
-            borderRadius: "4px",
-            cursor: "pointer",
-            outline: "none",
-          }}
-          defaultValue="March 2026"
-        >
-          <option>March 2026</option>
-          <option>February 2026</option>
-          <option>January 2026</option>
-          <option>December 2025</option>
-        </select>
+        <MonthSelector />
       </div>
 
       {/* KPIs */}

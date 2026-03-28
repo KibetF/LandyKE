@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import Sidebar from "@/components/dashboard/Sidebar";
+import PortalHeader from "@/components/dashboard/PortalHeader";
 
 export default async function PortalLayout({
   children,
@@ -37,6 +38,7 @@ export default async function PortalLayout({
         className="flex-1 overflow-y-auto portal-main"
         style={{ padding: "2.5rem 3rem" }}
       >
+        <PortalHeader />
         {children}
       </main>
     </div>
