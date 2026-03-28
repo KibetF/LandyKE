@@ -237,6 +237,30 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
     }
   }
 
+  async function toggleTenantStatus(tenantId: string, currentStatus: string) {
+    setLoading(true);
+    setMessage(null);
+    const newStatus = currentStatus === "active" ? "moved" : "active";
+    try {
+      const res = await fetch("/api/admin/tenants", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tenant_id: tenantId, status: newStatus }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setMessage({ type: "error", text: data.error });
+      } else {
+        setMessage({ type: "success", text: `Tenant marked as ${newStatus}` });
+        setTenants((prev) => prev.map((t) => t.id === tenantId ? { ...t, status: newStatus } : t));
+      }
+    } catch {
+      setMessage({ type: "error", text: "Network error" });
+    } finally {
+      setLoading(false);
+    }
+  }
+
   async function createPayment(e: React.FormEvent) {
     e.preventDefault();
     if (!selectedLandlord) return;
@@ -256,6 +280,35 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
         setMessage({ type: "success", text: "Payment recorded" });
         setPayments((prev) => [data.payment, ...prev]);
         setPaymentForm({ tenant_id: "", amount: "", paid_date: "", due_date: "", notes: "M-Pesa", status: "paid" });
+      }
+    } catch {
+      setMessage({ type: "error", text: "Network error" });
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function togglePaymentStatus(paymentId: string, currentStatus: string) {
+    setLoading(true);
+    setMessage(null);
+    const nextStatus = currentStatus === "paid" ? "pending" : "paid";
+    const today = new Date().toISOString().slice(0, 10);
+    try {
+      const res = await fetch("/api/admin/payments", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          payment_id: paymentId,
+          status: nextStatus,
+          ...(nextStatus === "paid" ? { paid_date: today } : {}),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setMessage({ type: "error", text: data.error });
+      } else {
+        setMessage({ type: "success", text: `Payment marked as ${nextStatus}` });
+        setPayments((prev) => prev.map((p) => p.id === paymentId ? { ...p, ...data.payment } : p));
       }
     } catch {
       setMessage({ type: "error", text: "Network error" });
@@ -559,16 +612,32 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
                         <h4 style={{ fontSize: "0.85rem", fontWeight: 500, marginBottom: "0.15rem" }}>{t.full_name}</h4>
                         <span style={{ fontSize: "0.7rem", color: "var(--muted)" }}>
                           {t.properties?.name || "—"}{t.phone ? ` · ${t.phone}` : ""}
-                          {t.phone ? ` · ${t.phone}` : ""}
                         </span>
                       </div>
-                      <div className="text-right">
-                        <span className="font-serif" style={{ fontSize: "0.9rem", fontWeight: 600 }}>
-                          KES {Number(t.rent_amount).toLocaleString()}
-                        </span>
-                        <small className="block" style={{ fontSize: "0.65rem", color: t.status === "active" ? "var(--green)" : "var(--rust)" }}>
-                          {t.status === "active" ? "Active" : "Inactive"}
-                        </small>
+                      <div className="flex items-center" style={{ gap: "0.75rem" }}>
+                        <div className="text-right">
+                          <span className="font-serif" style={{ fontSize: "0.9rem", fontWeight: 600 }}>
+                            KES {Number(t.rent_amount).toLocaleString()}
+                          </span>
+                        </div>
+                        <button
+                          onClick={() => toggleTenantStatus(t.id, t.status)}
+                          disabled={loading}
+                          style={{
+                            padding: "0.3rem 0.6rem",
+                            fontSize: "0.65rem",
+                            fontWeight: 600,
+                            borderRadius: "4px",
+                            border: "none",
+                            cursor: "pointer",
+                            textTransform: "uppercase",
+                            letterSpacing: "0.05em",
+                            background: t.status === "active" ? "rgba(45,106,79,0.1)" : "rgba(139,58,42,0.1)",
+                            color: t.status === "active" ? "var(--green)" : "var(--rust)",
+                          }}
+                        >
+                          {t.status === "active" ? "Active" : "Moved"}
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -693,18 +762,23 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
                         <span className="font-serif" style={{ fontSize: "0.9rem", fontWeight: 600, color: p.status === "paid" ? "var(--green)" : p.status === "overdue" ? "var(--rust)" : "var(--ink)" }}>
                           KES {Number(p.amount).toLocaleString()}
                         </span>
-                        <small
+                        <button
+                          onClick={() => togglePaymentStatus(p.id, p.status)}
+                          disabled={loading}
                           className="block status-pill"
                           style={{
                             fontSize: "0.55rem",
                             marginTop: "0.2rem",
                             display: "inline-block",
+                            border: "none",
+                            cursor: "pointer",
                             background: p.status === "paid" ? "var(--green-light)" : p.status === "overdue" ? "var(--red-light)" : "var(--amber-light)",
                             color: p.status === "paid" ? "var(--green)" : p.status === "overdue" ? "var(--red-soft)" : "var(--gold)",
                           }}
+                          title={`Click to mark as ${p.status === "paid" ? "pending" : "paid"}`}
                         >
                           {p.status}
-                        </small>
+                        </button>
                       </div>
                     </div>
                   </div>

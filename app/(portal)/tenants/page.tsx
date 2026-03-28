@@ -14,8 +14,8 @@ export default async function TenantsPage() {
     unit_number: string | null;
     full_name: string;
     phone: string | null;
-    monthly_rent: number;
-    is_active: boolean;
+    rent_amount: number;
+    status: string;
     properties: { name: string; location: string | null };
   }> = [];
 

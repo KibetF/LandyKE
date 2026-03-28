@@ -9,8 +9,8 @@ interface TenantData {
   unit_number: string | null;
   full_name: string;
   phone: string | null;
-  monthly_rent: number;
-  is_active: boolean;
+  rent_amount: number;
+  status: string;
   properties: { name: string; location: string | null };
 }
 
@@ -48,7 +48,7 @@ export default function TenantTable({ tenants, properties }: TenantTableProps) {
       : tenants.filter((t) => t.property_id === filter);
 
   const totalCount = tenants.length;
-  const activeCount = tenants.filter((t) => t.is_active).length;
+  const activeCount = tenants.filter((t) => t.status === "active").length;
   const inactiveCount = totalCount - activeCount;
 
   return (
@@ -276,7 +276,7 @@ export default function TenantTable({ tenants, properties }: TenantTableProps) {
                       className="font-serif"
                       style={{ fontSize: "0.95rem", fontWeight: 600 }}
                     >
-                      KES {Number(tenant.monthly_rent).toLocaleString()}
+                      KES {Number(tenant.rent_amount).toLocaleString()}
                     </span>
                     <small
                       className="block"
@@ -304,7 +304,7 @@ export default function TenantTable({ tenants, properties }: TenantTableProps) {
 
                   {/* Status */}
                   <StatusPill
-                    status={tenant.is_active ? "active" : "inactive"}
+                    status={tenant.status === "active" ? "active" : tenant.status === "moved" ? "moved" : "inactive"}
                   />
                 </div>
               );

@@ -60,3 +60,32 @@ export async function POST(request: NextRequest) {
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
   return NextResponse.json({ payment: data }, { status: 201 });
 }
+
+export async function PATCH(request: NextRequest) {
+  const user = await verifyAdmin();
+  if (!user) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+
+  const body = await request.json();
+  const { payment_id, status, paid_date } = body;
+
+  if (!payment_id || !status) {
+    return NextResponse.json({ error: "payment_id and status are required" }, { status: 400 });
+  }
+
+  const adminClient = createAdminClient();
+  const updateData: Record<string, string | null> = { status };
+  if (status === "paid" && paid_date) {
+    updateData.paid_date = paid_date;
+  }
+
+  const { data, error } = await adminClient
+    .schema("landyke")
+    .from("payments")
+    .update(updateData)
+    .eq("id", payment_id)
+    .select("*, tenants(full_name, property_id, properties(name))")
+    .single();
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+  return NextResponse.json({ payment: data });
+}

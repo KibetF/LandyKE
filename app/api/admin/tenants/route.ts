@@ -78,3 +78,27 @@ export async function POST(request: NextRequest) {
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
   return NextResponse.json({ tenant: data }, { status: 201 });
 }
+
+export async function PATCH(request: NextRequest) {
+  const user = await verifyAdmin();
+  if (!user) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+
+  const body = await request.json();
+  const { tenant_id, status } = body;
+
+  if (!tenant_id || !status) {
+    return NextResponse.json({ error: "tenant_id and status are required" }, { status: 400 });
+  }
+
+  const adminClient = createAdminClient();
+  const { data, error } = await adminClient
+    .schema("landyke")
+    .from("tenants")
+    .update({ status })
+    .eq("id", tenant_id)
+    .select()
+    .single();
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+  return NextResponse.json({ tenant: data });
+}
