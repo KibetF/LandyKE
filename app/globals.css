@@ -338,6 +338,12 @@ body {
   transform: translateY(-1px);
 }
 
+/* Nav link hover underline */
+.nav-link:hover {
+  color: var(--ink) !important;
+  border-bottom-color: var(--gold) !important;
+}
+
 /* Marketing section padding */
 .marketing-section {
   padding: 5rem 5rem;
