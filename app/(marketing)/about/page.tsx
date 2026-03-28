@@ -1,11 +1,13 @@
 import { Shield, Eye, Handshake, TrendingUp, MapPin, Users, Building2, Award } from "lucide-react";
 import Footer from "@/components/marketing/Footer";
+import TeamAvatar from "@/components/marketing/TeamAvatar";
 
 const team = [
   {
     name: "Fred Kibet",
     role: "Chief Executive Officer",
     initials: "FK",
+    image: "/team/fred-kibet.jpg",
     bio: "Fred founded LandyKe with a vision to professionalise property management across Kenya. With a background in real estate and technology, he leads the company's strategic direction, ensuring every landlord — local or diaspora — receives transparent, reliable service. Under his leadership, LandyKe has grown from a single-city operation to a multi-region property management firm trusted by dozens of clients.",
     gradient: "linear-gradient(135deg, var(--ink), var(--sage))",
   },
@@ -13,8 +15,17 @@ const team = [
     name: "Hillary Kosgei",
     role: "Chief Operating Officer",
     initials: "HK",
+    image: "/team/hillary-kosgei.jpg",
     bio: "Hillary oversees the day-to-day operations of LandyKe, from tenant management and maintenance coordination to financial reporting and compliance. His deep understanding of Kenyan landlord-tenant law and local rental markets ensures that every property under LandyKe's stewardship is managed with precision and care. He is the driving force behind the company's operational excellence and client satisfaction.",
     gradient: "linear-gradient(135deg, var(--ink), var(--gold))",
+  },
+  {
+    name: "Edwin Muli",
+    role: "Facilities Manager",
+    initials: "EM",
+    image: "/team/edwin-muli.jpg",
+    bio: "Edwin is the boots on the ground at LandyKe — the first responder when something breaks and the steady hand that keeps every property running smoothly. As Facilities Manager, he oversees all maintenance and repair work across the portfolio, coordinating vetted contractors, supervising quality, and ensuring rapid turnaround. Whether it's a burst pipe in Action Flats or a security fix at Elbros Business Park, Edwin can be dispatched to any property at short notice.",
+    gradient: "linear-gradient(135deg, var(--ink), var(--rust))",
   },
 ];
 
@@ -270,10 +281,10 @@ export default function AboutPage() {
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "1fr 1fr",
-            gap: "2.5rem",
+            gridTemplateColumns: "repeat(3, 1fr)",
+            gap: "2rem",
           }}
-          className="about-grid"
+          className="services-grid-3"
         >
           {team.map((t) => (
             <div
@@ -298,21 +309,7 @@ export default function AboutPage() {
                   gap: "1rem",
                 }}
               >
-                <div
-                  className="font-serif flex items-center justify-center"
-                  style={{
-                    width: "80px",
-                    height: "80px",
-                    borderRadius: "50%",
-                    background: "var(--gold)",
-                    color: "var(--ink)",
-                    fontSize: "2rem",
-                    fontWeight: 600,
-                    border: "3px solid rgba(255,255,255,0.2)",
-                  }}
-                >
-                  {t.initials}
-                </div>
+                <TeamAvatar src={t.image} alt={t.name} initials={t.initials} />
                 <div className="text-center">
                   <h3
                     className="font-serif"
@@ -339,7 +336,7 @@ export default function AboutPage() {
                 </div>
               </div>
               {/* Bio */}
-              <div style={{ padding: "2rem" }}>
+              <div style={{ padding: "1.5rem" }}>
                 <p
                   style={{
                     fontSize: "0.85rem",
