@@ -6,25 +6,27 @@ import StatusPill from "@/components/ui/StatusPill";
 import type { MaintenanceRequest } from "@/types";
 
 const mockRequests: MaintenanceRequest[] = [
-  { id: "1", property_id: "p1", unit_number: "3", tenant_name: "James Waweru", property_name: "Plot A — Langas", description: "Leaking kitchen faucet, water pooling on floor", priority: "high", status: "open", date_submitted: "2026-03-18" },
-  { id: "2", property_id: "p2", unit_number: "2", tenant_name: "Grace Akinyi", property_name: "Kapsoya Block", description: "Bathroom door handle broken, won't lock", priority: "medium", status: "in-progress", date_submitted: "2026-03-15" },
-  { id: "3", property_id: "p1", unit_number: "1", tenant_name: "Faith Kiprotich", property_name: "Plot A — Langas", description: "Power outlet in bedroom not working", priority: "high", status: "open", date_submitted: "2026-03-17" },
-  { id: "4", property_id: "p3", unit_number: "7", tenant_name: "Daniel Otieno", property_name: "Plot B — Pioneer", description: "Window glass cracked from storm damage", priority: "urgent", status: "open", date_submitted: "2026-03-19" },
-  { id: "5", property_id: "p4", unit_number: "1", tenant_name: "Samuel Mutua", property_name: "Annex — Huruma", description: "Ceiling paint peeling in living room", priority: "low", status: "completed", date_submitted: "2026-03-05" },
-  { id: "6", property_id: "p2", unit_number: "4", tenant_name: "Ruth Njeri", property_name: "Kapsoya Block", description: "Blocked kitchen sink drain", priority: "medium", status: "completed", date_submitted: "2026-03-08" },
-  { id: "7", property_id: "p1", unit_number: "5", tenant_name: "Peter Kamau", property_name: "Plot A — Langas", description: "Main door lock is jammed", priority: "high", status: "in-progress", date_submitted: "2026-03-14" },
-  { id: "8", property_id: "p3", unit_number: "2", tenant_name: "Mary Wanjiku", property_name: "Plot B — Pioneer", description: "Hot water heater not working", priority: "urgent", status: "in-progress", date_submitted: "2026-03-16" },
-  { id: "9", property_id: "p4", unit_number: "2", tenant_name: "Joseph Kipchoge", property_name: "Annex — Huruma", description: "Toilet running continuously", priority: "medium", status: "open", date_submitted: "2026-03-19" },
-  { id: "10", property_id: "p1", unit_number: "6", tenant_name: "Anne Chebet", property_name: "Plot A — Langas", description: "Broken curtain rail in master bedroom", priority: "low", status: "completed", date_submitted: "2026-03-02" },
-  { id: "11", property_id: "p2", unit_number: "1", tenant_name: "David Maina", property_name: "Kapsoya Block", description: "Wall crack near window expanding", priority: "high", status: "open", date_submitted: "2026-03-20" },
-  { id: "12", property_id: "p3", unit_number: "5", tenant_name: "Lucy Achieng", property_name: "Plot B — Pioneer", description: "Gate padlock replacement needed", priority: "low", status: "completed", date_submitted: "2026-03-01" },
+  { id: "1", property_id: "p1", unit_number: "3", tenant_name: "James Waweru", property_name: "Elbros Business Park", description: "Leaking kitchen faucet, water pooling on floor", priority: "high", status: "open", date_submitted: "2026-03-18" },
+  { id: "2", property_id: "p2", unit_number: "2", tenant_name: "Grace Akinyi", property_name: "Sanshin House", description: "Office door handle broken, won't lock", priority: "medium", status: "in-progress", date_submitted: "2026-03-15" },
+  { id: "3", property_id: "p1", unit_number: "1", tenant_name: "Faith Kiprotich", property_name: "Elbros Business Park", description: "Power outlet in bedroom not working", priority: "high", status: "open", date_submitted: "2026-03-17" },
+  { id: "4", property_id: "p3", unit_number: "7", tenant_name: "Daniel Otieno", property_name: "Action Flats Phase 1", description: "Window glass cracked from storm damage", priority: "urgent", status: "open", date_submitted: "2026-03-19" },
+  { id: "5", property_id: "p4", unit_number: "1", tenant_name: "Samuel Mutua", property_name: "Action Flats Phase 2", description: "Ceiling paint peeling in living room", priority: "low", status: "completed", date_submitted: "2026-03-05" },
+  { id: "6", property_id: "p2", unit_number: "4", tenant_name: "Ruth Njeri", property_name: "Sanshin House", description: "Blocked kitchen sink drain", priority: "medium", status: "completed", date_submitted: "2026-03-08" },
+  { id: "7", property_id: "p5", unit_number: "5", tenant_name: "Peter Kamau", property_name: "Rock Center Parkview", description: "Main door lock is jammed", priority: "high", status: "in-progress", date_submitted: "2026-03-14" },
+  { id: "8", property_id: "p3", unit_number: "2", tenant_name: "Mary Wanjiku", property_name: "Action Flats Phase 1", description: "Hot water heater not working", priority: "urgent", status: "in-progress", date_submitted: "2026-03-16" },
+  { id: "9", property_id: "p6", unit_number: "2", tenant_name: "Joseph Kipchoge", property_name: "Eldoville Villa", description: "Toilet running continuously", priority: "medium", status: "open", date_submitted: "2026-03-19" },
+  { id: "10", property_id: "p5", unit_number: "6", tenant_name: "Anne Chebet", property_name: "Rock Center Parkview", description: "Broken curtain rail in master bedroom", priority: "low", status: "completed", date_submitted: "2026-03-02" },
+  { id: "11", property_id: "p4", unit_number: "1", tenant_name: "David Maina", property_name: "Action Flats Phase 2", description: "Wall crack near window expanding", priority: "high", status: "open", date_submitted: "2026-03-20" },
+  { id: "12", property_id: "p6", unit_number: "3", tenant_name: "Lucy Achieng", property_name: "Eldoville Villa", description: "Gate padlock replacement needed", priority: "low", status: "completed", date_submitted: "2026-03-01" },
 ];
 
 const properties = [
-  { id: "p1", name: "Plot A — Langas" },
-  { id: "p2", name: "Kapsoya Block" },
-  { id: "p3", name: "Plot B — Pioneer" },
-  { id: "p4", name: "Annex — Huruma" },
+  { id: "p1", name: "Elbros Business Park" },
+  { id: "p2", name: "Sanshin House" },
+  { id: "p3", name: "Action Flats Phase 1" },
+  { id: "p4", name: "Action Flats Phase 2" },
+  { id: "p5", name: "Rock Center Parkview" },
+  { id: "p6", name: "Eldoville Villa" },
 ];
 
 const selectStyle = {

@@ -5,23 +5,25 @@ import { FileText, Receipt, File, Scale, BarChart3 } from "lucide-react";
 import type { Document } from "@/types";
 
 const mockDocuments: Document[] = [
-  { id: "1", name: "Lease Agreement — Unit 3", type: "lease", property_name: "Plot A — Langas", property_id: "p1", date_uploaded: "2026-01-15", file_size: "245 KB" },
-  { id: "2", name: "January 2026 Invoice", type: "invoice", property_name: "Kapsoya Block", property_id: "p2", date_uploaded: "2026-01-31", file_size: "89 KB" },
-  { id: "3", name: "Rent Receipt — Feb 2026", type: "receipt", property_name: "Plot A — Langas", property_id: "p1", date_uploaded: "2026-02-05", file_size: "42 KB" },
+  { id: "1", name: "Lease Agreement — Unit 3", type: "lease", property_name: "Elbros Business Park", property_id: "p1", date_uploaded: "2026-01-15", file_size: "245 KB" },
+  { id: "2", name: "January 2026 Invoice", type: "invoice", property_name: "Sanshin House", property_id: "p2", date_uploaded: "2026-01-31", file_size: "89 KB" },
+  { id: "3", name: "Rent Receipt — Feb 2026", type: "receipt", property_name: "Elbros Business Park", property_id: "p1", date_uploaded: "2026-02-05", file_size: "42 KB" },
   { id: "4", name: "Q4 2025 Financial Report", type: "report", property_name: "All Properties", property_id: "all", date_uploaded: "2026-01-10", file_size: "1.2 MB" },
-  { id: "5", name: "Tenancy Agreement — Unit 7", type: "lease", property_name: "Plot B — Pioneer", property_id: "p3", date_uploaded: "2025-11-20", file_size: "312 KB" },
-  { id: "6", name: "Property Insurance Certificate", type: "legal", property_name: "Plot A — Langas", property_id: "p1", date_uploaded: "2025-12-01", file_size: "520 KB" },
-  { id: "7", name: "February 2026 Invoice", type: "invoice", property_name: "Plot A — Langas", property_id: "p1", date_uploaded: "2026-02-28", file_size: "91 KB" },
-  { id: "8", name: "Maintenance Receipt — Plumbing", type: "receipt", property_name: "Annex — Huruma", property_id: "p4", date_uploaded: "2026-03-10", file_size: "38 KB" },
+  { id: "5", name: "Tenancy Agreement — Unit 7", type: "lease", property_name: "Action Flats Phase 1", property_id: "p3", date_uploaded: "2025-11-20", file_size: "312 KB" },
+  { id: "6", name: "Property Insurance Certificate", type: "legal", property_name: "Elbros Business Park", property_id: "p1", date_uploaded: "2025-12-01", file_size: "520 KB" },
+  { id: "7", name: "February 2026 Invoice", type: "invoice", property_name: "Action Flats Phase 2", property_id: "p4", date_uploaded: "2026-02-28", file_size: "91 KB" },
+  { id: "8", name: "Maintenance Receipt — Plumbing", type: "receipt", property_name: "Rock Center Parkview", property_id: "p5", date_uploaded: "2026-03-10", file_size: "38 KB" },
   { id: "9", name: "Annual Property Report 2025", type: "report", property_name: "All Properties", property_id: "all", date_uploaded: "2026-01-05", file_size: "2.4 MB" },
-  { id: "10", name: "NEMA Compliance Certificate", type: "legal", property_name: "Kapsoya Block", property_id: "p2", date_uploaded: "2025-10-15", file_size: "180 KB" },
+  { id: "10", name: "NEMA Compliance Certificate", type: "legal", property_name: "Sanshin House", property_id: "p2", date_uploaded: "2025-10-15", file_size: "180 KB" },
 ];
 
 const properties = [
-  { id: "p1", name: "Plot A — Langas" },
-  { id: "p2", name: "Kapsoya Block" },
-  { id: "p3", name: "Plot B — Pioneer" },
-  { id: "p4", name: "Annex — Huruma" },
+  { id: "p1", name: "Elbros Business Park" },
+  { id: "p2", name: "Sanshin House" },
+  { id: "p3", name: "Action Flats Phase 1" },
+  { id: "p4", name: "Action Flats Phase 2" },
+  { id: "p5", name: "Rock Center Parkview" },
+  { id: "p6", name: "Eldoville Villa" },
 ];
 
 function getTypeIcon(type: Document["type"]) {

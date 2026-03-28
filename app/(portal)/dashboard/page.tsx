@@ -17,10 +17,10 @@ const fallbackIncomeData = [
 ];
 
 const fallbackProperties = [
-  { name: "Plot A — Langas", location: "Langas, Eldoret", units: 6, income: 75000, occupancy: "100% occupied" },
-  { name: "Kapsoya Block", location: "Kapsoya, Eldoret", units: 4, income: 48000, occupancy: "100% occupied" },
-  { name: "Plot B — Pioneer", location: "Pioneer, Eldoret", units: 4, income: 40000, occupancy: "75% occupied" },
-  { name: "Annex — Huruma", location: "Huruma, Eldoret", units: 2, income: 25000, occupancy: "100% occupied" },
+  { name: "Elbros Business Park", location: "Near Royalton, Eldoret", units: 18, income: 180000, occupancy: "94% occupied" },
+  { name: "Sanshin House", location: "Sinai, Eldoret", units: 12, income: 120000, occupancy: "88% occupied" },
+  { name: "Action Flats Phase 1", location: "Action, Eldoret", units: 16, income: 145000, occupancy: "92% occupied" },
+  { name: "Action Flats Phase 2", location: "Action, Eldoret", units: 14, income: 130000, occupancy: "96% occupied" },
 ];
 
 const fallbackTenants = [

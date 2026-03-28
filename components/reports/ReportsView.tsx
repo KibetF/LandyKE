@@ -29,15 +29,17 @@ const collectionRates = [
 ];
 
 const occupancyData = [
-  { name: "Plot A — Langas", total: 6, occupied: 6, rate: 100 },
-  { name: "Kapsoya Block", total: 4, occupied: 4, rate: 100 },
-  { name: "Plot B — Pioneer", total: 4, occupied: 3, rate: 75 },
-  { name: "Annex — Huruma", total: 2, occupied: 2, rate: 100 },
+  { name: "Elbros Business Park", total: 18, occupied: 17, rate: 94 },
+  { name: "Sanshin House", total: 12, occupied: 11, rate: 92 },
+  { name: "Action Flats Phase 1", total: 16, occupied: 15, rate: 94 },
+  { name: "Action Flats Phase 2", total: 14, occupied: 13, rate: 93 },
+  { name: "Rock Center Parkview", total: 10, occupied: 10, rate: 100 },
+  { name: "Eldoville Villa", total: 8, occupied: 8, rate: 100 },
 ];
 
 const arrearsData = [
-  { tenant: "Daniel Otieno", property: "Plot B — Pioneer", unit: "7", amount: 10000, days: 15 },
-  { tenant: "Samuel Mutua", property: "Annex — Huruma", unit: "1", amount: 12500, days: 5 },
+  { tenant: "Daniel Otieno", property: "Action Flats Phase 1", unit: "7", amount: 10000, days: 15 },
+  { tenant: "Samuel Mutua", property: "Action Flats Phase 2", unit: "1", amount: 12500, days: 5 },
 ];
 
 const cardStyle = {
