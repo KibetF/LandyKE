@@ -22,11 +22,11 @@ export default function HeroSection() {
         className="hero-grid"
         style={{
           display: "grid",
-          gridTemplateColumns: "1fr 1fr",
+          gridTemplateColumns: "3fr 2fr",
           alignItems: "center",
-          maxWidth: "1280px",
+          maxWidth: "1400px",
           margin: "0 auto",
-          padding: "3rem 2rem",
+          padding: "5rem 2rem 5rem 2rem",
         }}
       >
         {/* Left content */}
