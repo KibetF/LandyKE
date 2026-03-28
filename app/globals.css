@@ -332,6 +332,12 @@ body {
   font-weight: 500;
 }
 
+/* Marketing button hover */
+.client-login-btn:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  transform: translateY(-1px);
+}
+
 /* Marketing section padding */
 .marketing-section {
   padding: 5rem 5rem;

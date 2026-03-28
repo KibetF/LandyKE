@@ -203,7 +203,7 @@ export default function PortfolioSection() {
             height: "48px",
             padding: "0 2rem",
             border: "1.5px solid var(--gold)",
-            borderRadius: "2px",
+            borderRadius: "26px",
             color: "var(--gold)",
             fontSize: "0.8rem",
             fontWeight: 500,
