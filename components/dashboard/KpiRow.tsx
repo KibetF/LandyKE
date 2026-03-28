@@ -8,12 +8,16 @@ interface KpiData {
   propertyCount: number;
   totalUnits: number;
   occupancyRate: number;
+  monthLabel?: string;
 }
 
 export default function KpiRow({ data }: { data: KpiData }) {
+  const monthLabel = data.monthLabel || "This Month";
+  const shortMonth = monthLabel.split(" ")[0];
+
   const kpis = [
     {
-      label: "Total Collected — March",
+      label: `Total Collected — ${shortMonth}`,
       value: data.totalCollected.toLocaleString(),
       sub: `KES · of ${data.totalExpected.toLocaleString()} expected`,
       icon: "💰",
@@ -22,7 +26,7 @@ export default function KpiRow({ data }: { data: KpiData }) {
     {
       label: "Tenants Paid",
       value: `${data.tenantsPaid} / ${data.totalTenants}`,
-      sub: `${data.totalTenants - data.tenantsPaid} outstanding`,
+      sub: `${Math.max(0, data.totalTenants - data.tenantsPaid)} outstanding`,
       icon: "✅",
       color: "kpi-green",
     },

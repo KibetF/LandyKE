@@ -30,10 +30,11 @@ export default async function PortalLayout({
   }
 
   const userName = landlord.full_name || user.email || "User";
+  const isAdmin = user.email === process.env.ADMIN_EMAIL;
 
   return (
     <div className="flex portal-layout" style={{ minHeight: "100vh", background: "#f7f5f2" }}>
-      <Sidebar userName={userName} />
+      <Sidebar userName={userName} isAdmin={isAdmin} />
       <main
         className="flex-1 overflow-y-auto portal-main"
         style={{ padding: "2.5rem 3rem" }}

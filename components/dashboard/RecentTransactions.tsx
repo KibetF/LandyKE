@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Receipt } from "lucide-react";
 
 interface Transaction {
   title: string;
@@ -12,6 +13,8 @@ export default function RecentTransactions({
 }: {
   transactions: Transaction[];
 }) {
+  const isEmpty = transactions.length === 0;
+
   return (
     <div
       className="card-hover"
@@ -49,44 +52,54 @@ export default function RecentTransactions({
         </Link>
       </div>
       <div style={{ padding: "0.5rem" }}>
-        {transactions.map((txn, i) => (
+        {isEmpty ? (
           <div
-            key={i}
-            className="flex justify-between items-center"
-            style={{
-              padding: "0.75rem 1rem",
-              borderBottom:
-                i < transactions.length - 1
-                  ? "1px solid var(--warm)"
-                  : "none",
-            }}
+            className="flex flex-col items-center justify-center"
+            style={{ padding: "2rem", color: "var(--muted)" }}
           >
-            <div>
-              <h4
-                style={{
-                  fontSize: "0.8rem",
-                  fontWeight: 500,
-                  marginBottom: "0.15rem",
-                }}
-              >
-                {txn.title}
-              </h4>
-              <span style={{ fontSize: "0.68rem", color: "var(--muted)" }}>
-                {txn.detail}
-              </span>
-            </div>
+            <Receipt size={28} style={{ marginBottom: "0.5rem", opacity: 0.4 }} />
+            <span style={{ fontSize: "0.85rem" }}>No transactions yet</span>
+          </div>
+        ) : (
+          transactions.map((txn, i) => (
             <div
-              className="font-serif"
+              key={i}
+              className="flex justify-between items-center"
               style={{
-                fontSize: "1rem",
-                fontWeight: 600,
-                color: txn.isDeduction ? "var(--rust)" : "var(--green)",
+                padding: "0.75rem 1rem",
+                borderBottom:
+                  i < transactions.length - 1
+                    ? "1px solid var(--warm)"
+                    : "none",
               }}
             >
-              {txn.amount}
+              <div>
+                <h4
+                  style={{
+                    fontSize: "0.8rem",
+                    fontWeight: 500,
+                    marginBottom: "0.15rem",
+                  }}
+                >
+                  {txn.title}
+                </h4>
+                <span style={{ fontSize: "0.68rem", color: "var(--muted)" }}>
+                  {txn.detail}
+                </span>
+              </div>
+              <div
+                className="font-serif"
+                style={{
+                  fontSize: "1rem",
+                  fontWeight: 600,
+                  color: txn.isDeduction ? "var(--rust)" : "var(--green)",
+                }}
+              >
+                {txn.amount}
+              </div>
             </div>
-          </div>
-        ))}
+          ))
+        )}
       </div>
     </div>
   );

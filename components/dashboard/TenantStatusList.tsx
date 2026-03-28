@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Users } from "lucide-react";
 import StatusPill from "@/components/ui/StatusPill";
 
 interface TenantStatus {
@@ -16,6 +17,8 @@ export default function TenantStatusList({
 }: {
   tenants: TenantStatus[];
 }) {
+  const isEmpty = tenants.length === 0;
+
   return (
     <div
       className="card-hover"
@@ -53,69 +56,82 @@ export default function TenantStatusList({
         </Link>
       </div>
       <div style={{ padding: "0.5rem" }}>
-        {tenants.map((t) => (
+        {isEmpty ? (
           <div
-            key={t.name}
-            className="items-center cursor-pointer row-hover"
-            style={{
-              display: "grid",
-              gridTemplateColumns: "auto 1fr auto auto",
-              gap: "1rem",
-              padding: "0.9rem 1rem",
-              borderRadius: "6px",
-              transition: "background 0.15s",
-            }}
+            className="flex flex-col items-center justify-center"
+            style={{ padding: "2rem", color: "var(--muted)" }}
           >
+            <Users size={28} style={{ marginBottom: "0.5rem", opacity: 0.4 }} />
+            <span style={{ fontSize: "0.85rem" }}>No tenants yet</span>
+            <span style={{ fontSize: "0.7rem", marginTop: "0.25rem" }}>
+              Tenant payment status will appear here
+            </span>
+          </div>
+        ) : (
+          tenants.map((t) => (
             <div
-              className="flex items-center justify-center shrink-0"
+              key={t.name}
+              className="items-center cursor-pointer row-hover"
               style={{
-                width: "34px",
-                height: "34px",
-                borderRadius: "50%",
-                background: t.color,
-                fontSize: "0.75rem",
-                fontWeight: 600,
-                color: "var(--white)",
+                display: "grid",
+                gridTemplateColumns: "auto 1fr auto auto",
+                gap: "1rem",
+                padding: "0.9rem 1rem",
+                borderRadius: "6px",
+                transition: "background 0.15s",
               }}
             >
-              {t.initials}
-            </div>
-            <div>
-              <h4
+              <div
+                className="flex items-center justify-center shrink-0"
                 style={{
-                  fontSize: "0.82rem",
-                  fontWeight: 500,
-                  marginBottom: "0.15rem",
+                  width: "34px",
+                  height: "34px",
+                  borderRadius: "50%",
+                  background: t.color,
+                  fontSize: "0.75rem",
+                  fontWeight: 600,
+                  color: "var(--white)",
                 }}
               >
-                {t.name}
-              </h4>
-              <span style={{ fontSize: "0.68rem", color: "var(--muted)" }}>
-                {t.property}
-              </span>
+                {t.initials}
+              </div>
+              <div>
+                <h4
+                  style={{
+                    fontSize: "0.82rem",
+                    fontWeight: 500,
+                    marginBottom: "0.15rem",
+                  }}
+                >
+                  {t.name}
+                </h4>
+                <span style={{ fontSize: "0.68rem", color: "var(--muted)" }}>
+                  {t.property}
+                </span>
+              </div>
+              <div className="text-right">
+                <span
+                  className="font-serif"
+                  style={{ fontSize: "1rem", fontWeight: 600 }}
+                >
+                  {t.amount.toLocaleString()}
+                </span>
+                <small
+                  className="block"
+                  style={{
+                    fontSize: "0.65rem",
+                    color: "var(--muted)",
+                    fontFamily: "var(--font-sans), sans-serif",
+                    fontWeight: 400,
+                  }}
+                >
+                  {t.date}
+                </small>
+              </div>
+              <StatusPill status={t.status} />
             </div>
-            <div className="text-right">
-              <span
-                className="font-serif"
-                style={{ fontSize: "1rem", fontWeight: 600 }}
-              >
-                {t.amount.toLocaleString()}
-              </span>
-              <small
-                className="block"
-                style={{
-                  fontSize: "0.65rem",
-                  color: "var(--muted)",
-                  fontFamily: "var(--font-sans), sans-serif",
-                  fontWeight: 400,
-                }}
-              >
-                {t.date}
-              </small>
-            </div>
-            <StatusPill status={t.status} />
-          </div>
-        ))}
+          ))
+        )}
       </div>
     </div>
   );

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Home } from "lucide-react";
 
 interface PropertyData {
   name: string;
@@ -13,6 +14,8 @@ export default function PropertyBreakdown({
 }: {
   properties: PropertyData[];
 }) {
+  const isEmpty = properties.length === 0;
+
   return (
     <div
       className="card-hover"
@@ -50,41 +53,51 @@ export default function PropertyBreakdown({
         </Link>
       </div>
       <div style={{ padding: "0.5rem" }}>
-        {properties.map((p, i) => (
+        {isEmpty ? (
           <div
-            key={p.name}
-            className="flex justify-between items-center cursor-pointer row-hover"
-            style={{
-              padding: "0.9rem 1rem",
-              borderRadius: "6px",
-              transition: "background 0.15s",
-              borderBottom:
-                i < properties.length - 1
-                  ? "1px solid var(--warm)"
-                  : "none",
-            }}
+            className="flex flex-col items-center justify-center"
+            style={{ padding: "2rem", color: "var(--muted)" }}
           >
-            <div>
-              <h4 style={{ fontSize: "0.82rem", fontWeight: 500, marginBottom: "0.15rem" }}>
-                {p.name}
-              </h4>
-              <span style={{ fontSize: "0.68rem", color: "var(--muted)" }}>
-                {p.units} units · {p.location}
-              </span>
-            </div>
-            <div className="text-right">
-              <div
-                className="font-serif"
-                style={{ fontSize: "1rem", fontWeight: 600 }}
-              >
-                {p.income.toLocaleString()}
-              </div>
-              <div style={{ fontSize: "0.65rem", color: "var(--green)" }}>
-                {p.occupancy}
-              </div>
-            </div>
+            <Home size={28} style={{ marginBottom: "0.5rem", opacity: 0.4 }} />
+            <span style={{ fontSize: "0.85rem" }}>No properties yet</span>
           </div>
-        ))}
+        ) : (
+          properties.map((p, i) => (
+            <div
+              key={p.name}
+              className="flex justify-between items-center cursor-pointer row-hover"
+              style={{
+                padding: "0.9rem 1rem",
+                borderRadius: "6px",
+                transition: "background 0.15s",
+                borderBottom:
+                  i < properties.length - 1
+                    ? "1px solid var(--warm)"
+                    : "none",
+              }}
+            >
+              <div>
+                <h4 style={{ fontSize: "0.82rem", fontWeight: 500, marginBottom: "0.15rem" }}>
+                  {p.name}
+                </h4>
+                <span style={{ fontSize: "0.68rem", color: "var(--muted)" }}>
+                  {p.units} units · {p.location}
+                </span>
+              </div>
+              <div className="text-right">
+                <div
+                  className="font-serif"
+                  style={{ fontSize: "1rem", fontWeight: 600 }}
+                >
+                  {p.income.toLocaleString()}
+                </div>
+                <div style={{ fontSize: "0.65rem", color: "var(--green)" }}>
+                  {p.occupancy}
+                </div>
+              </div>
+            </div>
+          ))
+        )}
       </div>
     </div>
   );

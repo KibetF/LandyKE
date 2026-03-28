@@ -12,6 +12,7 @@ import {
   FileIcon,
   Settings,
   LogOut,
+  Shield,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
@@ -28,11 +29,16 @@ const navItems = [
 
 interface SidebarProps {
   userName: string;
+  isAdmin?: boolean;
 }
 
-export default function Sidebar({ userName }: SidebarProps) {
+export default function Sidebar({ userName, isAdmin }: SidebarProps) {
   const pathname = usePathname();
   const initial = userName.charAt(0).toUpperCase();
+
+  const allNavItems = isAdmin
+    ? [...navItems, { href: "/admin", label: "Admin", icon: Shield }]
+    : navItems;
 
   async function handleLogout() {
     const supabase = createClient();
@@ -94,13 +100,13 @@ export default function Sidebar({ userName }: SidebarProps) {
             letterSpacing: "0.05em",
           }}
         >
-          Landlord Client
+          {isAdmin ? "Administrator" : "Landlord Client"}
         </span>
       </div>
 
       {/* Nav */}
       <nav className="flex-1" style={{ padding: "0 0.75rem" }}>
-        {navItems.map((item) => {
+        {allNavItems.map((item) => {
           const isActive = pathname === item.href;
           const Icon = item.icon;
           return (

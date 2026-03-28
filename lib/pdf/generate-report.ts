@@ -1,0 +1,279 @@
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import { addHeader, addFooter, addSectionTitle, COLORS } from "./pdf-theme";
+
+interface RentStatementData {
+  month: string;
+  incomeData: { month: string; collected: number; expected: number }[];
+  arrearsData: { tenant: string; property: string; unit: string; amount: number; days: number }[];
+  collectionRate: number;
+  totalCollected: number;
+  totalExpected: number;
+}
+
+export function generateRentStatement(data: RentStatementData) {
+  const doc = new jsPDF();
+  let y = addHeader(doc, "Monthly Rent Statement", data.month);
+
+  // Summary box
+  const summaryItems = [
+    { label: "Total Collected", value: `KES ${data.totalCollected.toLocaleString()}`, color: COLORS.green },
+    { label: "Total Expected", value: `KES ${data.totalExpected.toLocaleString()}`, color: COLORS.ink },
+    { label: "Collection Rate", value: `${data.collectionRate}%`, color: COLORS.gold },
+    { label: "Outstanding", value: `KES ${Math.max(0, data.totalExpected - data.totalCollected).toLocaleString()}`, color: COLORS.rust },
+  ];
+
+  const boxWidth = 40;
+  const startX = 20;
+  summaryItems.forEach((item, i) => {
+    const x = startX + i * (boxWidth + 5);
+
+    // Box background
+    doc.setFillColor(...COLORS.cream);
+    doc.roundedRect(x, y, boxWidth, 20, 2, 2, "F");
+
+    // Label
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(6.5);
+    doc.setTextColor(...COLORS.muted);
+    doc.text(item.label.toUpperCase(), x + 4, y + 7);
+
+    // Value
+    doc.setFont("times", "bold");
+    doc.setFontSize(11);
+    doc.setTextColor(...item.color);
+    doc.text(item.value, x + 4, y + 15);
+  });
+
+  y += 30;
+
+  // Income trend table
+  y = addSectionTitle(doc, "Income Trend — Last 6 Months", y);
+
+  autoTable(doc, {
+    startY: y,
+    head: [["Month", "Collected", "Expected", "Rate"]],
+    body: data.incomeData.map((d) => [
+      d.month,
+      `KES ${d.collected.toLocaleString()}`,
+      `KES ${d.expected.toLocaleString()}`,
+      d.expected > 0 ? `${Math.round((d.collected / d.expected) * 100)}%` : "—",
+    ]),
+    theme: "plain",
+    styles: {
+      font: "helvetica",
+      fontSize: 8,
+      cellPadding: 4,
+      textColor: COLORS.ink,
+    },
+    headStyles: {
+      fillColor: COLORS.cream,
+      textColor: COLORS.ink,
+      fontStyle: "bold",
+      fontSize: 7,
+    },
+    alternateRowStyles: {
+      fillColor: [250, 248, 244],
+    },
+    columnStyles: {
+      0: { fontStyle: "bold" },
+      3: { halign: "center" },
+    },
+  });
+
+  y = (doc as jsPDF & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 10;
+
+  // Arrears table
+  if (data.arrearsData.length > 0) {
+    y = addSectionTitle(doc, "Outstanding Arrears", y);
+
+    autoTable(doc, {
+      startY: y,
+      head: [["Tenant", "Property", "Unit", "Amount", "Days Overdue"]],
+      body: data.arrearsData.map((d) => [
+        d.tenant,
+        d.property,
+        d.unit,
+        `KES ${d.amount.toLocaleString()}`,
+        `${d.days} days`,
+      ]),
+      theme: "plain",
+      styles: {
+        font: "helvetica",
+        fontSize: 8,
+        cellPadding: 4,
+        textColor: COLORS.ink,
+      },
+      headStyles: {
+        fillColor: COLORS.cream,
+        textColor: COLORS.ink,
+        fontStyle: "bold",
+        fontSize: 7,
+      },
+      bodyStyles: {
+        textColor: COLORS.rust,
+      },
+      columnStyles: {
+        3: { fontStyle: "bold" },
+        4: { halign: "center" },
+      },
+    });
+  }
+
+  // Add footers
+  const totalPages = doc.getNumberOfPages();
+  for (let i = 1; i <= totalPages; i++) {
+    doc.setPage(i);
+    addFooter(doc, i, totalPages);
+  }
+
+  doc.save(`LandyKE-Rent-Statement-${data.month.replace(/\s/g, "-")}.pdf`);
+}
+
+interface PropertySummaryData {
+  month: string;
+  occupancyData: { name: string; total: number; occupied: number; rate: number }[];
+  incomeData: { month: string; collected: number; expected: number }[];
+  arrearsData: { tenant: string; property: string; unit: string; amount: number; days: number }[];
+}
+
+export function generatePropertySummary(data: PropertySummaryData) {
+  const doc = new jsPDF();
+  let y = addHeader(doc, "Property Performance Summary", data.month);
+
+  // Property occupancy table
+  y = addSectionTitle(doc, "Property Occupancy", y);
+
+  autoTable(doc, {
+    startY: y,
+    head: [["Property", "Total Units", "Occupied", "Vacancy", "Occupancy Rate"]],
+    body: data.occupancyData.map((d) => [
+      d.name,
+      d.total.toString(),
+      d.occupied.toString(),
+      (d.total - d.occupied).toString(),
+      `${d.rate}%`,
+    ]),
+    theme: "plain",
+    styles: {
+      font: "helvetica",
+      fontSize: 8,
+      cellPadding: 4,
+      textColor: COLORS.ink,
+    },
+    headStyles: {
+      fillColor: COLORS.cream,
+      textColor: COLORS.ink,
+      fontStyle: "bold",
+      fontSize: 7,
+    },
+    alternateRowStyles: {
+      fillColor: [250, 248, 244],
+    },
+    columnStyles: {
+      0: { fontStyle: "bold" },
+      4: { halign: "center" },
+    },
+    didParseCell: (hookData) => {
+      if (hookData.section === "body" && hookData.column.index === 4) {
+        const rate = parseInt(hookData.cell.raw as string);
+        if (rate === 100) {
+          hookData.cell.styles.textColor = COLORS.green;
+        } else if (rate >= 90) {
+          hookData.cell.styles.textColor = COLORS.gold;
+        } else {
+          hookData.cell.styles.textColor = COLORS.rust;
+        }
+        hookData.cell.styles.fontStyle = "bold";
+      }
+    },
+  });
+
+  y = (doc as jsPDF & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 12;
+
+  // Totals row
+  const totalUnits = data.occupancyData.reduce((s, d) => s + d.total, 0);
+  const totalOccupied = data.occupancyData.reduce((s, d) => s + d.occupied, 0);
+  const overallRate = totalUnits > 0 ? Math.round((totalOccupied / totalUnits) * 100) : 0;
+
+  doc.setFillColor(...COLORS.cream);
+  doc.roundedRect(20, y - 4, 170, 16, 2, 2, "F");
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(8);
+  doc.setTextColor(...COLORS.ink);
+  doc.text(`Total: ${totalUnits} units across ${data.occupancyData.length} properties`, 25, y + 3);
+  doc.text(`Occupied: ${totalOccupied}  |  Vacant: ${totalUnits - totalOccupied}  |  Rate: ${overallRate}%`, 25, y + 9);
+
+  y += 22;
+
+  // 6-month income trend
+  y = addSectionTitle(doc, "6-Month Income Trend", y);
+
+  autoTable(doc, {
+    startY: y,
+    head: [["Month", "Collected", "Expected", "Collection Rate"]],
+    body: data.incomeData.map((d) => [
+      d.month,
+      `KES ${d.collected.toLocaleString()}`,
+      `KES ${d.expected.toLocaleString()}`,
+      d.expected > 0 ? `${Math.round((d.collected / d.expected) * 100)}%` : "—",
+    ]),
+    theme: "plain",
+    styles: {
+      font: "helvetica",
+      fontSize: 8,
+      cellPadding: 4,
+      textColor: COLORS.ink,
+    },
+    headStyles: {
+      fillColor: COLORS.cream,
+      textColor: COLORS.ink,
+      fontStyle: "bold",
+      fontSize: 7,
+    },
+    alternateRowStyles: {
+      fillColor: [250, 248, 244],
+    },
+  });
+
+  y = (doc as jsPDF & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 12;
+
+  // Arrears section
+  if (data.arrearsData.length > 0) {
+    y = addSectionTitle(doc, "Current Arrears", y);
+
+    autoTable(doc, {
+      startY: y,
+      head: [["Tenant", "Property", "Unit", "Amount Owed", "Days Overdue"]],
+      body: data.arrearsData.map((d) => [
+        d.tenant,
+        d.property,
+        d.unit,
+        `KES ${d.amount.toLocaleString()}`,
+        `${d.days} days`,
+      ]),
+      theme: "plain",
+      styles: {
+        font: "helvetica",
+        fontSize: 8,
+        cellPadding: 4,
+        textColor: COLORS.rust,
+      },
+      headStyles: {
+        fillColor: [253, 240, 240],
+        textColor: COLORS.rust,
+        fontStyle: "bold",
+        fontSize: 7,
+      },
+    });
+  }
+
+  // Add footers
+  const totalPages = doc.getNumberOfPages();
+  for (let i = 1; i <= totalPages; i++) {
+    doc.setPage(i);
+    addFooter(doc, i, totalPages);
+  }
+
+  doc.save(`LandyKE-Property-Summary-${data.month.replace(/\s/g, "-")}.pdf`);
+}

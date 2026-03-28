@@ -1,4 +1,19 @@
 import { createClient } from "@/lib/supabase/server";
+import {
+  getLandlord,
+  getProperties,
+  getActiveTenants,
+  getPayments,
+  getMonthRange,
+  getMonthStart,
+  getMonthEnd,
+  getShortMonth,
+  formatMonthKey,
+  computeIncomeByMonth,
+  computePropertyBreakdown,
+  computeTenantStatus,
+  computeRecentTransactions,
+} from "@/lib/queries";
 import KpiRow from "@/components/dashboard/KpiRow";
 import IncomeChart from "@/components/dashboard/IncomeChart";
 import PropertyBreakdown from "@/components/dashboard/PropertyBreakdown";
@@ -6,140 +21,103 @@ import TenantStatusList from "@/components/dashboard/TenantStatusList";
 import RecentTransactions from "@/components/dashboard/RecentTransactions";
 import MonthSelector from "@/components/dashboard/MonthSelector";
 
-// Dummy data fallback matching the HTML exactly
-const fallbackIncomeData = [
-  { month: "Oct", collected: 176000, expected: 200000 },
-  { month: "Nov", collected: 192000, expected: 200000 },
-  { month: "Dec", collected: 185000, expected: 200000 },
-  { month: "Jan", collected: 200000, expected: 200000 },
-  { month: "Feb", collected: 196000, expected: 200000 },
-  { month: "Mar", collected: 188000, expected: 200000 },
-];
+function getGreeting() {
+  const hour = new Date().getHours();
+  if (hour < 12) return "Good morning";
+  if (hour < 17) return "Good afternoon";
+  return "Good evening";
+}
 
-const fallbackProperties = [
-  { name: "Elbros Business Park", location: "Near Royalton, Eldoret", units: 18, income: 180000, occupancy: "94% occupied" },
-  { name: "Sanshin House", location: "Sinai, Eldoret", units: 12, income: 120000, occupancy: "88% occupied" },
-  { name: "Action Flats Phase 1", location: "Action, Eldoret", units: 16, income: 145000, occupancy: "92% occupied" },
-  { name: "Action Flats Phase 2", location: "Action, Eldoret", units: 14, income: 130000, occupancy: "96% occupied" },
-];
+interface DashboardSearchParams {
+  month?: string;
+}
 
-const fallbackTenants = [
-  { initials: "JW", color: "#4a5c4e", name: "James Waweru", property: "Plot A · Unit 4", amount: 12500, date: "1 Mar 2026", status: "paid" as const },
-  { initials: "GA", color: "#8b3a2a", name: "Grace Akinyi", property: "Kapsoya · Unit 2", amount: 12000, date: "2 Mar 2026", status: "paid" as const },
-  { initials: "DO", color: "#c8963e", name: "Daniel Otieno", property: "Plot B · Unit 7", amount: 10000, date: "Due 5 Mar", status: "pending" as const },
-  { initials: "FK", color: "#2d6a4f", name: "Faith Kiprotich", property: "Plot A · Unit 1", amount: 12500, date: "1 Mar 2026", status: "paid" as const },
-  { initials: "SM", color: "#6b3d8a", name: "Samuel Mutua", property: "Annex · Unit 1", amount: 12500, date: "Overdue 5 days", status: "overdue" as const },
-  { initials: "RN", color: "#3d6b8a", name: "Ruth Njeri", property: "Kapsoya · Unit 1", amount: 12000, date: "3 Mar 2026", status: "paid" as const },
-];
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<DashboardSearchParams>;
+}) {
+  const params = await searchParams;
+  const selectedMonth = params.month || new Date().toISOString().slice(0, 7);
+  const monthLabel = formatMonthKey(selectedMonth);
+  const greeting = getGreeting();
 
-const fallbackTransactions = [
-  { title: "M-Pesa · James Waweru", detail: "Plot A · 1 Mar 2026 · 09:41", amount: "+12,500" },
-  { title: "Bank Transfer · Grace Akinyi", detail: "Kapsoya · 2 Mar 2026 · 14:02", amount: "+12,000" },
-  { title: "M-Pesa · Faith Kiprotich", detail: "Plot A · 1 Mar 2026 · 08:15", amount: "+12,500" },
-  { title: "M-Pesa · Ruth Njeri", detail: "Kapsoya · 3 Mar 2026 · 11:30", amount: "+12,000" },
-  { title: "M-Pesa · Peter Kamau", detail: "Annex · 2 Mar 2026 · 16:45", amount: "+12,500" },
-  { title: "Management Fee — March", detail: "Deduction · 1 Mar 2026", amount: "-9,400", isDeduction: true },
-];
-
-export default async function DashboardPage() {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Try to fetch real data, fall back to dummy data
-  let userName = "Margaret";
-  let incomeData = fallbackIncomeData;
-  let properties = fallbackProperties;
-  let tenants = fallbackTenants;
-  let transactions = fallbackTransactions;
+  let userName = "User";
+  let incomeData: { month: string; collected: number; expected: number }[] = [];
+  let properties: { name: string; location: string; units: number; income: number; occupancy: string }[] = [];
+  let tenants: { initials: string; color: string; name: string; property: string; amount: number; date: string; status: "paid" | "pending" | "overdue" }[] = [];
+  let transactions: { title: string; detail: string; amount: string; isDeduction?: boolean }[] = [];
   let kpiData = {
-    totalCollected: 188000,
-    totalExpected: 200000,
-    tenantsPaid: 14,
-    totalTenants: 16,
-    outstanding: 12000,
-    outstandingCount: 2,
-    propertyCount: 4,
-    totalUnits: 16,
-    occupancyRate: 96,
+    totalCollected: 0,
+    totalExpected: 0,
+    tenantsPaid: 0,
+    totalTenants: 0,
+    outstanding: 0,
+    outstandingCount: 0,
+    propertyCount: 0,
+    totalUnits: 0,
+    occupancyRate: 0,
+    monthLabel,
   };
 
   if (user) {
-    const { data: landlord } = await supabase
-      .schema("landyke")
-      .from("landlords")
-      .select("id, full_name")
-      .eq("user_id", user.id)
-      .single();
+    const landlord = await getLandlord(supabase, user.id);
 
     if (landlord) {
       userName = landlord.full_name.split(" ")[0];
-    }
 
-    // Fetch properties using the landlord's table id (not auth user id)
-    const landlordId = landlord?.id;
-    const { data: dbProperties } = await supabase
-      .schema("landyke")
-      .from("properties")
-      .select("*")
-      .eq("landlord_id", landlordId);
+      const dbProperties = await getProperties(supabase, landlord.id);
 
-    if (dbProperties && dbProperties.length > 0) {
-      // Use real data if available
-      const { data: dbPayments } = await supabase
-        .schema("landyke")
-        .from("payments")
-        .select("*, tenants(full_name, unit_number, monthly_rent, property_id)")
-        .in(
-          "property_id",
-          dbProperties.map((p) => p.id)
+      if (dbProperties.length > 0) {
+        const propertyIds = dbProperties.map((p: { id: string }) => p.id);
+        const allPayments = await getPayments(supabase, propertyIds);
+        const activeTenants = await getActiveTenants(supabase, propertyIds);
+
+        const totalTenants = activeTenants.length;
+        const totalExpected = activeTenants.reduce((sum: number, t: { monthly_rent: number }) => sum + Number(t.monthly_rent), 0);
+        const totalUnits = dbProperties.reduce((sum: number, p: { total_units: number }) => sum + (p.total_units || 0), 0);
+        const activeTenantCount = activeTenants.length;
+        const occupancyRate = totalUnits > 0 ? Math.round((activeTenantCount / totalUnits) * 100) : 0;
+
+        // Filter payments for selected month
+        const monthStart = getMonthStart(selectedMonth);
+        const monthEnd = getMonthEnd(selectedMonth);
+        const monthPayments = allPayments.filter(
+          (p: { payment_date: string }) => p.payment_date >= monthStart && p.payment_date <= monthEnd
         );
-
-      if (dbPayments && dbPayments.length > 0) {
-        // Calculate KPIs from real data
-        const marchPayments = dbPayments.filter(
-          (p) =>
-            p.payment_date >= "2026-03-01" && p.payment_date <= "2026-03-31"
-        );
-        const paidPayments = marchPayments.filter(
-          (p) => p.status === "paid"
-        );
-        const totalCollected = paidPayments.reduce(
-          (sum, p) => sum + Number(p.amount),
-          0
-        );
-
-        const { data: allTenants } = await supabase
-          .schema("landyke")
-          .from("tenants")
-          .select("*")
-          .in(
-            "property_id",
-            dbProperties.map((p) => p.id)
-          )
-          .eq("is_active", true);
-
-        const totalTenants = allTenants?.length || 16;
-        const totalExpected =
-          allTenants?.reduce((sum, t) => sum + Number(t.monthly_rent), 0) ||
-          200000;
+        const paidPayments = monthPayments.filter((p: { status: string }) => p.status === "paid");
+        const totalCollected = paidPayments.reduce((sum: number, p: { amount: number }) => sum + Number(p.amount), 0);
 
         kpiData = {
           totalCollected,
           totalExpected,
           tenantsPaid: paidPayments.length,
           totalTenants,
-          outstanding: totalExpected - totalCollected,
-          outstandingCount:
-            totalTenants - paidPayments.length,
+          outstanding: Math.max(0, totalExpected - totalCollected),
+          outstandingCount: totalTenants - paidPayments.length,
           propertyCount: dbProperties.length,
-          totalUnits: dbProperties.reduce(
-            (sum, p) => sum + (p.total_units || 0),
-            0
-          ),
-          occupancyRate: 96,
+          totalUnits,
+          occupancyRate,
+          monthLabel,
         };
+
+        // Income chart — last 6 months ending at selected month
+        const months = getMonthRange(selectedMonth, 6);
+        incomeData = computeIncomeByMonth(allPayments, totalExpected, months);
+
+        // Property breakdown
+        properties = computePropertyBreakdown(dbProperties, allPayments, selectedMonth);
+
+        // Tenant status
+        tenants = computeTenantStatus(activeTenants, allPayments, selectedMonth);
+
+        // Recent transactions
+        transactions = computeRecentTransactions(monthPayments.length > 0 ? monthPayments : allPayments);
       }
     }
   }
@@ -156,7 +134,7 @@ export default async function DashboardPage() {
             className="font-serif"
             style={{ fontSize: "2rem", fontWeight: 300, color: "var(--ink)" }}
           >
-            Good morning,{" "}
+            {greeting},{" "}
             <span style={{ color: "var(--gold)", fontStyle: "italic" }}>
               {userName}
             </span>
@@ -168,7 +146,7 @@ export default async function DashboardPage() {
               marginTop: "0.2rem",
             }}
           >
-            Here&apos;s your portfolio snapshot for March 2026
+            Here&apos;s your portfolio snapshot for {monthLabel}
           </p>
         </div>
         <MonthSelector />

@@ -9,6 +9,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import Link from "next/link";
+import { BarChart3 } from "lucide-react";
 import type { MonthlyIncome } from "@/types";
 
 interface IncomeChartProps {
@@ -16,6 +17,8 @@ interface IncomeChartProps {
 }
 
 export default function IncomeChart({ data }: IncomeChartProps) {
+  const isEmpty = data.length === 0;
+
   return (
     <div
       className="card-hover"
@@ -53,44 +56,57 @@ export default function IncomeChart({ data }: IncomeChartProps) {
         </Link>
       </div>
       <div style={{ padding: "1.5rem", height: "220px" }}>
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data} barGap={2} barCategoryGap="20%">
-            <XAxis
-              dataKey="month"
-              tickLine={false}
-              axisLine={false}
-              tick={{
-                fontSize: 10,
-                fill: "#7a7468",
-                letterSpacing: "0.05em",
-              }}
-            />
-            <YAxis hide />
-            <Tooltip
-              formatter={(value) =>
-                `KES ${(Number(value) / 1000).toFixed(0)}k`
-              }
-              contentStyle={{
-                background: "var(--white)",
-                border: "1px solid var(--warm)",
-                borderRadius: "4px",
-                fontSize: "0.75rem",
-              }}
-            />
-            <Bar
-              dataKey="expected"
-              fill="#ede6d6"
-              radius={[3, 3, 0, 0]}
-              name="Expected"
-            />
-            <Bar
-              dataKey="collected"
-              fill="#c8963e"
-              radius={[3, 3, 0, 0]}
-              name="Collected"
-            />
-          </BarChart>
-        </ResponsiveContainer>
+        {isEmpty ? (
+          <div
+            className="flex flex-col items-center justify-center"
+            style={{ height: "100%", color: "var(--muted)" }}
+          >
+            <BarChart3 size={32} style={{ marginBottom: "0.75rem", opacity: 0.4 }} />
+            <span style={{ fontSize: "0.85rem" }}>No income data yet</span>
+            <span style={{ fontSize: "0.7rem", marginTop: "0.25rem" }}>
+              Payments will appear here once recorded
+            </span>
+          </div>
+        ) : (
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={data} barGap={2} barCategoryGap="20%">
+              <XAxis
+                dataKey="month"
+                tickLine={false}
+                axisLine={false}
+                tick={{
+                  fontSize: 10,
+                  fill: "#7a7468",
+                  letterSpacing: "0.05em",
+                }}
+              />
+              <YAxis hide />
+              <Tooltip
+                formatter={(value) =>
+                  `KES ${(Number(value) / 1000).toFixed(0)}k`
+                }
+                contentStyle={{
+                  background: "var(--white)",
+                  border: "1px solid var(--warm)",
+                  borderRadius: "4px",
+                  fontSize: "0.75rem",
+                }}
+              />
+              <Bar
+                dataKey="expected"
+                fill="#ede6d6"
+                radius={[3, 3, 0, 0]}
+                name="Expected"
+              />
+              <Bar
+                dataKey="collected"
+                fill="#c8963e"
+                radius={[3, 3, 0, 0]}
+                name="Collected"
+              />
+            </BarChart>
+          </ResponsiveContainer>
+        )}
       </div>
     </div>
   );
