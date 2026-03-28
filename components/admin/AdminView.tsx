@@ -128,7 +128,7 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
   // Form states
   const [accountForm, setAccountForm] = useState({ full_name: "", email: "", phone: "", password: "" });
   const [propertyForm, setPropertyForm] = useState({ name: "", location: "", total_units: "" });
-  const [tenantForm, setTenantForm] = useState({ property_id: "", full_name: "", email: "", phone: "", rent_amount: "" });
+  const [tenantForm, setTenantForm] = useState({ property_id: "", full_name: "", email: "", phone: "", rent_amount: "", unit_number: "" });
   const [paymentForm, setPaymentForm] = useState({ tenant_id: "", amount: "", paid_date: "", due_date: "", notes: "M-Pesa", status: "paid" });
 
   const [loading, setLoading] = useState(false);
@@ -228,7 +228,7 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
       } else {
         setMessage({ type: "success", text: `${tenantForm.full_name} added` });
         setTenants((prev) => [data.tenant, ...prev]);
-        setTenantForm({ property_id: "", full_name: "", email: "", phone: "", rent_amount: "" });
+        setTenantForm({ property_id: "", full_name: "", email: "", phone: "", rent_amount: "", unit_number: "" });
       }
     } catch {
       setMessage({ type: "error", text: "Network error" });
@@ -502,9 +502,15 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
                       ))}
                     </select>
                   </div>
-                  <div style={{ marginBottom: "1rem" }}>
-                    <label style={labelStyle}>Full Name *</label>
-                    <input type="text" required value={tenantForm.full_name} onChange={(e) => setTenantForm((f) => ({ ...f, full_name: e.target.value }))} placeholder="e.g. James Waweru" style={inputStyle} />
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1rem" }}>
+                    <div>
+                      <label style={labelStyle}>Full Name *</label>
+                      <input type="text" required value={tenantForm.full_name} onChange={(e) => setTenantForm((f) => ({ ...f, full_name: e.target.value }))} placeholder="e.g. James Waweru" style={inputStyle} />
+                    </div>
+                    <div>
+                      <label style={labelStyle}>Unit Number</label>
+                      <input type="text" value={tenantForm.unit_number} onChange={(e) => setTenantForm((f) => ({ ...f, unit_number: e.target.value }))} placeholder="e.g. A3" style={inputStyle} />
+                    </div>
                   </div>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1rem" }}>
                     <div>

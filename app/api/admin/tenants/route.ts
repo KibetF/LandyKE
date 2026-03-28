@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
   if (!user) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const body = await request.json();
-  const { property_id, landlord_id, full_name, email, phone, rent_amount } = body;
+  const { property_id, landlord_id, full_name, email, phone, rent_amount, unit_number } = body;
 
   if (!property_id || !full_name || !rent_amount || !landlord_id) {
     return NextResponse.json({ error: "property_id, landlord_id, full_name, and rent_amount are required" }, { status: 400 });
@@ -69,6 +69,7 @@ export async function POST(request: NextRequest) {
       email: email || null,
       phone: phone || null,
       rent_amount: Number(rent_amount),
+      unit_number: unit_number || null,
       status: "active",
     })
     .select("*, properties(name)")
