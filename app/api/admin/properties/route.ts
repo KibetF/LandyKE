@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
   const { data, error } = await adminClient
     .schema("landyke")
     .from("properties")
-    .insert({ landlord_id, name, location: location || null, total_units: Number(total_units) })
+    .insert({ landlord_id, name, address: location || name, location: location || null, total_units: Number(total_units) })
     .select()
     .single();
 
