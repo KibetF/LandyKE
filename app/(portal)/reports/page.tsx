@@ -33,7 +33,6 @@ export default async function ReportsPage({
   let occupancyData: { name: string; total: number; occupied: number; rate: number }[] = [];
   let collectionRates: { month: string; rate: number }[] = [];
   let arrearsData: { tenant: string; property: string; unit: string; amount: number; days: number }[] = [];
-  let totalExpected = 0;
 
   if (user) {
     const landlord = await getLandlord(supabase, user.id);
@@ -41,17 +40,17 @@ export default async function ReportsPage({
       const dbProperties = await getProperties(supabase, landlord.id);
       if (dbProperties.length > 0) {
         const propertyIds = dbProperties.map((p: { id: string }) => p.id);
-        const allPayments = await getPayments(supabase, propertyIds);
+        const allPayments = await getPayments(supabase, landlord.id);
         const activeTenants = await getActiveTenants(supabase, propertyIds);
 
-        totalExpected = activeTenants.reduce(
-          (sum: number, t: { monthly_rent: number }) => sum + Number(t.monthly_rent),
+        const totalExpected = activeTenants.reduce(
+          (sum: number, t: { rent_amount: number }) => sum + Number(t.rent_amount),
           0
         );
 
         const months = getMonthRange(selectedMonth, 6);
         incomeData = computeIncomeByMonth(allPayments, totalExpected, months);
-        occupancyData = computeOccupancyData(dbProperties);
+        occupancyData = computeOccupancyData(dbProperties, activeTenants);
         collectionRates = computeCollectionRates(allPayments, totalExpected, months);
         arrearsData = computeArrears(activeTenants, allPayments, selectedMonth);
       }

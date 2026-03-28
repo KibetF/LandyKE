@@ -14,7 +14,7 @@ export async function getProperties(supabase: SupabaseClient, landlordId: string
   const { data } = await supabase
     .schema("landyke")
     .from("properties")
-    .select("*, tenants(id, is_active, monthly_rent)")
+    .select("*")
     .eq("landlord_id", landlordId);
   return data || [];
 }
@@ -34,17 +34,17 @@ export async function getActiveTenants(supabase: SupabaseClient, propertyIds: st
     .from("tenants")
     .select("*, properties(name, location)")
     .in("property_id", propertyIds)
-    .eq("is_active", true);
+    .eq("status", "active");
   return data || [];
 }
 
-export async function getPayments(supabase: SupabaseClient, propertyIds: string[]) {
+export async function getPayments(supabase: SupabaseClient, landlordId: string) {
   const { data } = await supabase
     .schema("landyke")
     .from("payments")
-    .select("*, tenants(full_name, unit_number, monthly_rent, property_id), properties(name)")
-    .in("property_id", propertyIds)
-    .order("payment_date", { ascending: false });
+    .select("*, tenants(full_name, property_id, properties(name))")
+    .eq("landlord_id", landlordId)
+    .order("paid_date", { ascending: false });
   return data || [];
 }
 
@@ -86,9 +86,10 @@ export function getShortMonth(key: string) {
 
 /**
  * Group payments by month for last N months, computing collected vs expected.
+ * Uses `paid_date` from the actual DB schema.
  */
 export function computeIncomeByMonth(
-  payments: Array<{ amount: number; payment_date: string; status: string }>,
+  payments: Array<{ amount: number; paid_date: string | null; status: string }>,
   monthlyExpected: number,
   months: string[]
 ) {
@@ -96,7 +97,7 @@ export function computeIncomeByMonth(
     const start = getMonthStart(key);
     const end = getMonthEnd(key);
     const monthPayments = payments.filter(
-      (p) => p.payment_date >= start && p.payment_date <= end && p.status === "paid"
+      (p) => p.paid_date && p.paid_date >= start && p.paid_date <= end && p.status === "paid"
     );
     const collected = monthPayments.reduce((s, p) => s + Number(p.amount), 0);
     return {
@@ -109,20 +110,24 @@ export function computeIncomeByMonth(
 
 /**
  * Compute per-property breakdown: income this month and occupancy.
+ * Payments are linked through tenants, not directly to properties.
  */
 export function computePropertyBreakdown(
-  properties: Array<{ id: string; name: string; location: string | null; total_units: number; tenants?: Array<{ is_active: boolean }> }>,
-  payments: Array<{ property_id: string; amount: number; payment_date: string; status: string }>,
+  properties: Array<{ id: string; name: string; location: string | null; total_units: number }>,
+  tenants: Array<{ property_id: string; status: string }>,
+  payments: Array<{ amount: number; paid_date: string | null; status: string; tenants?: { property_id: string } }>,
   monthKey: string
 ) {
   const start = getMonthStart(monthKey);
   const end = getMonthEnd(monthKey);
   return properties.map((prop) => {
+    // Income: payments from tenants belonging to this property
     const monthPayments = payments.filter(
-      (p) => p.property_id === prop.id && p.payment_date >= start && p.payment_date <= end && p.status === "paid"
+      (p) => p.paid_date && p.paid_date >= start && p.paid_date <= end && p.status === "paid" &&
+        p.tenants?.property_id === prop.id
     );
     const income = monthPayments.reduce((s, p) => s + Number(p.amount), 0);
-    const activeTenants = prop.tenants?.filter((t) => t.is_active).length || 0;
+    const activeTenants = tenants.filter((t) => t.property_id === prop.id && t.status === "active").length;
     const occupancy = prop.total_units > 0 ? Math.round((activeTenants / prop.total_units) * 100) : 0;
     return {
       name: prop.name,
@@ -136,12 +141,13 @@ export function computePropertyBreakdown(
 
 /**
  * Build tenant status list for the selected month.
+ * Uses `rent_amount` and `status` from actual DB schema.
  */
 const AVATAR_COLORS = ["#4a5c4e", "#8b3a2a", "#c8963e", "#2d6a4f", "#6b3d8a", "#3d6b8a", "#1a5296", "#8b6914"];
 
 export function computeTenantStatus(
-  tenants: Array<{ id: string; full_name: string; monthly_rent: number; property_id: string; properties?: { name: string; location: string | null } }>,
-  payments: Array<{ tenant_id: string; amount: number; payment_date: string; status: string }>,
+  tenants: Array<{ id: string; full_name: string; rent_amount: number; property_id: string; properties?: { name: string; location: string | null } }>,
+  payments: Array<{ tenant_id: string; amount: number; paid_date: string | null; status: string }>,
   monthKey: string
 ) {
   const start = getMonthStart(monthKey);
@@ -154,27 +160,29 @@ export function computeTenantStatus(
       : t.full_name.substring(0, 2).toUpperCase();
 
     const tenantPayments = payments.filter(
-      (p) => p.tenant_id === t.id && p.payment_date >= start && p.payment_date <= end
+      (p) => p.tenant_id === t.id && p.paid_date && p.paid_date >= start && p.paid_date <= end
     );
     const paidPayment = tenantPayments.find((p) => p.status === "paid");
     const pendingPayment = tenantPayments.find((p) => p.status === "pending");
 
     let status: "paid" | "pending" | "overdue" = "overdue";
     let date = "No payment";
-    if (paidPayment) {
+    if (paidPayment && paidPayment.paid_date) {
       status = "paid";
-      date = new Date(paidPayment.payment_date).toLocaleDateString("en-KE", { day: "numeric", month: "short", year: "numeric" });
+      date = new Date(paidPayment.paid_date).toLocaleDateString("en-KE", { day: "numeric", month: "short", year: "numeric" });
     } else if (pendingPayment) {
       status = "pending";
-      date = `Due ${new Date(pendingPayment.payment_date).toLocaleDateString("en-KE", { day: "numeric", month: "short" })}`;
+      date = pendingPayment.paid_date
+        ? `Due ${new Date(pendingPayment.paid_date).toLocaleDateString("en-KE", { day: "numeric", month: "short" })}`
+        : "Pending";
     }
 
     return {
       initials,
       color: AVATAR_COLORS[i % AVATAR_COLORS.length],
       name: t.full_name,
-      property: `${t.properties?.name || ""} · Unit ${t.id.slice(-2)}`,
-      amount: Number(t.monthly_rent),
+      property: t.properties?.name || "",
+      amount: Number(t.rent_amount),
       date,
       status,
     };
@@ -183,22 +191,19 @@ export function computeTenantStatus(
 
 /**
  * Build recent transactions list from payments.
+ * Uses `paid_date` and `notes` (for method) from actual DB schema.
  */
 export function computeRecentTransactions(
-  payments: Array<{ amount: number; payment_date: string; method: string; status: string; tenants?: { full_name: string; unit_number: string | null }; properties?: { name: string } }>,
+  payments: Array<{ amount: number; paid_date: string | null; notes: string | null; status: string; tenants?: { full_name: string; properties?: { name: string } } }>,
   limit = 6
 ) {
   return payments.slice(0, limit).map((p) => {
-    const method = (p.method || "").toLowerCase().includes("mpesa") || (p.method || "").toLowerCase().includes("m-pesa")
-      ? "M-Pesa"
-      : (p.method || "").toLowerCase().includes("bank")
-        ? "Bank Transfer"
-        : p.method || "Payment";
-    const d = new Date(p.payment_date);
+    const method = p.notes || "Payment";
+    const d = p.paid_date ? new Date(p.paid_date) : new Date();
     const dateStr = d.toLocaleDateString("en-KE", { day: "numeric", month: "short", year: "numeric" });
     return {
       title: `${method} · ${p.tenants?.full_name || "Unknown"}`,
-      detail: `${p.properties?.name || ""} · ${dateStr}`,
+      detail: `${p.tenants?.properties?.name || ""} · ${dateStr}`,
       amount: `+${Number(p.amount).toLocaleString()}`,
     };
   });
@@ -208,19 +213,18 @@ export function computeRecentTransactions(
  * Compute arrears: active tenants who have no paid payment for the selected month.
  */
 export function computeArrears(
-  tenants: Array<{ id: string; full_name: string; monthly_rent: number; unit_number: string | null; property_id: string; properties?: { name: string } }>,
-  payments: Array<{ tenant_id: string; payment_date: string; status: string }>,
+  tenants: Array<{ id: string; full_name: string; rent_amount: number; property_id: string; properties?: { name: string } }>,
+  payments: Array<{ tenant_id: string; paid_date: string | null; status: string }>,
   monthKey: string
 ) {
   const start = getMonthStart(monthKey);
   const end = getMonthEnd(monthKey);
   const today = new Date();
-  const monthEnd = new Date(end);
 
   return tenants
     .filter((t) => {
       const hasPaid = payments.some(
-        (p) => p.tenant_id === t.id && p.payment_date >= start && p.payment_date <= end && p.status === "paid"
+        (p) => p.tenant_id === t.id && p.paid_date && p.paid_date >= start && p.paid_date <= end && p.status === "paid"
       );
       return !hasPaid;
     })
@@ -229,9 +233,9 @@ export function computeArrears(
       return {
         tenant: t.full_name,
         property: t.properties?.name || "",
-        unit: t.unit_number || "",
-        amount: Number(t.monthly_rent),
-        days: Math.min(daysOverdue, Math.floor((today.getTime() - monthEnd.getTime()) / (1000 * 60 * 60 * 24)) > 0 ? daysOverdue : daysOverdue),
+        unit: "",
+        amount: Number(t.rent_amount),
+        days: daysOverdue,
       };
     });
 }
@@ -240,7 +244,7 @@ export function computeArrears(
  * Compute collection rates for each month.
  */
 export function computeCollectionRates(
-  payments: Array<{ amount: number; payment_date: string; status: string }>,
+  payments: Array<{ amount: number; paid_date: string | null; status: string }>,
   monthlyExpected: number,
   months: string[]
 ) {
@@ -248,7 +252,7 @@ export function computeCollectionRates(
     const start = getMonthStart(key);
     const end = getMonthEnd(key);
     const collected = payments
-      .filter((p) => p.payment_date >= start && p.payment_date <= end && p.status === "paid")
+      .filter((p) => p.paid_date && p.paid_date >= start && p.paid_date <= end && p.status === "paid")
       .reduce((s, p) => s + Number(p.amount), 0);
     const rate = monthlyExpected > 0 ? Math.round((collected / monthlyExpected) * 100) : 0;
     return { month: formatMonthKey(key).split(" ")[0], rate };
@@ -259,10 +263,11 @@ export function computeCollectionRates(
  * Compute occupancy data per property.
  */
 export function computeOccupancyData(
-  properties: Array<{ id: string; name: string; total_units: number; tenants?: Array<{ is_active: boolean }> }>
+  properties: Array<{ id: string; name: string; total_units: number }>,
+  tenants: Array<{ property_id: string; status: string }>
 ) {
   return properties.map((prop) => {
-    const occupied = prop.tenants?.filter((t) => t.is_active).length || 0;
+    const occupied = tenants.filter((t) => t.property_id === prop.id && t.status === "active").length;
     const rate = prop.total_units > 0 ? Math.round((occupied / prop.total_units) * 100) : 0;
     return {
       name: prop.name,

@@ -7,7 +7,6 @@ import {
   getMonthRange,
   getMonthStart,
   getMonthEnd,
-  getShortMonth,
   formatMonthKey,
   computeIncomeByMonth,
   computePropertyBreakdown,
@@ -75,20 +74,20 @@ export default async function DashboardPage({
 
       if (dbProperties.length > 0) {
         const propertyIds = dbProperties.map((p: { id: string }) => p.id);
-        const allPayments = await getPayments(supabase, propertyIds);
+        // Payments are linked by landlord_id, not property_id
+        const allPayments = await getPayments(supabase, landlord.id);
         const activeTenants = await getActiveTenants(supabase, propertyIds);
 
         const totalTenants = activeTenants.length;
-        const totalExpected = activeTenants.reduce((sum: number, t: { monthly_rent: number }) => sum + Number(t.monthly_rent), 0);
+        const totalExpected = activeTenants.reduce((sum: number, t: { rent_amount: number }) => sum + Number(t.rent_amount), 0);
         const totalUnits = dbProperties.reduce((sum: number, p: { total_units: number }) => sum + (p.total_units || 0), 0);
-        const activeTenantCount = activeTenants.length;
-        const occupancyRate = totalUnits > 0 ? Math.round((activeTenantCount / totalUnits) * 100) : 0;
+        const occupancyRate = totalUnits > 0 ? Math.round((totalTenants / totalUnits) * 100) : 0;
 
-        // Filter payments for selected month
+        // Filter payments for selected month using paid_date
         const monthStart = getMonthStart(selectedMonth);
         const monthEnd = getMonthEnd(selectedMonth);
         const monthPayments = allPayments.filter(
-          (p: { payment_date: string }) => p.payment_date >= monthStart && p.payment_date <= monthEnd
+          (p: { paid_date: string | null }) => p.paid_date && p.paid_date >= monthStart && p.paid_date <= monthEnd
         );
         const paidPayments = monthPayments.filter((p: { status: string }) => p.status === "paid");
         const totalCollected = paidPayments.reduce((sum: number, p: { amount: number }) => sum + Number(p.amount), 0);
@@ -110,8 +109,8 @@ export default async function DashboardPage({
         const months = getMonthRange(selectedMonth, 6);
         incomeData = computeIncomeByMonth(allPayments, totalExpected, months);
 
-        // Property breakdown
-        properties = computePropertyBreakdown(dbProperties, allPayments, selectedMonth);
+        // Property breakdown — needs tenants for occupancy
+        properties = computePropertyBreakdown(dbProperties, activeTenants, allPayments, selectedMonth);
 
         // Tenant status
         tenants = computeTenantStatus(activeTenants, allPayments, selectedMonth);

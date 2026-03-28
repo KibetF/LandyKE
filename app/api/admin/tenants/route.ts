@@ -33,26 +33,15 @@ export async function GET(request: NextRequest) {
   }
 
   if (landlordId) {
-    // Get all properties for this landlord, then all tenants
-    const { data: properties } = await adminClient
-      .schema("landyke")
-      .from("properties")
-      .select("id")
-      .eq("landlord_id", landlordId);
-
-    if (!properties || properties.length === 0) {
-      return NextResponse.json({ tenants: [] });
-    }
-
     const { data, error } = await adminClient
       .schema("landyke")
       .from("tenants")
       .select("*, properties(name)")
-      .in("property_id", properties.map((p) => p.id))
+      .eq("landlord_id", landlordId)
       .order("created_at", { ascending: false });
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-    return NextResponse.json({ tenants: data });
+    return NextResponse.json({ tenants: data || [] });
   }
 
   return NextResponse.json({ error: "property_id or landlord_id required" }, { status: 400 });
@@ -63,10 +52,10 @@ export async function POST(request: NextRequest) {
   if (!user) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const body = await request.json();
-  const { property_id, full_name, unit_number, phone, monthly_rent, is_active } = body;
+  const { property_id, landlord_id, full_name, email, phone, rent_amount } = body;
 
-  if (!property_id || !full_name || !monthly_rent) {
-    return NextResponse.json({ error: "property_id, full_name, and monthly_rent are required" }, { status: 400 });
+  if (!property_id || !full_name || !rent_amount || !landlord_id) {
+    return NextResponse.json({ error: "property_id, landlord_id, full_name, and rent_amount are required" }, { status: 400 });
   }
 
   const adminClient = createAdminClient();
@@ -75,11 +64,12 @@ export async function POST(request: NextRequest) {
     .from("tenants")
     .insert({
       property_id,
+      landlord_id,
       full_name,
-      unit_number: unit_number || null,
+      email: email || null,
       phone: phone || null,
-      monthly_rent: Number(monthly_rent),
-      is_active: is_active !== false,
+      rent_amount: Number(rent_amount),
+      status: "active",
     })
     .select("*, properties(name)")
     .single();

@@ -25,24 +25,25 @@ interface Property {
 interface Tenant {
   id: string;
   full_name: string;
-  unit_number: string | null;
+  email: string | null;
   phone: string | null;
-  monthly_rent: number;
-  is_active: boolean;
+  rent_amount: number;
+  status: string;
   property_id: string;
+  landlord_id: string;
   properties?: { name: string };
 }
 
 interface Payment {
   id: string;
   tenant_id: string;
-  property_id: string;
+  landlord_id: string;
   amount: number;
-  payment_date: string;
-  method: string;
+  paid_date: string | null;
+  due_date: string | null;
+  notes: string | null;
   status: string;
-  tenants?: { full_name: string; unit_number: string | null };
-  properties?: { name: string };
+  tenants?: { full_name: string; property_id: string; properties?: { name: string } };
 }
 
 interface AdminViewProps {
@@ -127,8 +128,8 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
   // Form states
   const [accountForm, setAccountForm] = useState({ full_name: "", email: "", phone: "", password: "" });
   const [propertyForm, setPropertyForm] = useState({ name: "", location: "", total_units: "" });
-  const [tenantForm, setTenantForm] = useState({ property_id: "", full_name: "", unit_number: "", phone: "", monthly_rent: "" });
-  const [paymentForm, setPaymentForm] = useState({ tenant_id: "", property_id: "", amount: "", payment_date: "", method: "M-Pesa", status: "paid" });
+  const [tenantForm, setTenantForm] = useState({ property_id: "", full_name: "", email: "", phone: "", rent_amount: "" });
+  const [paymentForm, setPaymentForm] = useState({ tenant_id: "", amount: "", paid_date: "", due_date: "", notes: "M-Pesa", status: "paid" });
 
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
@@ -219,7 +220,7 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
       const res = await fetch("/api/admin/tenants", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(tenantForm),
+        body: JSON.stringify({ ...tenantForm, landlord_id: selectedLandlord.id }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -227,7 +228,7 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
       } else {
         setMessage({ type: "success", text: `${tenantForm.full_name} added` });
         setTenants((prev) => [data.tenant, ...prev]);
-        setTenantForm({ property_id: "", full_name: "", unit_number: "", phone: "", monthly_rent: "" });
+        setTenantForm({ property_id: "", full_name: "", email: "", phone: "", rent_amount: "" });
       }
     } catch {
       setMessage({ type: "error", text: "Network error" });
@@ -242,15 +243,11 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
     setLoading(true);
     setMessage(null);
 
-    // Auto-fill property_id from the selected tenant
-    const tenant = tenants.find((t) => t.id === paymentForm.tenant_id);
-    const propertyId = tenant?.property_id || paymentForm.property_id;
-
     try {
       const res = await fetch("/api/admin/payments", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...paymentForm, property_id: propertyId }),
+        body: JSON.stringify({ ...paymentForm, landlord_id: selectedLandlord.id }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -258,7 +255,7 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
       } else {
         setMessage({ type: "success", text: "Payment recorded" });
         setPayments((prev) => [data.payment, ...prev]);
-        setPaymentForm({ tenant_id: "", property_id: "", amount: "", payment_date: "", method: "M-Pesa", status: "paid" });
+        setPaymentForm({ tenant_id: "", amount: "", paid_date: "", due_date: "", notes: "M-Pesa", status: "paid" });
       }
     } catch {
       setMessage({ type: "error", text: "Network error" });
@@ -511,12 +508,12 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
                   </div>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1rem" }}>
                     <div>
-                      <label style={labelStyle}>Unit Number</label>
-                      <input type="text" value={tenantForm.unit_number} onChange={(e) => setTenantForm((f) => ({ ...f, unit_number: e.target.value }))} placeholder="e.g. A4" style={inputStyle} />
+                      <label style={labelStyle}>Email</label>
+                      <input type="email" value={tenantForm.email} onChange={(e) => setTenantForm((f) => ({ ...f, email: e.target.value }))} placeholder="e.g. james@email.com" style={inputStyle} />
                     </div>
                     <div>
-                      <label style={labelStyle}>Monthly Rent (KES) *</label>
-                      <input type="number" required min={1} value={tenantForm.monthly_rent} onChange={(e) => setTenantForm((f) => ({ ...f, monthly_rent: e.target.value }))} placeholder="e.g. 12500" style={inputStyle} />
+                      <label style={labelStyle}>Rent Amount (KES) *</label>
+                      <input type="number" required min={1} value={tenantForm.rent_amount} onChange={(e) => setTenantForm((f) => ({ ...f, rent_amount: e.target.value }))} placeholder="e.g. 12500" style={inputStyle} />
                     </div>
                   </div>
                   <div style={{ marginBottom: "1.5rem" }}>
@@ -555,16 +552,16 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
                       <div>
                         <h4 style={{ fontSize: "0.85rem", fontWeight: 500, marginBottom: "0.15rem" }}>{t.full_name}</h4>
                         <span style={{ fontSize: "0.7rem", color: "var(--muted)" }}>
-                          {t.properties?.name || "—"} · Unit {t.unit_number || "—"}
+                          {t.properties?.name || "—"}{t.phone ? ` · ${t.phone}` : ""}
                           {t.phone ? ` · ${t.phone}` : ""}
                         </span>
                       </div>
                       <div className="text-right">
                         <span className="font-serif" style={{ fontSize: "0.9rem", fontWeight: 600 }}>
-                          KES {Number(t.monthly_rent).toLocaleString()}
+                          KES {Number(t.rent_amount).toLocaleString()}
                         </span>
-                        <small className="block" style={{ fontSize: "0.65rem", color: t.is_active ? "var(--green)" : "var(--rust)" }}>
-                          {t.is_active ? "Active" : "Inactive"}
+                        <small className="block" style={{ fontSize: "0.65rem", color: t.status === "active" ? "var(--green)" : "var(--rust)" }}>
+                          {t.status === "active" ? "Active" : "Inactive"}
                         </small>
                       </div>
                     </div>
@@ -603,15 +600,15 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
                           ...f,
                           tenant_id: e.target.value,
                           property_id: tenant?.property_id || "",
-                          amount: tenant ? String(tenant.monthly_rent) : f.amount,
+                          amount: tenant ? String(tenant.rent_amount) : f.amount,
                         }));
                       }}
                       style={inputStyle}
                     >
                       <option value="">— Select tenant —</option>
-                      {tenants.filter((t) => t.is_active).map((t) => (
+                      {tenants.filter((t) => t.status === "active").map((t) => (
                         <option key={t.id} value={t.id}>
-                          {t.full_name} — {t.properties?.name || ""} Unit {t.unit_number || ""}
+                          {t.full_name} — {t.properties?.name || ""}
                         </option>
                       ))}
                     </select>
@@ -622,19 +619,14 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
                       <input type="number" required min={1} value={paymentForm.amount} onChange={(e) => setPaymentForm((f) => ({ ...f, amount: e.target.value }))} placeholder="e.g. 12500" style={inputStyle} />
                     </div>
                     <div>
-                      <label style={labelStyle}>Payment Date *</label>
-                      <input type="date" required value={paymentForm.payment_date} onChange={(e) => setPaymentForm((f) => ({ ...f, payment_date: e.target.value }))} style={inputStyle} />
+                      <label style={labelStyle}>Paid Date</label>
+                      <input type="date" value={paymentForm.paid_date} onChange={(e) => setPaymentForm((f) => ({ ...f, paid_date: e.target.value }))} style={inputStyle} />
                     </div>
                   </div>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1.5rem" }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1rem" }}>
                     <div>
-                      <label style={labelStyle}>Method *</label>
-                      <select value={paymentForm.method} onChange={(e) => setPaymentForm((f) => ({ ...f, method: e.target.value }))} style={inputStyle}>
-                        <option value="M-Pesa">M-Pesa</option>
-                        <option value="Bank Transfer">Bank Transfer</option>
-                        <option value="Cash">Cash</option>
-                        <option value="Cheque">Cheque</option>
-                      </select>
+                      <label style={labelStyle}>Due Date</label>
+                      <input type="date" value={paymentForm.due_date} onChange={(e) => setPaymentForm((f) => ({ ...f, due_date: e.target.value }))} style={inputStyle} />
                     </div>
                     <div>
                       <label style={labelStyle}>Status *</label>
@@ -644,6 +636,15 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
                         <option value="overdue">Overdue</option>
                       </select>
                     </div>
+                  </div>
+                  <div style={{ marginBottom: "1.5rem" }}>
+                    <label style={labelStyle}>Payment Method / Notes</label>
+                    <select value={paymentForm.notes} onChange={(e) => setPaymentForm((f) => ({ ...f, notes: e.target.value }))} style={inputStyle}>
+                      <option value="M-Pesa">M-Pesa</option>
+                      <option value="Bank Transfer">Bank Transfer</option>
+                      <option value="Cash">Cash</option>
+                      <option value="Cheque">Cheque</option>
+                    </select>
                   </div>
                   <button type="submit" disabled={loading} className="flex items-center justify-center" style={{ ...btnStyle, width: "100%", opacity: loading ? 0.6 : 1 }}>
                     <CreditCard size={16} />
@@ -676,10 +677,10 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
                     <div className="flex justify-between items-center">
                       <div>
                         <h4 style={{ fontSize: "0.85rem", fontWeight: 500, marginBottom: "0.15rem" }}>
-                          {p.method} · {p.tenants?.full_name || "—"}
+                          {p.notes || "Payment"} · {p.tenants?.full_name || "—"}
                         </h4>
                         <span style={{ fontSize: "0.7rem", color: "var(--muted)" }}>
-                          {p.properties?.name || "—"} · {new Date(p.payment_date).toLocaleDateString("en-KE", { day: "numeric", month: "short", year: "numeric" })}
+                          {p.tenants?.properties?.name || "—"} · {(p.paid_date || p.due_date) ? new Date(p.paid_date || p.due_date!).toLocaleDateString("en-KE", { day: "numeric", month: "short", year: "numeric" }) : "—"}
                         </span>
                       </div>
                       <div className="text-right">

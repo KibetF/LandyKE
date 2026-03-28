@@ -10,6 +10,9 @@ export interface Property {
   id: string;
   landlord_id: string;
   name: string;
+  address: string | null;
+  type: string | null;
+  units: number;
   location: string | null;
   total_units: number;
   created_at?: string;
@@ -17,23 +20,27 @@ export interface Property {
 
 export interface Tenant {
   id: string;
+  landlord_id: string;
   property_id: string;
-  unit_number: string | null;
   full_name: string;
+  email: string | null;
   phone: string | null;
-  monthly_rent: number;
-  is_active?: boolean;
+  lease_start: string | null;
+  lease_end: string | null;
+  rent_amount: number;
+  status: string;
   created_at?: string;
 }
 
 export interface Payment {
   id: string;
   tenant_id: string;
-  property_id: string;
+  landlord_id: string;
   amount: number;
-  payment_date: string;
-  method: string;
-  status: "paid" | "pending" | "overdue";
+  due_date: string | null;
+  paid_date: string | null;
+  status: string;
+  notes: string | null;
   created_at?: string;
 }
 

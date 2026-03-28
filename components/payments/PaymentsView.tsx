@@ -12,13 +12,13 @@ import StatusPill from "@/components/ui/StatusPill";
 interface PaymentData {
   id: string;
   tenant_id: string;
-  property_id: string;
+  landlord_id: string;
   amount: number;
-  payment_date: string;
-  method: string;
-  status: "paid" | "pending" | "overdue";
-  tenants: { full_name: string; unit_number: string | null };
-  properties: { name: string };
+  paid_date: string | null;
+  due_date: string | null;
+  notes: string | null;
+  status: string;
+  tenants: { full_name: string; property_id: string; properties: { name: string } };
 }
 
 interface PaymentsViewProps {
@@ -27,8 +27,8 @@ interface PaymentsViewProps {
   properties: Array<{ id: string; name: string }>;
 }
 
-function getMethodIcon(method: string) {
-  const m = method?.toLowerCase() || "";
+function getMethodIcon(notes: string | null) {
+  const m = (notes || "").toLowerCase();
   if (m.includes("mpesa") || m.includes("m-pesa")) return Smartphone;
   if (m.includes("bank")) return Building2;
   return Banknote;
@@ -37,7 +37,9 @@ function getMethodIcon(method: string) {
 function getMonthOptions(payments: PaymentData[]) {
   const months = new Set<string>();
   payments.forEach((p) => {
-    const d = new Date(p.payment_date);
+    const dateStr = p.paid_date || p.due_date;
+    if (!dateStr) return;
+    const d = new Date(dateStr);
     const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
     months.add(key);
   });
@@ -62,7 +64,9 @@ export default function PaymentsView({
   const filtered = useMemo(() => {
     return payments.filter((p) => {
       if (monthFilter !== "all") {
-        const d = new Date(p.payment_date);
+        const dateStr = p.paid_date || p.due_date;
+        if (!dateStr) return false;
+        const d = new Date(dateStr);
         const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
         if (key !== monthFilter) return false;
       }
@@ -77,11 +81,11 @@ export default function PaymentsView({
   const outstanding = expectedRent - collected;
 
   function exportCsv() {
-    const header = "Date,Tenant,Property,Unit,Amount,Method,Status\n";
+    const header = "Date,Tenant,Property,Amount,Method,Status\n";
     const rows = filtered
       .map(
         (p) =>
-          `${p.payment_date},${p.tenants?.full_name},${p.properties?.name},${p.tenants?.unit_number || ""},${p.amount},${p.method},${p.status}`
+          `${p.paid_date || p.due_date || ""},${p.tenants?.full_name},${p.tenants?.properties?.name || ""},${p.amount},${p.notes || ""},${p.status}`
       )
       .join("\n");
     const blob = new Blob([header + rows], { type: "text/csv" });
@@ -186,146 +190,42 @@ export default function PaymentsView({
 
       {/* KPI cards */}
       <div className="payments-kpi-grid" style={{ marginBottom: "1.5rem" }}>
-        <div
-          style={{
-            background: "var(--white)",
-            borderRadius: "8px",
-            border: "1px solid rgba(200,150,62,0.08)",
-            padding: "1rem 1.2rem",
-          }}
-        >
-          <span
-            style={{
-              fontSize: "0.6rem",
-              textTransform: "uppercase",
-              letterSpacing: "0.08em",
-              color: "var(--green)",
-            }}
-          >
-            Collected
-          </span>
-          <div
-            className="font-serif"
-            style={{
-              fontSize: "1.3rem",
-              fontWeight: 600,
-              color: "var(--green)",
-            }}
-          >
-            KES {collected.toLocaleString()}
-          </div>
+        <div style={{ background: "var(--white)", borderRadius: "8px", border: "1px solid rgba(200,150,62,0.08)", padding: "1rem 1.2rem" }}>
+          <span style={{ fontSize: "0.6rem", textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--green)" }}>Collected</span>
+          <div className="font-serif" style={{ fontSize: "1.3rem", fontWeight: 600, color: "var(--green)" }}>KES {collected.toLocaleString()}</div>
         </div>
-        <div
-          style={{
-            background: "var(--white)",
-            borderRadius: "8px",
-            border: "1px solid rgba(200,150,62,0.08)",
-            padding: "1rem 1.2rem",
-          }}
-        >
-          <span
-            style={{
-              fontSize: "0.6rem",
-              textTransform: "uppercase",
-              letterSpacing: "0.08em",
-              color: "var(--muted)",
-            }}
-          >
-            Expected
-          </span>
-          <div
-            className="font-serif"
-            style={{ fontSize: "1.3rem", fontWeight: 600 }}
-          >
-            KES {expectedRent.toLocaleString()}
-          </div>
+        <div style={{ background: "var(--white)", borderRadius: "8px", border: "1px solid rgba(200,150,62,0.08)", padding: "1rem 1.2rem" }}>
+          <span style={{ fontSize: "0.6rem", textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--muted)" }}>Expected</span>
+          <div className="font-serif" style={{ fontSize: "1.3rem", fontWeight: 600 }}>KES {expectedRent.toLocaleString()}</div>
         </div>
-        <div
-          style={{
-            background: "var(--white)",
-            borderRadius: "8px",
-            border: "1px solid rgba(200,150,62,0.08)",
-            padding: "1rem 1.2rem",
-          }}
-        >
-          <span
-            style={{
-              fontSize: "0.6rem",
-              textTransform: "uppercase",
-              letterSpacing: "0.08em",
-              color: outstanding > 0 ? "var(--rust)" : "var(--muted)",
-            }}
-          >
-            Outstanding
-          </span>
-          <div
-            className="font-serif"
-            style={{
-              fontSize: "1.3rem",
-              fontWeight: 600,
-              color: outstanding > 0 ? "var(--rust)" : "var(--ink)",
-            }}
-          >
-            KES {Math.max(0, outstanding).toLocaleString()}
-          </div>
+        <div style={{ background: "var(--white)", borderRadius: "8px", border: "1px solid rgba(200,150,62,0.08)", padding: "1rem 1.2rem" }}>
+          <span style={{ fontSize: "0.6rem", textTransform: "uppercase", letterSpacing: "0.08em", color: outstanding > 0 ? "var(--rust)" : "var(--muted)" }}>Outstanding</span>
+          <div className="font-serif" style={{ fontSize: "1.3rem", fontWeight: 600, color: outstanding > 0 ? "var(--rust)" : "var(--ink)" }}>KES {Math.max(0, outstanding).toLocaleString()}</div>
         </div>
-        <div
-          style={{
-            background: "var(--white)",
-            borderRadius: "8px",
-            border: "1px solid rgba(200,150,62,0.08)",
-            padding: "1rem 1.2rem",
-          }}
-        >
-          <span
-            style={{
-              fontSize: "0.6rem",
-              textTransform: "uppercase",
-              letterSpacing: "0.08em",
-              color: "var(--muted)",
-            }}
-          >
-            Payments
-          </span>
-          <div
-            className="font-serif"
-            style={{ fontSize: "1.3rem", fontWeight: 600 }}
-          >
-            {filtered.length}
-          </div>
+        <div style={{ background: "var(--white)", borderRadius: "8px", border: "1px solid rgba(200,150,62,0.08)", padding: "1rem 1.2rem" }}>
+          <span style={{ fontSize: "0.6rem", textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--muted)" }}>Payments</span>
+          <div className="font-serif" style={{ fontSize: "1.3rem", fontWeight: 600 }}>{filtered.length}</div>
         </div>
       </div>
 
       {/* Payment list */}
-      <div
-        style={{
-          background: "var(--white)",
-          borderRadius: "8px",
-          border: "1px solid rgba(200,150,62,0.08)",
-          overflow: "hidden",
-        }}
-      >
+      <div style={{ background: "var(--white)", borderRadius: "8px", border: "1px solid rgba(200,150,62,0.08)", overflow: "hidden" }}>
         {filtered.length === 0 ? (
-          <div
-            style={{
-              padding: "3rem",
-              textAlign: "center",
-              color: "var(--muted)",
-              fontSize: "0.85rem",
-            }}
-          >
+          <div style={{ padding: "3rem", textAlign: "center", color: "var(--muted)", fontSize: "0.85rem" }}>
             No payments found for the selected filters.
           </div>
         ) : (
           <div>
             {filtered.map((payment, i) => {
-              const MethodIcon = getMethodIcon(payment.method);
+              const MethodIcon = getMethodIcon(payment.notes);
               const amountColor =
                 payment.status === "paid"
                   ? "var(--green)"
                   : payment.status === "overdue"
                     ? "var(--red-soft)"
                     : "var(--ink)";
+
+              const displayDate = payment.paid_date || payment.due_date;
 
               return (
                 <div
@@ -336,81 +236,33 @@ export default function PaymentsView({
                     gridTemplateColumns: "auto 1fr auto auto auto",
                     gap: "1rem",
                     padding: "1rem 1.5rem",
-                    borderBottom:
-                      i < filtered.length - 1
-                        ? "1px solid var(--warm)"
-                        : "none",
+                    borderBottom: i < filtered.length - 1 ? "1px solid var(--warm)" : "none",
                     transition: "background 0.15s",
                   }}
                 >
-                  {/* Method icon */}
-                  <div
-                    className="flex items-center justify-center"
-                    style={{
-                      width: "34px",
-                      height: "34px",
-                      borderRadius: "50%",
-                      background: "var(--warm)",
-                    }}
-                  >
+                  <div className="flex items-center justify-center" style={{ width: "34px", height: "34px", borderRadius: "50%", background: "var(--warm)" }}>
                     <MethodIcon size={16} style={{ color: "var(--muted)" }} />
                   </div>
-
-                  {/* Tenant + property */}
                   <div>
-                    <h4
-                      style={{
-                        fontSize: "0.85rem",
-                        fontWeight: 500,
-                        marginBottom: "0.15rem",
-                      }}
-                    >
+                    <h4 style={{ fontSize: "0.85rem", fontWeight: 500, marginBottom: "0.15rem" }}>
                       {payment.tenants?.full_name || "—"}
                     </h4>
-                    <span
-                      style={{ fontSize: "0.7rem", color: "var(--muted)" }}
-                    >
-                      {payment.properties?.name}
-                      {payment.tenants?.unit_number
-                        ? ` · Unit ${payment.tenants.unit_number}`
-                        : ""}
+                    <span style={{ fontSize: "0.7rem", color: "var(--muted)" }}>
+                      {payment.tenants?.properties?.name || ""}
+                      {payment.notes ? ` · ${payment.notes}` : ""}
                     </span>
                   </div>
-
-                  {/* Amount */}
                   <div className="text-right">
-                    <span
-                      className="font-serif"
-                      style={{
-                        fontSize: "1rem",
-                        fontWeight: 600,
-                        color: amountColor,
-                      }}
-                    >
+                    <span className="font-serif" style={{ fontSize: "1rem", fontWeight: 600, color: amountColor }}>
                       KES {Number(payment.amount).toLocaleString()}
                     </span>
                   </div>
-
-                  {/* Date */}
-                  <span
-                    style={{
-                      fontSize: "0.72rem",
-                      color: "var(--muted)",
-                      minWidth: "80px",
-                    }}
-                  >
-                    {new Date(payment.payment_date).toLocaleDateString(
-                      "en-KE",
-                      {
-                        day: "numeric",
-                        month: "short",
-                        year: "numeric",
-                      }
-                    )}
+                  <span style={{ fontSize: "0.72rem", color: "var(--muted)", minWidth: "80px" }}>
+                    {displayDate
+                      ? new Date(displayDate).toLocaleDateString("en-KE", { day: "numeric", month: "short", year: "numeric" })
+                      : "—"}
                   </span>
-
-                  {/* Status */}
-                  <StatusPill status={payment.status} />
+                  <StatusPill status={payment.status as "paid" | "pending" | "overdue"} />
                 </div>
               );
             })}
