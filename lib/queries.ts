@@ -146,14 +146,17 @@ export function computePropertyBreakdown(
 const AVATAR_COLORS = ["#4a5c4e", "#8b3a2a", "#c8963e", "#2d6a4f", "#6b3d8a", "#3d6b8a", "#1a5296", "#8b6914"];
 
 export function computeTenantStatus(
-  tenants: Array<{ id: string; full_name: string; rent_amount: number; property_id: string; properties?: { name: string; location: string | null } }>,
+  tenants: Array<{ id: string; full_name: string; rent_amount: number; property_id: string; created_at?: string; properties?: { name: string; location: string | null } }>,
   payments: Array<{ tenant_id: string; amount: number; paid_date: string | null; status: string }>,
   monthKey: string
 ) {
   const start = getMonthStart(monthKey);
   const end = getMonthEnd(monthKey);
 
-  return tenants.map((t, i) => {
+  // Only include tenants created before the selected month
+  const eligibleTenants = tenants.filter((t) => !t.created_at || t.created_at < start);
+
+  return eligibleTenants.map((t, i) => {
     const names = t.full_name.split(" ");
     const initials = names.length >= 2
       ? (names[0][0] + names[names.length - 1][0]).toUpperCase()
@@ -213,7 +216,7 @@ export function computeRecentTransactions(
  * Compute arrears: active tenants who have no paid payment for the selected month.
  */
 export function computeArrears(
-  tenants: Array<{ id: string; full_name: string; rent_amount: number; property_id: string; properties?: { name: string } }>,
+  tenants: Array<{ id: string; full_name: string; rent_amount: number; property_id: string; created_at?: string; properties?: { name: string } }>,
   payments: Array<{ tenant_id: string; paid_date: string | null; status: string }>,
   monthKey: string
 ) {
@@ -223,6 +226,8 @@ export function computeArrears(
 
   return tenants
     .filter((t) => {
+      // Skip tenants created in or after the selected month
+      if (t.created_at && t.created_at >= start) return false;
       const hasPaid = payments.some(
         (p) => p.tenant_id === t.id && p.paid_date && p.paid_date >= start && p.paid_date <= end && p.status === "paid"
       );

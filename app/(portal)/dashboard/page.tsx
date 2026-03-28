@@ -78,13 +78,17 @@ export default async function DashboardPage({
         const allPayments = await getPayments(supabase, landlord.id);
         const activeTenants = await getActiveTenants(supabase, propertyIds);
 
-        const totalTenants = activeTenants.length;
-        const totalExpected = activeTenants.reduce((sum: number, t: { rent_amount: number }) => sum + Number(t.rent_amount), 0);
+        // Only count tenants created before the selected month for expected rent
+        const monthStart = getMonthStart(selectedMonth);
+        const tenantsForMonth = activeTenants.filter(
+          (t: { created_at?: string }) => !t.created_at || t.created_at < monthStart
+        );
+        const totalTenants = tenantsForMonth.length;
+        const totalExpected = tenantsForMonth.reduce((sum: number, t: { rent_amount: number }) => sum + Number(t.rent_amount), 0);
         const totalUnits = dbProperties.reduce((sum: number, p: { total_units: number }) => sum + (p.total_units || 0), 0);
-        const occupancyRate = totalUnits > 0 ? Math.round((totalTenants / totalUnits) * 100) : 0;
+        const occupancyRate = totalUnits > 0 ? Math.round((activeTenants.length / totalUnits) * 100) : 0;
 
         // Filter payments for selected month using paid_date
-        const monthStart = getMonthStart(selectedMonth);
         const monthEnd = getMonthEnd(selectedMonth);
         const monthPayments = allPayments.filter(
           (p: { paid_date: string | null }) => p.paid_date && p.paid_date >= monthStart && p.paid_date <= monthEnd
