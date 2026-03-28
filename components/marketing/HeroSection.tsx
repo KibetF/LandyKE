@@ -5,7 +5,6 @@ export default function HeroSection() {
     <section
       className="relative overflow-hidden hero-grid"
       style={{
-        minHeight: "min(calc(100vh - 72px), 760px)",
         display: "grid",
         gridTemplateColumns: "1fr 1fr",
         alignItems: "end",
