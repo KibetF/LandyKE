@@ -5,10 +5,10 @@ export default function HeroSection() {
     <section
       className="relative overflow-hidden hero-grid"
       style={{
-        minHeight: "calc(100vh - 72px)",
+        minHeight: "min(calc(100vh - 72px), 760px)",
         display: "grid",
         gridTemplateColumns: "1fr 1fr",
-        alignItems: "center",
+        alignItems: "end",
         paddingTop: "72px",
       }}
     >
@@ -24,7 +24,7 @@ export default function HeroSection() {
       {/* Left content */}
       <div
         className="flex flex-col justify-center relative z-2"
-        style={{ padding: "6rem 4rem 6rem 5rem" }}
+        style={{ padding: "3rem 4rem 4rem 5rem" }}
       >
         <div
           className="inline-flex items-center uppercase"
@@ -129,7 +129,7 @@ export default function HeroSection() {
       {/* Right - floating card */}
       <div
         className="flex items-center justify-center relative"
-        style={{ padding: "4rem" }}
+        style={{ padding: "2rem 4rem 4rem 4rem" }}
       >
         <div
           style={{
