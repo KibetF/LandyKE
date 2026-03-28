@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { MapPin, Building2, Users } from "lucide-react";
 import ScrollReveal from "@/components/ui/ScrollReveal";
 
@@ -8,7 +9,7 @@ const properties = [
     type: "Residential",
     units: 24,
     occupancy: 96,
-    gradient: "linear-gradient(135deg, var(--ink), var(--sage))",
+    image: "/properties/riverside-apartments.jpg",
   },
   {
     name: "Kipchoge Towers",
@@ -16,7 +17,7 @@ const properties = [
     type: "Mixed-Use",
     units: 18,
     occupancy: 92,
-    gradient: "linear-gradient(135deg, var(--ink), var(--gold))",
+    image: "/properties/kipchoge-towers.jpg",
   },
   {
     name: "Lakeview Residences",
@@ -24,7 +25,7 @@ const properties = [
     type: "Residential",
     units: 12,
     occupancy: 100,
-    gradient: "linear-gradient(135deg, var(--sage), var(--ink))",
+    image: "/properties/lakeview-residences.jpg",
   },
   {
     name: "Pioneer Mall Units",
@@ -32,7 +33,7 @@ const properties = [
     type: "Commercial",
     units: 8,
     occupancy: 88,
-    gradient: "linear-gradient(135deg, var(--rust), var(--ink))",
+    image: "/properties/pioneer-mall.jpg",
   },
   {
     name: "Garden Court Villas",
@@ -40,7 +41,7 @@ const properties = [
     type: "Residential",
     units: 6,
     occupancy: 100,
-    gradient: "linear-gradient(135deg, var(--ink), var(--green))",
+    image: "/properties/garden-court.jpg",
   },
   {
     name: "Nyali Heights",
@@ -48,7 +49,7 @@ const properties = [
     type: "Residential",
     units: 16,
     occupancy: 94,
-    gradient: "linear-gradient(135deg, #8b7530, var(--ink))",
+    image: "/properties/nyali-heights.jpg",
   },
 ];
 
@@ -101,10 +102,17 @@ export default function PortfolioSection() {
                 className="portfolio-img"
                 style={{
                   height: "220px",
-                  background: p.gradient,
                   position: "relative",
+                  overflow: "hidden",
                 }}
               >
+                <Image
+                  src={p.image}
+                  alt={p.name}
+                  fill
+                  sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                  style={{ objectFit: "cover" }}
+                />
                 {/* Overlay gradient */}
                 <div
                   style={{
