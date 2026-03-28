@@ -25,7 +25,7 @@ const steps = [
 
 export default function HowItWorks() {
   return (
-    <section style={{ padding: "5rem 5rem 3.5rem", background: "var(--white)" }}>
+    <section className="how-it-works" style={{ padding: "5rem 5rem 3.5rem", background: "var(--white)" }}>
       <ScrollReveal>
         <div
           className="section-tag flex items-center uppercase"

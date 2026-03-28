@@ -50,6 +50,7 @@ export default function TrustSection() {
       style={{ background: "var(--ink)", padding: "7rem 5rem" }}
     >
       <div
+        className="trust-grid"
         style={{
           display: "grid",
           gridTemplateColumns: "1fr 1fr",

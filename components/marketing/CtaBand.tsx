@@ -1,6 +1,7 @@
 export default function CtaBand() {
   return (
     <div
+      className="cta-band"
       style={{
         padding: "80px 5rem",
         background: "var(--cream)",

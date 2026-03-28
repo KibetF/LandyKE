@@ -31,7 +31,7 @@ export default function HeroSection() {
       >
         {/* Left content */}
         <div
-          className="flex flex-col justify-center relative z-2"
+          className="flex flex-col justify-center relative z-2 hero-left"
           style={{ padding: "1rem 2rem 1rem 3rem" }}
         >
           <div
@@ -88,7 +88,7 @@ export default function HeroSection() {
             financial reporting. You stay informed, we handle everything else.
           </p>
 
-          <div className="flex" style={{ gap: "1rem" }}>
+          <div className="flex flex-wrap" style={{ gap: "1rem" }}>
             <Link
               href="/login"
               className="no-underline uppercase"

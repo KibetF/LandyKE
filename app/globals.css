@@ -400,6 +400,36 @@ body {
   /* Stats belt 2x2 */
   .stats-belt-grid {
     grid-template-columns: repeat(2, 1fr) !important;
+    padding: 2rem 1.5rem !important;
+  }
+
+  /* Trust section */
+  .trust-section-bg {
+    padding: 4rem 1.5rem !important;
+  }
+  .trust-grid {
+    grid-template-columns: 1fr !important;
+    gap: 2rem !important;
+  }
+
+  /* CTA band */
+  .cta-band {
+    grid-template-columns: 1fr !important;
+    padding: 3rem 1.5rem !important;
+    gap: 2rem !important;
+  }
+
+  /* How it works */
+  .how-it-works {
+    padding: 4rem 1.5rem 3rem !important;
+  }
+
+  /* Hero padding */
+  .hero-grid {
+    padding: 3rem 1rem !important;
+  }
+  .hero-left {
+    padding: 1rem 1rem !important;
   }
 
   /* Steps vertical */
@@ -450,6 +480,19 @@ body {
 #contact textarea:focus {
   border-color: var(--gold);
   box-shadow: 0 0 0 3px rgba(200,150,62,0.1);
+}
+
+/* Small mobile */
+@media (max-width: 480px) {
+  .stats-belt-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .cta-band .flex {
+    flex-direction: column;
+  }
+  .hero-grid {
+    padding: 2rem 0.75rem !important;
+  }
 }
 
 /* Footer responsive */
