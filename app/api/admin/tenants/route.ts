@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
   if (!user) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const body = await request.json();
-  const { property_id, landlord_id, full_name, email, phone, rent_amount, unit_number } = body;
+  const { property_id, landlord_id, full_name, email, phone, rent_amount, unit_number, unit_type } = body;
 
   if (!property_id || !full_name || !rent_amount || !landlord_id) {
     return NextResponse.json({ error: "property_id, landlord_id, full_name, and rent_amount are required" }, { status: 400 });
@@ -71,6 +71,7 @@ export async function POST(request: NextRequest) {
       phone: phone || null,
       rent_amount: Number(rent_amount),
       unit_number: unit_number || null,
+      unit_type: unit_type || null,
       status: "active",
     })
     .select("*, properties(name)")
@@ -99,17 +100,27 @@ export async function PATCH(request: NextRequest) {
   if (!user) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const body = await request.json();
-  const { tenant_id, status } = body;
+  const { tenant_id, status, full_name, email, phone, rent_amount, unit_number, unit_type, property_id } = body;
 
-  if (!tenant_id || !status) {
-    return NextResponse.json({ error: "tenant_id and status are required" }, { status: 400 });
+  if (!tenant_id) {
+    return NextResponse.json({ error: "tenant_id is required" }, { status: 400 });
   }
+
+  const updateData: Record<string, string | number | null> = {};
+  if (status !== undefined) updateData.status = status;
+  if (full_name !== undefined) updateData.full_name = full_name;
+  if (email !== undefined) updateData.email = email || null;
+  if (phone !== undefined) updateData.phone = phone || null;
+  if (rent_amount !== undefined) updateData.rent_amount = Number(rent_amount);
+  if (unit_number !== undefined) updateData.unit_number = unit_number || null;
+  if (unit_type !== undefined) updateData.unit_type = unit_type || null;
+  if (property_id !== undefined) updateData.property_id = property_id;
 
   const adminClient = createAdminClient();
   const { data, error } = await adminClient
     .schema("landyke")
     .from("tenants")
-    .update({ status })
+    .update(updateData)
     .eq("id", tenant_id)
     .select("*, properties(name)")
     .single();
@@ -130,4 +141,22 @@ export async function PATCH(request: NextRequest) {
   }
 
   return NextResponse.json({ tenant: data });
+}
+
+export async function DELETE(request: NextRequest) {
+  const user = await verifyAdmin();
+  if (!user) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+
+  const { tenant_id } = await request.json();
+  if (!tenant_id) return NextResponse.json({ error: "tenant_id required" }, { status: 400 });
+
+  const adminClient = createAdminClient();
+  const { error } = await adminClient
+    .schema("landyke")
+    .from("tenants")
+    .delete()
+    .eq("id", tenant_id);
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  return NextResponse.json({ success: true });
 }

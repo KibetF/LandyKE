@@ -52,3 +52,50 @@ export async function POST(request: NextRequest) {
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
   return NextResponse.json({ property: data }, { status: 201 });
 }
+
+export async function PATCH(request: NextRequest) {
+  const user = await verifyAdmin();
+  if (!user) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+
+  const body = await request.json();
+  const { property_id, name, location, total_units } = body;
+
+  if (!property_id) {
+    return NextResponse.json({ error: "property_id is required" }, { status: 400 });
+  }
+
+  const updateData: Record<string, string | number | null> = {};
+  if (name !== undefined) { updateData.name = name; updateData.address = location || name; }
+  if (location !== undefined) updateData.location = location || null;
+  if (total_units !== undefined) updateData.total_units = Number(total_units);
+
+  const adminClient = createAdminClient();
+  const { data, error } = await adminClient
+    .schema("landyke")
+    .from("properties")
+    .update(updateData)
+    .eq("id", property_id)
+    .select()
+    .single();
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+  return NextResponse.json({ property: data });
+}
+
+export async function DELETE(request: NextRequest) {
+  const user = await verifyAdmin();
+  if (!user) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+
+  const { property_id } = await request.json();
+  if (!property_id) return NextResponse.json({ error: "property_id required" }, { status: 400 });
+
+  const adminClient = createAdminClient();
+  const { error } = await adminClient
+    .schema("landyke")
+    .from("properties")
+    .delete()
+    .eq("id", property_id);
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  return NextResponse.json({ success: true });
+}

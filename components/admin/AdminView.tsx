@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import {
   UserPlus, Users, Check, AlertCircle, Home, CreditCard,
-  Building2, Plus, ChevronDown,
+  Building2, Plus, ChevronDown, Pencil, Trash2, X,
 } from "lucide-react";
 
 interface Landlord {
@@ -31,6 +31,8 @@ interface Tenant {
   status: string;
   property_id: string;
   landlord_id: string;
+  unit_number: string | null;
+  unit_type: string | null;
   properties?: { name: string };
 }
 
@@ -51,6 +53,8 @@ interface AdminViewProps {
 }
 
 type Tab = "accounts" | "properties" | "tenants" | "payments";
+
+const UNIT_TYPES = ["Studio", "1 Bedroom", "2 Bedroom", "3 Bedroom", "4 Bedroom", "Bedsitter", "Shop", "Office"];
 
 const cardStyle = {
   background: "var(--white)",
@@ -94,6 +98,26 @@ const btnStyle = {
   fontWeight: 500,
 } as const;
 
+const modalOverlayStyle: React.CSSProperties = {
+  position: "fixed",
+  inset: 0,
+  background: "rgba(0,0,0,0.4)",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  zIndex: 1000,
+};
+
+const modalStyle: React.CSSProperties = {
+  background: "var(--white)",
+  borderRadius: "8px",
+  padding: "1.5rem",
+  width: "100%",
+  maxWidth: "500px",
+  maxHeight: "90vh",
+  overflowY: "auto",
+};
+
 function Message({ message }: { message: { type: "success" | "error"; text: string } | null }) {
   if (!message) return null;
   return (
@@ -128,8 +152,18 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
   // Form states
   const [accountForm, setAccountForm] = useState({ full_name: "", email: "", phone: "", password: "" });
   const [propertyForm, setPropertyForm] = useState({ name: "", location: "", total_units: "" });
-  const [tenantForm, setTenantForm] = useState({ property_id: "", full_name: "", email: "", phone: "", rent_amount: "", unit_number: "" });
+  const [tenantForm, setTenantForm] = useState({ property_id: "", full_name: "", email: "", phone: "", rent_amount: "", unit_number: "", unit_type: "" });
   const [paymentForm, setPaymentForm] = useState({ tenant_id: "", amount: "", paid_date: "", due_date: "", notes: "M-Pesa", status: "paid" });
+
+  // Edit modals
+  const [editingProperty, setEditingProperty] = useState<Property | null>(null);
+  const [editingTenant, setEditingTenant] = useState<Tenant | null>(null);
+  const [editingPayment, setEditingPayment] = useState<Payment | null>(null);
+
+  // Edit form states
+  const [editPropertyForm, setEditPropertyForm] = useState({ name: "", location: "", total_units: "" });
+  const [editTenantForm, setEditTenantForm] = useState({ full_name: "", email: "", phone: "", rent_amount: "", unit_number: "", unit_type: "", property_id: "", status: "" });
+  const [editPaymentForm, setEditPaymentForm] = useState({ amount: "", paid_date: "", due_date: "", notes: "", status: "" });
 
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
@@ -159,6 +193,8 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
       fetchPayments(selectedLandlord.id);
     }
   }, [selectedLandlord, fetchProperties, fetchTenants, fetchPayments]);
+
+  // === CREATE HANDLERS ===
 
   async function createAccount(e: React.FormEvent) {
     e.preventDefault();
@@ -228,31 +264,7 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
       } else {
         setMessage({ type: "success", text: `${tenantForm.full_name} added` });
         setTenants((prev) => [data.tenant, ...prev]);
-        setTenantForm({ property_id: "", full_name: "", email: "", phone: "", rent_amount: "", unit_number: "" });
-      }
-    } catch {
-      setMessage({ type: "error", text: "Network error" });
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function toggleTenantStatus(tenantId: string, currentStatus: string) {
-    setLoading(true);
-    setMessage(null);
-    const newStatus = currentStatus === "active" ? "moved" : "active";
-    try {
-      const res = await fetch("/api/admin/tenants", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tenant_id: tenantId, status: newStatus }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setMessage({ type: "error", text: data.error });
-      } else {
-        setMessage({ type: "success", text: `Tenant marked as ${newStatus}` });
-        setTenants((prev) => prev.map((t) => t.id === tenantId ? { ...t, status: newStatus } : t));
+        setTenantForm({ property_id: "", full_name: "", email: "", phone: "", rent_amount: "", unit_number: "", unit_type: "" });
       }
     } catch {
       setMessage({ type: "error", text: "Network error" });
@@ -266,7 +278,6 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
     if (!selectedLandlord) return;
     setLoading(true);
     setMessage(null);
-
     try {
       const res = await fetch("/api/admin/payments", {
         method: "POST",
@@ -288,27 +299,25 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
     }
   }
 
-  async function togglePaymentStatus(paymentId: string, currentStatus: string) {
+  // === UPDATE HANDLERS ===
+
+  async function updateProperty(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editingProperty) return;
     setLoading(true);
-    setMessage(null);
-    const nextStatus = currentStatus === "paid" ? "pending" : "paid";
-    const today = new Date().toISOString().slice(0, 10);
     try {
-      const res = await fetch("/api/admin/payments", {
+      const res = await fetch("/api/admin/properties", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          payment_id: paymentId,
-          status: nextStatus,
-          ...(nextStatus === "paid" ? { paid_date: today } : {}),
-        }),
+        body: JSON.stringify({ property_id: editingProperty.id, ...editPropertyForm, total_units: Number(editPropertyForm.total_units) }),
       });
       const data = await res.json();
-      if (!res.ok) {
-        setMessage({ type: "error", text: data.error });
+      if (res.ok) {
+        setProperties((prev) => prev.map((p) => p.id === editingProperty.id ? data.property : p));
+        setEditingProperty(null);
+        setMessage({ type: "success", text: "Property updated" });
       } else {
-        setMessage({ type: "success", text: `Payment marked as ${nextStatus}` });
-        setPayments((prev) => prev.map((p) => p.id === paymentId ? { ...p, ...data.payment } : p));
+        setMessage({ type: "error", text: data.error });
       }
     } catch {
       setMessage({ type: "error", text: "Network error" });
@@ -317,12 +326,185 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
     }
   }
 
+  async function updateTenant(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editingTenant) return;
+    setLoading(true);
+    try {
+      const res = await fetch("/api/admin/tenants", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tenant_id: editingTenant.id, ...editTenantForm }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setTenants((prev) => prev.map((t) => t.id === editingTenant.id ? data.tenant : t));
+        setEditingTenant(null);
+        setMessage({ type: "success", text: "Tenant updated" });
+      } else {
+        setMessage({ type: "error", text: data.error });
+      }
+    } catch {
+      setMessage({ type: "error", text: "Network error" });
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function updatePayment(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editingPayment) return;
+    setLoading(true);
+    try {
+      const res = await fetch("/api/admin/payments", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          payment_id: editingPayment.id,
+          status: editPaymentForm.status,
+          paid_date: editPaymentForm.paid_date || null,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setPayments((prev) => prev.map((p) => p.id === editingPayment.id ? data.payment : p));
+        setEditingPayment(null);
+        setMessage({ type: "success", text: "Payment updated" });
+      } else {
+        setMessage({ type: "error", text: data.error });
+      }
+    } catch {
+      setMessage({ type: "error", text: "Network error" });
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // === DELETE HANDLERS ===
+
+  async function deleteProperty(id: string, name: string) {
+    if (!window.confirm(`Delete "${name}"? This will also delete all tenants and payments linked to this property.`)) return;
+    setLoading(true);
+    try {
+      const res = await fetch("/api/admin/properties", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ property_id: id }),
+      });
+      if (res.ok) {
+        setProperties((prev) => prev.filter((p) => p.id !== id));
+        setMessage({ type: "success", text: `${name} deleted` });
+        if (selectedLandlord) {
+          fetchTenants(selectedLandlord.id);
+          fetchPayments(selectedLandlord.id);
+        }
+      } else {
+        const data = await res.json();
+        setMessage({ type: "error", text: data.error });
+      }
+    } catch {
+      setMessage({ type: "error", text: "Network error" });
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function deleteTenant(id: string, name: string) {
+    if (!window.confirm(`Delete tenant "${name}"? This will also delete their payment records.`)) return;
+    setLoading(true);
+    try {
+      const res = await fetch("/api/admin/tenants", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tenant_id: id }),
+      });
+      if (res.ok) {
+        setTenants((prev) => prev.filter((t) => t.id !== id));
+        setMessage({ type: "success", text: `${name} deleted` });
+        if (selectedLandlord) fetchPayments(selectedLandlord.id);
+      } else {
+        const data = await res.json();
+        setMessage({ type: "error", text: data.error });
+      }
+    } catch {
+      setMessage({ type: "error", text: "Network error" });
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function deletePayment(id: string) {
+    if (!window.confirm("Delete this payment record?")) return;
+    setLoading(true);
+    try {
+      const res = await fetch("/api/admin/payments", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ payment_id: id }),
+      });
+      if (res.ok) {
+        setPayments((prev) => prev.filter((p) => p.id !== id));
+        setMessage({ type: "success", text: "Payment deleted" });
+      } else {
+        const data = await res.json();
+        setMessage({ type: "error", text: data.error });
+      }
+    } catch {
+      setMessage({ type: "error", text: "Network error" });
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // === OPEN EDIT MODALS ===
+
+  function openEditProperty(p: Property) {
+    setEditPropertyForm({ name: p.name, location: p.location || "", total_units: String(p.total_units) });
+    setEditingProperty(p);
+  }
+
+  function openEditTenant(t: Tenant) {
+    setEditTenantForm({
+      full_name: t.full_name,
+      email: t.email || "",
+      phone: t.phone || "",
+      rent_amount: String(t.rent_amount),
+      unit_number: t.unit_number || "",
+      unit_type: t.unit_type || "",
+      property_id: t.property_id,
+      status: t.status,
+    });
+    setEditingTenant(t);
+  }
+
+  function openEditPayment(p: Payment) {
+    setEditPaymentForm({
+      amount: String(p.amount),
+      paid_date: p.paid_date || "",
+      due_date: p.due_date || "",
+      notes: p.notes || "",
+      status: p.status,
+    });
+    setEditingPayment(p);
+  }
+
   const tabs: { key: Tab; label: string; icon: React.ElementType }[] = [
     { key: "accounts", label: "Accounts", icon: Users },
     { key: "properties", label: "Properties", icon: Home },
     { key: "tenants", label: "Tenants", icon: Users },
     { key: "payments", label: "Payments", icon: CreditCard },
   ];
+
+  const actionBtnStyle = (color: string): React.CSSProperties => ({
+    background: "none",
+    border: "none",
+    cursor: "pointer",
+    padding: "0.3rem",
+    borderRadius: "4px",
+    color,
+    display: "flex",
+    alignItems: "center",
+  });
 
   return (
     <>
@@ -367,7 +549,7 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
         })}
       </div>
 
-      {/* Landlord selector — shown on properties/tenants/payments tabs */}
+      {/* Landlord selector */}
       {tab !== "accounts" && (
         <div style={{ marginBottom: "1.5rem" }}>
           <label style={labelStyle}>Select Landlord</label>
@@ -397,7 +579,6 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
       {/* === ACCOUNTS TAB === */}
       {tab === "accounts" && (
         <div className="occupancy-grid">
-          {/* Create form */}
           <div style={cardStyle}>
             <div className="flex items-center" style={{ padding: "1.2rem 1.5rem", borderBottom: "1px solid var(--warm)", gap: "0.5rem" }}>
               <UserPlus size={18} style={{ color: "var(--gold)" }} />
@@ -428,7 +609,6 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
             </form>
           </div>
 
-          {/* Landlord list */}
           <div style={cardStyle}>
             <div className="flex items-center justify-between" style={{ padding: "1.2rem 1.5rem", borderBottom: "1px solid var(--warm)" }}>
               <div className="flex items-center" style={{ gap: "0.5rem" }}>
@@ -520,7 +700,15 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
                         <h4 style={{ fontSize: "0.85rem", fontWeight: 500, marginBottom: "0.15rem" }}>{p.name}</h4>
                         <span style={{ fontSize: "0.7rem", color: "var(--muted)" }}>{p.location || "No location"}</span>
                       </div>
-                      <span className="font-serif" style={{ fontSize: "0.9rem", fontWeight: 600 }}>{p.total_units} units</span>
+                      <div className="flex items-center" style={{ gap: "0.5rem" }}>
+                        <span className="font-serif" style={{ fontSize: "0.9rem", fontWeight: 600 }}>{p.total_units} units</span>
+                        <button onClick={() => openEditProperty(p)} style={actionBtnStyle("var(--gold)")} title="Edit">
+                          <Pencil size={14} />
+                        </button>
+                        <button onClick={() => deleteProperty(p.id, p.name)} disabled={loading} style={actionBtnStyle("var(--rust)")} title="Delete">
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))
@@ -567,17 +755,28 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
                   </div>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1rem" }}>
                     <div>
-                      <label style={labelStyle}>Email</label>
-                      <input type="email" value={tenantForm.email} onChange={(e) => setTenantForm((f) => ({ ...f, email: e.target.value }))} placeholder="e.g. james@email.com" style={inputStyle} />
+                      <label style={labelStyle}>Unit Type</label>
+                      <select value={tenantForm.unit_type} onChange={(e) => setTenantForm((f) => ({ ...f, unit_type: e.target.value }))} style={inputStyle}>
+                        <option value="">— Select type —</option>
+                        {UNIT_TYPES.map((t) => (
+                          <option key={t} value={t}>{t}</option>
+                        ))}
+                      </select>
                     </div>
                     <div>
                       <label style={labelStyle}>Rent Amount (KES) *</label>
                       <input type="number" required min={1} value={tenantForm.rent_amount} onChange={(e) => setTenantForm((f) => ({ ...f, rent_amount: e.target.value }))} placeholder="e.g. 12500" style={inputStyle} />
                     </div>
                   </div>
-                  <div style={{ marginBottom: "1.5rem" }}>
-                    <label style={labelStyle}>Phone</label>
-                    <input type="tel" value={tenantForm.phone} onChange={(e) => setTenantForm((f) => ({ ...f, phone: e.target.value }))} placeholder="e.g. +254 712 345 678" style={inputStyle} />
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1rem" }}>
+                    <div>
+                      <label style={labelStyle}>Email</label>
+                      <input type="email" value={tenantForm.email} onChange={(e) => setTenantForm((f) => ({ ...f, email: e.target.value }))} placeholder="e.g. james@email.com" style={inputStyle} />
+                    </div>
+                    <div>
+                      <label style={labelStyle}>Phone</label>
+                      <input type="tel" value={tenantForm.phone} onChange={(e) => setTenantForm((f) => ({ ...f, phone: e.target.value }))} placeholder="e.g. +254 712 345 678" style={inputStyle} />
+                    </div>
                   </div>
                   <button type="submit" disabled={loading} className="flex items-center justify-center" style={{ ...btnStyle, width: "100%", opacity: loading ? 0.6 : 1 }}>
                     <UserPlus size={16} />
@@ -611,32 +810,37 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
                       <div>
                         <h4 style={{ fontSize: "0.85rem", fontWeight: 500, marginBottom: "0.15rem" }}>{t.full_name}</h4>
                         <span style={{ fontSize: "0.7rem", color: "var(--muted)" }}>
-                          {t.properties?.name || "—"}{t.phone ? ` · ${t.phone}` : ""}
+                          {t.properties?.name || "—"}
+                          {t.unit_number ? ` · Unit ${t.unit_number}` : ""}
+                          {t.unit_type ? ` · ${t.unit_type}` : ""}
+                          {t.phone ? ` · ${t.phone}` : ""}
                         </span>
                       </div>
-                      <div className="flex items-center" style={{ gap: "0.75rem" }}>
+                      <div className="flex items-center" style={{ gap: "0.5rem" }}>
                         <div className="text-right">
                           <span className="font-serif" style={{ fontSize: "0.9rem", fontWeight: 600 }}>
                             KES {Number(t.rent_amount).toLocaleString()}
                           </span>
                         </div>
-                        <button
-                          onClick={() => toggleTenantStatus(t.id, t.status)}
-                          disabled={loading}
+                        <span
                           style={{
-                            padding: "0.3rem 0.6rem",
-                            fontSize: "0.65rem",
+                            padding: "0.2rem 0.5rem",
+                            fontSize: "0.6rem",
                             fontWeight: 600,
                             borderRadius: "4px",
-                            border: "none",
-                            cursor: "pointer",
                             textTransform: "uppercase",
                             letterSpacing: "0.05em",
                             background: t.status === "active" ? "rgba(45,106,79,0.1)" : "rgba(139,58,42,0.1)",
                             color: t.status === "active" ? "var(--green)" : "var(--rust)",
                           }}
                         >
-                          {t.status === "active" ? "Active" : "Moved"}
+                          {t.status}
+                        </span>
+                        <button onClick={() => openEditTenant(t)} style={actionBtnStyle("var(--gold)")} title="Edit">
+                          <Pencil size={14} />
+                        </button>
+                        <button onClick={() => deleteTenant(t.id, t.full_name)} disabled={loading} style={actionBtnStyle("var(--rust)")} title="Delete">
+                          <Trash2 size={14} />
                         </button>
                       </div>
                     </div>
@@ -674,7 +878,6 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
                         setPaymentForm((f) => ({
                           ...f,
                           tenant_id: e.target.value,
-                          property_id: tenant?.property_id || "",
                           amount: tenant ? String(tenant.rent_amount) : f.amount,
                         }));
                       }}
@@ -758,26 +961,29 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
                           {p.tenants?.properties?.name || "—"} · {(p.paid_date || p.due_date) ? new Date(p.paid_date || p.due_date!).toLocaleDateString("en-KE", { day: "numeric", month: "short", year: "numeric" }) : "—"}
                         </span>
                       </div>
-                      <div className="text-right">
-                        <span className="font-serif" style={{ fontSize: "0.9rem", fontWeight: 600, color: p.status === "paid" ? "var(--green)" : p.status === "overdue" ? "var(--rust)" : "var(--ink)" }}>
-                          KES {Number(p.amount).toLocaleString()}
-                        </span>
-                        <button
-                          onClick={() => togglePaymentStatus(p.id, p.status)}
-                          disabled={loading}
-                          className="block status-pill"
-                          style={{
-                            fontSize: "0.55rem",
-                            marginTop: "0.2rem",
-                            display: "inline-block",
-                            border: "none",
-                            cursor: "pointer",
-                            background: p.status === "paid" ? "var(--green-light)" : p.status === "overdue" ? "var(--red-light)" : "var(--amber-light)",
-                            color: p.status === "paid" ? "var(--green)" : p.status === "overdue" ? "var(--red-soft)" : "var(--gold)",
-                          }}
-                          title={`Click to mark as ${p.status === "paid" ? "pending" : "paid"}`}
-                        >
-                          {p.status}
+                      <div className="flex items-center" style={{ gap: "0.5rem" }}>
+                        <div className="text-right">
+                          <span className="font-serif" style={{ fontSize: "0.9rem", fontWeight: 600, color: p.status === "paid" ? "var(--green)" : p.status === "overdue" ? "var(--rust)" : "var(--ink)" }}>
+                            KES {Number(p.amount).toLocaleString()}
+                          </span>
+                          <span
+                            className="block status-pill"
+                            style={{
+                              fontSize: "0.55rem",
+                              marginTop: "0.2rem",
+                              display: "inline-block",
+                              background: p.status === "paid" ? "var(--green-light)" : p.status === "overdue" ? "var(--red-light)" : "var(--amber-light)",
+                              color: p.status === "paid" ? "var(--green)" : p.status === "overdue" ? "var(--red-soft)" : "var(--gold)",
+                            }}
+                          >
+                            {p.status}
+                          </span>
+                        </div>
+                        <button onClick={() => openEditPayment(p)} style={actionBtnStyle("var(--gold)")} title="Edit">
+                          <Pencil size={14} />
+                        </button>
+                        <button onClick={() => deletePayment(p.id)} disabled={loading} style={actionBtnStyle("var(--rust)")} title="Delete">
+                          <Trash2 size={14} />
                         </button>
                       </div>
                     </div>
@@ -794,6 +1000,154 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
         <div className="flex flex-col items-center justify-center" style={{ padding: "4rem", color: "var(--muted)" }}>
           <Users size={40} style={{ marginBottom: "1rem", opacity: 0.3 }} />
           <span style={{ fontSize: "0.95rem" }}>Select a landlord above to manage their data</span>
+        </div>
+      )}
+
+      {/* === EDIT PROPERTY MODAL === */}
+      {editingProperty && (
+        <div style={modalOverlayStyle} onClick={() => setEditingProperty(null)}>
+          <div style={modalStyle} onClick={(e) => e.stopPropagation()}>
+            <div className="flex justify-between items-center" style={{ marginBottom: "1.5rem" }}>
+              <h3 className="font-serif" style={{ fontSize: "1.1rem", fontWeight: 600 }}>Edit Property</h3>
+              <button onClick={() => setEditingProperty(null)} style={{ background: "none", border: "none", cursor: "pointer" }}>
+                <X size={18} style={{ color: "var(--muted)" }} />
+              </button>
+            </div>
+            <form onSubmit={updateProperty}>
+              <div style={{ marginBottom: "1rem" }}>
+                <label style={labelStyle}>Property Name *</label>
+                <input type="text" required value={editPropertyForm.name} onChange={(e) => setEditPropertyForm((f) => ({ ...f, name: e.target.value }))} style={inputStyle} />
+              </div>
+              <div style={{ marginBottom: "1rem" }}>
+                <label style={labelStyle}>Location</label>
+                <input type="text" value={editPropertyForm.location} onChange={(e) => setEditPropertyForm((f) => ({ ...f, location: e.target.value }))} style={inputStyle} />
+              </div>
+              <div style={{ marginBottom: "1.5rem" }}>
+                <label style={labelStyle}>Total Units *</label>
+                <input type="number" required min={1} value={editPropertyForm.total_units} onChange={(e) => setEditPropertyForm((f) => ({ ...f, total_units: e.target.value }))} style={inputStyle} />
+              </div>
+              <button type="submit" disabled={loading} className="flex items-center justify-center" style={{ ...btnStyle, width: "100%", opacity: loading ? 0.6 : 1 }}>
+                {loading ? "Saving..." : "Save Changes"}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* === EDIT TENANT MODAL === */}
+      {editingTenant && (
+        <div style={modalOverlayStyle} onClick={() => setEditingTenant(null)}>
+          <div style={modalStyle} onClick={(e) => e.stopPropagation()}>
+            <div className="flex justify-between items-center" style={{ marginBottom: "1.5rem" }}>
+              <h3 className="font-serif" style={{ fontSize: "1.1rem", fontWeight: 600 }}>Edit Tenant</h3>
+              <button onClick={() => setEditingTenant(null)} style={{ background: "none", border: "none", cursor: "pointer" }}>
+                <X size={18} style={{ color: "var(--muted)" }} />
+              </button>
+            </div>
+            <form onSubmit={updateTenant}>
+              <div style={{ marginBottom: "1rem" }}>
+                <label style={labelStyle}>Property *</label>
+                <select required value={editTenantForm.property_id} onChange={(e) => setEditTenantForm((f) => ({ ...f, property_id: e.target.value }))} style={inputStyle}>
+                  {properties.map((p) => (
+                    <option key={p.id} value={p.id}>{p.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1rem" }}>
+                <div>
+                  <label style={labelStyle}>Full Name *</label>
+                  <input type="text" required value={editTenantForm.full_name} onChange={(e) => setEditTenantForm((f) => ({ ...f, full_name: e.target.value }))} style={inputStyle} />
+                </div>
+                <div>
+                  <label style={labelStyle}>Unit Number</label>
+                  <input type="text" value={editTenantForm.unit_number} onChange={(e) => setEditTenantForm((f) => ({ ...f, unit_number: e.target.value }))} style={inputStyle} />
+                </div>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1rem" }}>
+                <div>
+                  <label style={labelStyle}>Unit Type</label>
+                  <select value={editTenantForm.unit_type} onChange={(e) => setEditTenantForm((f) => ({ ...f, unit_type: e.target.value }))} style={inputStyle}>
+                    <option value="">— Select type —</option>
+                    {UNIT_TYPES.map((t) => (
+                      <option key={t} value={t}>{t}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label style={labelStyle}>Rent Amount (KES) *</label>
+                  <input type="number" required min={1} value={editTenantForm.rent_amount} onChange={(e) => setEditTenantForm((f) => ({ ...f, rent_amount: e.target.value }))} style={inputStyle} />
+                </div>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1rem" }}>
+                <div>
+                  <label style={labelStyle}>Email</label>
+                  <input type="email" value={editTenantForm.email} onChange={(e) => setEditTenantForm((f) => ({ ...f, email: e.target.value }))} style={inputStyle} />
+                </div>
+                <div>
+                  <label style={labelStyle}>Phone</label>
+                  <input type="tel" value={editTenantForm.phone} onChange={(e) => setEditTenantForm((f) => ({ ...f, phone: e.target.value }))} style={inputStyle} />
+                </div>
+              </div>
+              <div style={{ marginBottom: "1.5rem" }}>
+                <label style={labelStyle}>Status *</label>
+                <select required value={editTenantForm.status} onChange={(e) => setEditTenantForm((f) => ({ ...f, status: e.target.value }))} style={inputStyle}>
+                  <option value="active">Active</option>
+                  <option value="moved">Moved</option>
+                  <option value="inactive">Inactive</option>
+                </select>
+              </div>
+              <button type="submit" disabled={loading} className="flex items-center justify-center" style={{ ...btnStyle, width: "100%", opacity: loading ? 0.6 : 1 }}>
+                {loading ? "Saving..." : "Save Changes"}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* === EDIT PAYMENT MODAL === */}
+      {editingPayment && (
+        <div style={modalOverlayStyle} onClick={() => setEditingPayment(null)}>
+          <div style={modalStyle} onClick={(e) => e.stopPropagation()}>
+            <div className="flex justify-between items-center" style={{ marginBottom: "1.5rem" }}>
+              <h3 className="font-serif" style={{ fontSize: "1.1rem", fontWeight: 600 }}>Edit Payment</h3>
+              <button onClick={() => setEditingPayment(null)} style={{ background: "none", border: "none", cursor: "pointer" }}>
+                <X size={18} style={{ color: "var(--muted)" }} />
+              </button>
+            </div>
+            <form onSubmit={updatePayment}>
+              <div style={{ marginBottom: "1rem" }}>
+                <label style={labelStyle}>Tenant</label>
+                <input type="text" readOnly value={editingPayment.tenants?.full_name || "—"} style={{ ...inputStyle, background: "var(--cream)", cursor: "default" }} />
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1rem" }}>
+                <div>
+                  <label style={labelStyle}>Amount (KES)</label>
+                  <input type="text" readOnly value={`KES ${Number(editPaymentForm.amount).toLocaleString()}`} style={{ ...inputStyle, background: "var(--cream)", cursor: "default" }} />
+                </div>
+                <div>
+                  <label style={labelStyle}>Status *</label>
+                  <select required value={editPaymentForm.status} onChange={(e) => setEditPaymentForm((f) => ({ ...f, status: e.target.value }))} style={inputStyle}>
+                    <option value="paid">Paid</option>
+                    <option value="pending">Pending</option>
+                    <option value="overdue">Overdue</option>
+                  </select>
+                </div>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1.5rem" }}>
+                <div>
+                  <label style={labelStyle}>Paid Date</label>
+                  <input type="date" value={editPaymentForm.paid_date} onChange={(e) => setEditPaymentForm((f) => ({ ...f, paid_date: e.target.value }))} style={inputStyle} />
+                </div>
+                <div>
+                  <label style={labelStyle}>Due Date</label>
+                  <input type="date" value={editPaymentForm.due_date} onChange={(e) => setEditPaymentForm((f) => ({ ...f, due_date: e.target.value }))} style={inputStyle} />
+                </div>
+              </div>
+              <button type="submit" disabled={loading} className="flex items-center justify-center" style={{ ...btnStyle, width: "100%", opacity: loading ? 0.6 : 1 }}>
+                {loading ? "Saving..." : "Save Changes"}
+              </button>
+            </form>
+          </div>
         </div>
       )}
     </>
