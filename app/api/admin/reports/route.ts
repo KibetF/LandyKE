@@ -50,9 +50,11 @@ export async function GET(request: NextRequest) {
     return row.properties.name || "";
   }
 
-  // Tenants eligible for this month (created before selected month)
+  const monthEnd = getMonthEnd(selectedMonth);
+
+  // Tenants eligible for this month (created during or before selected month)
   const tenantsForMonth = activeTenants.filter(
-    (t: { created_at?: string }) => !t.created_at || t.created_at < monthStart
+    (t: { created_at?: string }) => !t.created_at || t.created_at <= monthEnd
   );
   const totalExpected = tenantsForMonth.reduce((s: number, t: { rent_amount: number }) => s + Number(t.rent_amount), 0);
 
@@ -86,7 +88,6 @@ export async function GET(request: NextRequest) {
   });
 
   // Arrears
-  const monthEnd = getMonthEnd(selectedMonth);
   const today = new Date();
   const arrearsData = tenantsForMonth
     .filter((t) => {
@@ -135,12 +136,36 @@ export async function GET(request: NextRequest) {
     };
   });
 
+  // Per-property payment breakdown for the selected month
+  const propertyBreakdown = properties.map((prop) => {
+    const pTenants = tenantsForMonth.filter((t) => t.property_id === prop.id);
+    const pExpected = pTenants.reduce((s, t) => s + Number(t.rent_amount), 0);
+    const pPaidPayments = allPayments.filter(
+      (p) => p.paid_date && p.paid_date >= monthStart && p.paid_date <= monthEnd && p.status === "paid" &&
+        pTenants.some((t) => t.id === p.tenant_id)
+    );
+    const pCollected = pPaidPayments.reduce((s, p) => s + Number(p.amount), 0);
+    const paidTenantIds = new Set(pPaidPayments.map((p) => p.tenant_id));
+    const tenantsPaid = pTenants.filter((t) => paidTenantIds.has(t.id)).length;
+
+    return {
+      name: prop.name,
+      location: prop.location,
+      totalTenants: pTenants.length,
+      tenantsPaid,
+      collected: pCollected,
+      expected: pExpected,
+      rate: pExpected > 0 ? Math.round((pCollected / pExpected) * 100) : 0,
+    };
+  });
+
   return NextResponse.json({
     incomeData,
     occupancyData,
     collectionRates,
     arrearsData,
     tenantStatusData,
+    propertyBreakdown,
     selectedMonth,
   });
 }

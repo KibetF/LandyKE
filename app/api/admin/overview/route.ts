@@ -49,7 +49,7 @@ export async function GET() {
     const paidPayments = lPayments.filter((p) => p.status === "paid");
     const totalCollected = paidPayments.reduce((s, p) => s + Number(p.amount), 0);
     const totalExpected = activeTenants
-      .filter((t) => !t.created_at || t.created_at < monthStart)
+      .filter((t) => !t.created_at || t.created_at <= monthEnd)
       .reduce((s, t) => s + Number(t.rent_amount), 0);
     const totalUnits = lProperties.reduce((s, p) => s + (p.total_units || 0), 0);
 
@@ -62,7 +62,7 @@ export async function GET() {
         .filter((pay) => pTenants.some((t) => t.id === pay.tenant_id))
         .reduce((s, pay) => s + Number(pay.amount), 0);
       const pExpected = pTenants
-        .filter((t) => !t.created_at || t.created_at < monthStart)
+        .filter((t) => !t.created_at || t.created_at <= monthEnd)
         .reduce((s, t) => s + Number(t.rent_amount), 0);
 
       return {
@@ -113,7 +113,7 @@ export async function GET() {
     .lte("paid_date", monthEnd);
 
   const totalExpectedAll = tenants
-    .filter((t) => t.status === "active" && (!t.created_at || t.created_at < monthStart))
+    .filter((t) => t.status === "active" && (!t.created_at || t.created_at <= monthEnd))
     .reduce((s, t) => s + Number(t.rent_amount), 0);
 
   const incomeChart = months.map((key) => {

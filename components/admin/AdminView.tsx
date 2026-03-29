@@ -65,12 +65,23 @@ interface AdminViewProps {
 
 type Tab = "overview" | "accounts" | "properties" | "tenants" | "payments" | "reports";
 
+interface PropertyBreakdown {
+  name: string;
+  location: string | null;
+  totalTenants: number;
+  tenantsPaid: number;
+  collected: number;
+  expected: number;
+  rate: number;
+}
+
 interface AdminReportData {
   incomeData: { month: string; collected: number; expected: number }[];
   occupancyData: { name: string; total: number; occupied: number; rate: number }[];
   collectionRates: { month: string; rate: number }[];
   arrearsData: { tenant: string; property: string; unit: string; amount: number; days: number }[];
   tenantStatusData: { name: string; property: string; amount: number; date: string; status: "paid" | "pending" | "overdue" }[];
+  propertyBreakdown: PropertyBreakdown[];
   selectedMonth: string;
 }
 
@@ -1478,6 +1489,104 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
                   </div>
                 );
               })()}
+
+              {/* Property Payment Breakdown */}
+              {reportData.propertyBreakdown && reportData.propertyBreakdown.length > 0 && (
+                <div style={{ ...cardStyle, marginBottom: "1.5rem" }}>
+                  <div style={{ padding: "1.2rem 1.5rem", borderBottom: "1px solid var(--warm)" }}>
+                    <h3 className="font-serif" style={{ fontSize: "1.1rem", fontWeight: 600 }}>
+                      Payment Breakdown by Property — {formatMonthLabel(reportMonth)}
+                    </h3>
+                  </div>
+                  <div style={{ overflowX: "auto" }}>
+                    <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.85rem" }}>
+                      <thead>
+                        <tr style={{ borderBottom: "1px solid var(--warm)", background: "var(--cream)" }}>
+                          {["Property", "Tenants Paid", "Collected", "Expected", "Outstanding", "Rate"].map((h) => (
+                            <th key={h} style={{ padding: "0.75rem 1rem", textAlign: "left", fontSize: "0.7rem", textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--muted)", fontWeight: 600 }}>
+                              {h}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {reportData.propertyBreakdown.map((prop, i) => (
+                          <tr key={prop.name} style={{ borderBottom: i < reportData.propertyBreakdown.length - 1 ? "1px solid var(--warm)" : "none" }} className="row-hover">
+                            <td style={{ padding: "0.85rem 1rem" }}>
+                              <span style={{ fontWeight: 600 }}>{prop.name}</span>
+                              {prop.location && <span style={{ display: "block", fontSize: "0.7rem", color: "var(--muted)" }}>{prop.location}</span>}
+                            </td>
+                            <td style={{ padding: "0.85rem 1rem" }}>
+                              <span style={{ fontWeight: 600 }}>{prop.tenantsPaid}</span>
+                              <span style={{ color: "var(--muted)" }}> / {prop.totalTenants}</span>
+                            </td>
+                            <td style={{ padding: "0.85rem 1rem" }}>
+                              <span className="font-serif" style={{ fontWeight: 600, color: prop.collected > 0 ? "var(--green)" : "var(--muted)" }}>
+                                KES {prop.collected.toLocaleString()}
+                              </span>
+                            </td>
+                            <td style={{ padding: "0.85rem 1rem" }}>
+                              <span style={{ color: "var(--muted)" }}>KES {prop.expected.toLocaleString()}</span>
+                            </td>
+                            <td style={{ padding: "0.85rem 1rem" }}>
+                              <span className="font-serif" style={{ fontWeight: 600, color: prop.expected - prop.collected > 0 ? "var(--rust)" : "var(--green)" }}>
+                                KES {Math.max(0, prop.expected - prop.collected).toLocaleString()}
+                              </span>
+                            </td>
+                            <td style={{ padding: "0.85rem 1rem" }}>
+                              <div className="flex items-center" style={{ gap: "0.5rem" }}>
+                                <div style={{ flex: 1, background: "var(--warm)", borderRadius: "4px", height: "6px", overflow: "hidden", minWidth: "60px" }}>
+                                  <div style={{
+                                    width: `${prop.rate}%`, height: "100%",
+                                    background: prop.rate >= 100 ? "var(--green)" : prop.rate >= 50 ? "var(--gold)" : "var(--rust)",
+                                    borderRadius: "4px",
+                                  }} />
+                                </div>
+                                <span className="font-serif" style={{
+                                  fontSize: "0.85rem", fontWeight: 600,
+                                  color: prop.rate >= 100 ? "var(--green)" : prop.rate >= 50 ? "var(--gold)" : "var(--rust)",
+                                }}>
+                                  {prop.rate}%
+                                </span>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                        {/* Totals row */}
+                        {(() => {
+                          const totals = reportData.propertyBreakdown.reduce((acc, p) => ({
+                            tenantsPaid: acc.tenantsPaid + p.tenantsPaid,
+                            totalTenants: acc.totalTenants + p.totalTenants,
+                            collected: acc.collected + p.collected,
+                            expected: acc.expected + p.expected,
+                          }), { tenantsPaid: 0, totalTenants: 0, collected: 0, expected: 0 });
+                          const totalRate = totals.expected > 0 ? Math.round((totals.collected / totals.expected) * 100) : 0;
+                          return (
+                            <tr style={{ background: "var(--cream)", fontWeight: 600 }}>
+                              <td style={{ padding: "0.85rem 1rem" }}>Total</td>
+                              <td style={{ padding: "0.85rem 1rem" }}>{totals.tenantsPaid} / {totals.totalTenants}</td>
+                              <td style={{ padding: "0.85rem 1rem" }}>
+                                <span className="font-serif" style={{ color: "var(--green)" }}>KES {totals.collected.toLocaleString()}</span>
+                              </td>
+                              <td style={{ padding: "0.85rem 1rem" }}>KES {totals.expected.toLocaleString()}</td>
+                              <td style={{ padding: "0.85rem 1rem" }}>
+                                <span className="font-serif" style={{ color: totals.expected - totals.collected > 0 ? "var(--rust)" : "var(--green)" }}>
+                                  KES {Math.max(0, totals.expected - totals.collected).toLocaleString()}
+                                </span>
+                              </td>
+                              <td style={{ padding: "0.85rem 1rem" }}>
+                                <span className="font-serif" style={{ color: totalRate >= 100 ? "var(--green)" : totalRate >= 50 ? "var(--gold)" : "var(--rust)" }}>
+                                  {totalRate}%
+                                </span>
+                              </td>
+                            </tr>
+                          );
+                        })()}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
 
               {/* Income Chart */}
               <div style={{ ...cardStyle, marginBottom: "1.5rem" }}>

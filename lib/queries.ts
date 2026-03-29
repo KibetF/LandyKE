@@ -236,8 +236,8 @@ export function computeTenantStatus(
   const start = getMonthStart(monthKey);
   const end = getMonthEnd(monthKey);
 
-  // Only include tenants created before the selected month
-  const eligibleTenants = tenants.filter((t) => !t.created_at || t.created_at < start);
+  // Include tenants created during or before the selected month
+  const eligibleTenants = tenants.filter((t) => !t.created_at || t.created_at <= end);
 
   return eligibleTenants.map((t, i) => {
     const names = t.full_name.split(" ");
@@ -309,8 +309,8 @@ export function computeArrears(
 
   return tenants
     .filter((t) => {
-      // Skip tenants created in or after the selected month
-      if (t.created_at && t.created_at >= start) return false;
+      // Skip tenants created after the selected month
+      if (t.created_at && t.created_at > end) return false;
       const hasPaid = payments.some(
         (p) => p.tenant_id === t.id && p.paid_date && p.paid_date >= start && p.paid_date <= end && p.status === "paid"
       );
