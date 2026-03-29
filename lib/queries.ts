@@ -100,6 +100,9 @@ export async function getPaymentsPaginated(
 
 // --- Aggregation helpers ---
 
+/** Platform launch month — month selectors and charts start here */
+export const LAUNCH_MONTH = "2026-03";
+
 const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const MONTH_FULL = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
@@ -114,9 +117,39 @@ export function getMonthRange(selectedMonth: string, count: number) {
   for (let i = count - 1; i >= 0; i--) {
     const d = new Date(year, month - 1 - i, 1);
     const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-    months.push(key);
+    // Don't include months before launch
+    if (key >= LAUNCH_MONTH) {
+      months.push(key);
+    }
   }
   return months;
+}
+
+/**
+ * Generate list of months from LAUNCH_MONTH to the current month (inclusive).
+ * Returns newest first for use in dropdowns.
+ */
+export function getAvailableMonths() {
+  const [launchY, launchM] = LAUNCH_MONTH.split("-").map(Number);
+  const now = new Date();
+  const nowY = now.getFullYear();
+  const nowM = now.getMonth() + 1;
+  const months: { value: string; label: string }[] = [];
+
+  let y = launchY;
+  let m = launchM;
+  while (y < nowY || (y === nowY && m <= nowM)) {
+    const key = `${y}-${String(m).padStart(2, "0")}`;
+    const label = `${MONTH_FULL[m - 1]} ${y}`;
+    months.push({ value: key, label });
+    m++;
+    if (m > 12) {
+      m = 1;
+      y++;
+    }
+  }
+
+  return months.reverse();
 }
 
 export function getMonthStart(key: string) {

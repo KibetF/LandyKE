@@ -40,7 +40,7 @@ export default function IncomeChart({ data }: IncomeChartProps) {
           className="font-serif"
           style={{ fontSize: "1.1rem", fontWeight: 600 }}
         >
-          Monthly Income — Last 6 Months
+          Monthly Income
         </h3>
         <Link
           href="/payments"

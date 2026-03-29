@@ -9,6 +9,7 @@ import {
   computeOccupancyData,
   computeCollectionRates,
   computeArrears,
+  computeTenantStatus,
 } from "@/lib/queries";
 import ReportsView from "@/components/reports/ReportsView";
 
@@ -33,6 +34,7 @@ export default async function ReportsPage({
   let occupancyData: { name: string; total: number; occupied: number; rate: number }[] = [];
   let collectionRates: { month: string; rate: number }[] = [];
   let arrearsData: { tenant: string; property: string; unit: string; amount: number; days: number }[] = [];
+  let tenantStatusData: { name: string; property: string; amount: number; date: string; status: "paid" | "pending" | "overdue" }[] = [];
 
   if (user) {
     const landlord = await getLandlord(supabase, user.id);
@@ -53,6 +55,15 @@ export default async function ReportsPage({
         occupancyData = computeOccupancyData(dbProperties, activeTenants);
         collectionRates = computeCollectionRates(allPayments, totalExpected, months);
         arrearsData = computeArrears(activeTenants, allPayments, selectedMonth);
+
+        const statusList = computeTenantStatus(activeTenants, allPayments, selectedMonth);
+        tenantStatusData = statusList.map((t) => ({
+          name: t.name,
+          property: t.property,
+          amount: t.amount,
+          date: t.date,
+          status: t.status,
+        }));
       }
     }
   }
@@ -63,6 +74,7 @@ export default async function ReportsPage({
       occupancyData={occupancyData}
       collectionRates={collectionRates}
       arrearsData={arrearsData}
+      tenantStatusData={tenantStatusData}
       selectedMonth={selectedMonth}
     />
   );

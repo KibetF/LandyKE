@@ -1,20 +1,9 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
+import { getAvailableMonths } from "@/lib/queries";
 
-function generateMonths(count: number) {
-  const now = new Date();
-  const months: { value: string; label: string }[] = [];
-  for (let i = 0; i < count; i++) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    const value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-    const label = d.toLocaleDateString("en-KE", { month: "long", year: "numeric" });
-    months.push({ value, label });
-  }
-  return months;
-}
-
-const months = generateMonths(12);
+const months = getAvailableMonths();
 const currentMonth = new Date().toISOString().slice(0, 7);
 
 export default function MonthSelector() {

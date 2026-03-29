@@ -130,6 +130,129 @@ export function generateRentStatement(data: RentStatementData) {
   doc.save(`LandyKE-Rent-Statement-${data.month.replace(/\s/g, "-")}.pdf`);
 }
 
+interface TenantPaymentReportData {
+  month: string;
+  tenants: {
+    name: string;
+    property: string;
+    amount: number;
+    date: string;
+    status: "paid" | "pending" | "overdue";
+  }[];
+  totalCollected: number;
+  totalExpected: number;
+  collectionRate: number;
+}
+
+export function generateTenantPaymentReport(data: TenantPaymentReportData) {
+  const doc = new jsPDF();
+  let y = addHeader(doc, "Tenant Payment Report", data.month);
+
+  // Summary boxes
+  const paidCount = data.tenants.filter((t) => t.status === "paid").length;
+  const overdueCount = data.tenants.filter((t) => t.status === "overdue").length;
+  const pendingCount = data.tenants.filter((t) => t.status === "pending").length;
+
+  const summaryItems = [
+    { label: "Total Tenants", value: `${data.tenants.length}`, color: COLORS.ink },
+    { label: "Paid", value: `${paidCount}`, color: COLORS.green },
+    { label: "Pending", value: `${pendingCount}`, color: COLORS.gold },
+    { label: "Overdue", value: `${overdueCount}`, color: COLORS.rust },
+  ];
+
+  const boxWidth = 40;
+  const startX = 20;
+  summaryItems.forEach((item, i) => {
+    const x = startX + i * (boxWidth + 5);
+    doc.setFillColor(...COLORS.cream);
+    doc.roundedRect(x, y, boxWidth, 20, 2, 2, "F");
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(6.5);
+    doc.setTextColor(...COLORS.muted);
+    doc.text(item.label.toUpperCase(), x + 4, y + 7);
+    doc.setFont("times", "bold");
+    doc.setFontSize(14);
+    doc.setTextColor(...item.color);
+    doc.text(item.value, x + 4, y + 16);
+  });
+
+  y += 28;
+
+  // Financial summary line
+  doc.setFillColor(...COLORS.cream);
+  doc.roundedRect(20, y, 170, 12, 2, 2, "F");
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(7.5);
+  doc.setTextColor(...COLORS.ink);
+  doc.text(
+    `Collected: KES ${data.totalCollected.toLocaleString()}  |  Expected: KES ${data.totalExpected.toLocaleString()}  |  Collection Rate: ${data.collectionRate}%`,
+    25,
+    y + 7.5
+  );
+
+  y += 20;
+
+  // Tenant payment table
+  y = addSectionTitle(doc, "Payment Status by Tenant", y);
+
+  autoTable(doc, {
+    startY: y,
+    head: [["#", "Tenant Name", "Property", "Rent (KES)", "Status", "Payment Date"]],
+    body: data.tenants.map((t, i) => [
+      (i + 1).toString(),
+      t.name,
+      t.property,
+      `KES ${t.amount.toLocaleString()}`,
+      t.status.charAt(0).toUpperCase() + t.status.slice(1),
+      t.date,
+    ]),
+    theme: "plain",
+    styles: {
+      font: "helvetica",
+      fontSize: 8,
+      cellPadding: 4,
+      textColor: COLORS.ink,
+    },
+    headStyles: {
+      fillColor: COLORS.cream,
+      textColor: COLORS.ink,
+      fontStyle: "bold",
+      fontSize: 7,
+    },
+    alternateRowStyles: {
+      fillColor: [250, 248, 244],
+    },
+    columnStyles: {
+      0: { halign: "center", cellWidth: 10 },
+      1: { fontStyle: "bold" },
+      3: { halign: "right" },
+      4: { halign: "center" },
+    },
+    didParseCell: (hookData) => {
+      if (hookData.section === "body" && hookData.column.index === 4) {
+        const val = (hookData.cell.raw as string).toLowerCase();
+        if (val === "paid") {
+          hookData.cell.styles.textColor = COLORS.green;
+        } else if (val === "pending") {
+          hookData.cell.styles.textColor = COLORS.gold;
+        } else {
+          hookData.cell.styles.textColor = COLORS.rust;
+        }
+        hookData.cell.styles.fontStyle = "bold";
+      }
+    },
+  });
+
+  // Add footers
+  const totalPages = doc.getNumberOfPages();
+  for (let i = 1; i <= totalPages; i++) {
+    doc.setPage(i);
+    addFooter(doc, i, totalPages);
+  }
+
+  doc.save(`LandyKE-Tenant-Payment-Report-${data.month.replace(/\s/g, "-")}.pdf`);
+}
+
 interface PropertySummaryData {
   month: string;
   occupancyData: { name: string; total: number; occupied: number; rate: number }[];

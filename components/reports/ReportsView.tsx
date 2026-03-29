@@ -10,7 +10,8 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { Download, FileText, BarChart3, Users, AlertTriangle } from "lucide-react";
-import { generateRentStatement, generatePropertySummary } from "@/lib/pdf/generate-report";
+import { generateRentStatement, generatePropertySummary, generateTenantPaymentReport } from "@/lib/pdf/generate-report";
+import { getAvailableMonths } from "@/lib/queries";
 import WhatsAppShareButton from "@/components/ui/WhatsAppShareButton";
 
 interface ReportsViewProps {
@@ -18,6 +19,7 @@ interface ReportsViewProps {
   occupancyData: { name: string; total: number; occupied: number; rate: number }[];
   collectionRates: { month: string; rate: number }[];
   arrearsData: { tenant: string; property: string; unit: string; amount: number; days: number }[];
+  tenantStatusData: { name: string; property: string; amount: number; date: string; status: "paid" | "pending" | "overdue" }[];
   selectedMonth: string;
 }
 
@@ -28,20 +30,7 @@ const cardStyle = {
   overflow: "hidden",
 } as const;
 
-const months = [
-  { value: new Date().toISOString().slice(0, 7), label: formatLabel(new Date().toISOString().slice(0, 7)) },
-  { value: getPrevMonth(1), label: formatLabel(getPrevMonth(1)) },
-  { value: getPrevMonth(2), label: formatLabel(getPrevMonth(2)) },
-  { value: getPrevMonth(3), label: formatLabel(getPrevMonth(3)) },
-  { value: getPrevMonth(4), label: formatLabel(getPrevMonth(4)) },
-  { value: getPrevMonth(5), label: formatLabel(getPrevMonth(5)) },
-];
-
-function getPrevMonth(offset: number) {
-  const d = new Date();
-  d.setMonth(d.getMonth() - offset);
-  return d.toISOString().slice(0, 7);
-}
+const months = getAvailableMonths();
 
 function formatLabel(key: string) {
   const [year, month] = key.split("-");
@@ -54,6 +43,7 @@ export default function ReportsView({
   occupancyData,
   collectionRates,
   arrearsData,
+  tenantStatusData,
   selectedMonth,
 }: ReportsViewProps) {
   const router = useRouter();
@@ -120,6 +110,16 @@ export default function ReportsView({
       occupancyData,
       incomeData,
       arrearsData,
+    });
+  }
+
+  function downloadTenantPaymentReport() {
+    generateTenantPaymentReport({
+      month: formatLabel(selectedMonth),
+      tenants: tenantStatusData,
+      totalCollected: totalRevenue,
+      totalExpected,
+      collectionRate,
     });
   }
 
@@ -192,6 +192,24 @@ export default function ReportsView({
             <FileText size={14} />
             Property Summary PDF
           </button>
+          <button
+            onClick={downloadTenantPaymentReport}
+            className="flex items-center"
+            style={{
+              gap: "0.4rem",
+              background: "#1a5296",
+              color: "var(--cream)",
+              border: "none",
+              padding: "0.6rem 1rem",
+              fontSize: "0.8rem",
+              borderRadius: "4px",
+              cursor: "pointer",
+              fontFamily: "var(--font-sans), sans-serif",
+            }}
+          >
+            <Users size={14} />
+            Tenant Payments PDF
+          </button>
           <select
             value={selectedMonth}
             onChange={(e) => handleMonthChange(e.target.value)}
@@ -219,7 +237,7 @@ export default function ReportsView({
       {/* KPI cards */}
       <div className="reports-kpi-grid" style={{ marginBottom: "1.5rem" }}>
         {[
-          { label: "Total Revenue (6mo)", value: `KES ${totalRevenue.toLocaleString()}`, color: "var(--green)" },
+          { label: "Total Revenue", value: `KES ${totalRevenue.toLocaleString()}`, color: "var(--green)" },
           { label: "Collection Rate", value: `${collectionRate}%`, color: "var(--gold)" },
           { label: "Occupancy Rate", value: `${occupancyRate}%`, color: "#1a5296" },
           { label: "Total Tenants", value: `${occupiedUnits}`, color: "var(--ink)" },
@@ -242,7 +260,7 @@ export default function ReportsView({
           style={{ padding: "1.2rem 1.5rem", borderBottom: "1px solid var(--warm)" }}
         >
           <h3 className="font-serif" style={{ fontSize: "1.1rem", fontWeight: 600 }}>
-            Income Overview — Last 6 Months
+            Income Overview
           </h3>
         </div>
         <div style={{ padding: "1.5rem", height: "250px" }}>
