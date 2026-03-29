@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import StatusPill from "@/components/ui/StatusPill";
+import Pagination from "@/components/ui/Pagination";
 
 interface TenantData {
   id: string;
@@ -17,6 +18,8 @@ interface TenantData {
 interface TenantTableProps {
   tenants: TenantData[];
   properties: Array<{ id: string; name: string }>;
+  currentPage?: number;
+  totalPages?: number;
 }
 
 const avatarColors = [
@@ -39,7 +42,7 @@ function getInitials(name: string) {
     .slice(0, 2);
 }
 
-export default function TenantTable({ tenants, properties }: TenantTableProps) {
+export default function TenantTable({ tenants, properties, currentPage = 1, totalPages = 1 }: TenantTableProps) {
   const [filter, setFilter] = useState("all");
 
   const filtered =
@@ -312,6 +315,8 @@ export default function TenantTable({ tenants, properties }: TenantTableProps) {
           </div>
         )}
       </div>
+
+      <Pagination currentPage={currentPage} totalPages={totalPages} />
     </>
   );
 }

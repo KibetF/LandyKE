@@ -8,6 +8,7 @@ import {
   Download,
 } from "lucide-react";
 import StatusPill from "@/components/ui/StatusPill";
+import Pagination from "@/components/ui/Pagination";
 
 interface PaymentData {
   id: string;
@@ -25,6 +26,8 @@ interface PaymentsViewProps {
   payments: PaymentData[];
   expectedRent: number;
   properties: Array<{ id: string; name: string }>;
+  currentPage?: number;
+  totalPages?: number;
 }
 
 function getMethodIcon(notes: string | null) {
@@ -56,6 +59,8 @@ export default function PaymentsView({
   payments,
   expectedRent,
   properties,
+  currentPage = 1,
+  totalPages = 1,
 }: PaymentsViewProps) {
   const monthOptions = useMemo(() => getMonthOptions(payments), [payments]);
   const [monthFilter, setMonthFilter] = useState(monthOptions[0] || "all");
@@ -269,6 +274,8 @@ export default function PaymentsView({
           </div>
         )}
       </div>
+
+      <Pagination currentPage={currentPage} totalPages={totalPages} />
     </>
   );
 }

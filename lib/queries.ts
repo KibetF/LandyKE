@@ -48,6 +48,56 @@ export async function getPayments(supabase: SupabaseClient, landlordId: string) 
   return data || [];
 }
 
+// --- Paginated queries ---
+
+const PAGE_SIZE = 20;
+
+export async function getTenantsPaginated(
+  supabase: SupabaseClient,
+  propertyIds: string[],
+  page: number
+) {
+  const from = (page - 1) * PAGE_SIZE;
+  const to = from + PAGE_SIZE - 1;
+
+  const { data, count } = await supabase
+    .schema("landyke")
+    .from("tenants")
+    .select("*, properties(name, location)", { count: "exact" })
+    .in("property_id", propertyIds)
+    .order("created_at", { ascending: false })
+    .range(from, to);
+
+  return {
+    tenants: data || [],
+    total: count || 0,
+    totalPages: Math.ceil((count || 0) / PAGE_SIZE),
+  };
+}
+
+export async function getPaymentsPaginated(
+  supabase: SupabaseClient,
+  landlordId: string,
+  page: number
+) {
+  const from = (page - 1) * PAGE_SIZE;
+  const to = from + PAGE_SIZE - 1;
+
+  const { data, count } = await supabase
+    .schema("landyke")
+    .from("payments")
+    .select("*, tenants(full_name, property_id, properties(name))", { count: "exact" })
+    .eq("landlord_id", landlordId)
+    .order("paid_date", { ascending: false })
+    .range(from, to);
+
+  return {
+    payments: data || [],
+    total: count || 0,
+    totalPages: Math.ceil((count || 0) / PAGE_SIZE),
+  };
+}
+
 // --- Aggregation helpers ---
 
 const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];

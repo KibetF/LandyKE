@@ -1,13 +1,24 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { User, Bell, Lock, AlertTriangle } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
+
+interface NotificationPreferences {
+  email: boolean;
+  sms: boolean;
+  paymentAlerts: boolean;
+  maintenanceUpdates: boolean;
+  monthlyReports: boolean;
+}
 
 interface SettingsViewProps {
   landlord: {
     full_name: string;
     email: string;
     phone: string | null;
+    notification_preferences: NotificationPreferences;
   };
 }
 
@@ -42,17 +53,99 @@ const labelStyle = {
 };
 
 export default function SettingsView({ landlord }: SettingsViewProps) {
+  const router = useRouter();
   const [editing, setEditing] = useState(false);
-  const [notifications, setNotifications] = useState({
-    email: true,
-    sms: true,
-    paymentAlerts: true,
-    maintenanceUpdates: true,
-    monthlyReports: false,
-  });
+  const [fullName, setFullName] = useState(landlord.full_name);
+  const [phone, setPhone] = useState(landlord.phone || "");
+  const [saving, setSaving] = useState(false);
+  const [profileMsg, setProfileMsg] = useState("");
 
-  function toggleNotification(key: keyof typeof notifications) {
-    setNotifications((prev) => ({ ...prev, [key]: !prev[key] }));
+  const [notifications, setNotifications] = useState<NotificationPreferences>(
+    landlord.notification_preferences
+  );
+
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordMsg, setPasswordMsg] = useState("");
+  const [passwordSaving, setPasswordSaving] = useState(false);
+
+  async function handleProfileSave() {
+    setSaving(true);
+    setProfileMsg("");
+    try {
+      const res = await fetch("/api/settings/profile", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ full_name: fullName, phone: phone || null }),
+      });
+      if (res.ok) {
+        setProfileMsg("Profile updated");
+        setEditing(false);
+        router.refresh();
+      } else {
+        const data = await res.json();
+        setProfileMsg(data.error || "Failed to save");
+      }
+    } catch {
+      setProfileMsg("Failed to save");
+    }
+    setSaving(false);
+  }
+
+  async function toggleNotification(key: keyof NotificationPreferences) {
+    const updated = { ...notifications, [key]: !notifications[key] };
+    setNotifications(updated);
+    await fetch("/api/settings/notifications", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ notification_preferences: updated }),
+    });
+  }
+
+  async function handlePasswordChange() {
+    setPasswordMsg("");
+    if (newPassword.length < 6) {
+      setPasswordMsg("Password must be at least 6 characters");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setPasswordMsg("Passwords do not match");
+      return;
+    }
+    setPasswordSaving(true);
+    try {
+      const supabase = createClient();
+      // Verify current password
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: landlord.email,
+        password: currentPassword,
+      });
+      if (signInError) {
+        setPasswordMsg("Current password is incorrect");
+        setPasswordSaving(false);
+        return;
+      }
+      // Update password
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      if (error) {
+        setPasswordMsg(error.message);
+      } else {
+        setPasswordMsg("Password updated successfully");
+        setCurrentPassword("");
+        setNewPassword("");
+        setConfirmPassword("");
+      }
+    } catch {
+      setPasswordMsg("Failed to update password");
+    }
+    setPasswordSaving(false);
+  }
+
+  function handleDeleteAccount() {
+    window.confirm(
+      "To delete your account and all associated data, please contact support at support@landyke.co.ke"
+    );
   }
 
   return (
@@ -78,7 +171,14 @@ export default function SettingsView({ landlord }: SettingsViewProps) {
               <h3 className="font-serif" style={{ fontSize: "1.1rem", fontWeight: 600 }}>Profile</h3>
             </div>
             <button
-              onClick={() => setEditing(!editing)}
+              onClick={() => {
+                if (editing) {
+                  handleProfileSave();
+                } else {
+                  setEditing(true);
+                }
+              }}
+              disabled={saving}
               style={{
                 background: "none",
                 border: "1px solid var(--warm)",
@@ -90,17 +190,24 @@ export default function SettingsView({ landlord }: SettingsViewProps) {
                 fontFamily: "var(--font-sans), sans-serif",
                 textTransform: "uppercase",
                 letterSpacing: "0.08em",
+                opacity: saving ? 0.6 : 1,
               }}
             >
-              {editing ? "Save" : "Edit"}
+              {saving ? "Saving..." : editing ? "Save" : "Edit"}
             </button>
           </div>
           <div style={{ padding: "1.5rem", display: "flex", flexDirection: "column", gap: "1rem" }}>
+            {profileMsg && (
+              <span style={{ fontSize: "0.75rem", color: profileMsg.includes("updated") ? "var(--green)" : "var(--rust)" }}>
+                {profileMsg}
+              </span>
+            )}
             <div>
               <label style={labelStyle}>Full Name</label>
               <input
                 type="text"
-                defaultValue={landlord.full_name}
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
                 readOnly={!editing}
                 style={{
                   ...inputStyle,
@@ -113,12 +220,12 @@ export default function SettingsView({ landlord }: SettingsViewProps) {
               <label style={labelStyle}>Email Address</label>
               <input
                 type="email"
-                defaultValue={landlord.email}
-                readOnly={!editing}
+                value={landlord.email}
+                readOnly
                 style={{
                   ...inputStyle,
-                  background: editing ? "var(--white)" : "var(--cream)",
-                  cursor: editing ? "text" : "default",
+                  background: "var(--cream)",
+                  cursor: "default",
                 }}
               />
             </div>
@@ -126,7 +233,8 @@ export default function SettingsView({ landlord }: SettingsViewProps) {
               <label style={labelStyle}>Phone Number</label>
               <input
                 type="tel"
-                defaultValue={landlord.phone || ""}
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
                 placeholder="+254 7XX XXX XXX"
                 readOnly={!editing}
                 style={{
@@ -188,19 +296,44 @@ export default function SettingsView({ landlord }: SettingsViewProps) {
             <h3 className="font-serif" style={{ fontSize: "1.1rem", fontWeight: 600 }}>Change Password</h3>
           </div>
           <div style={{ padding: "1.5rem", display: "flex", flexDirection: "column", gap: "1rem" }}>
+            {passwordMsg && (
+              <span style={{ fontSize: "0.75rem", color: passwordMsg.includes("successfully") ? "var(--green)" : "var(--rust)" }}>
+                {passwordMsg}
+              </span>
+            )}
             <div>
               <label style={labelStyle}>Current Password</label>
-              <input type="password" placeholder="Enter current password" style={inputStyle} />
+              <input
+                type="password"
+                placeholder="Enter current password"
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                style={inputStyle}
+              />
             </div>
             <div>
               <label style={labelStyle}>New Password</label>
-              <input type="password" placeholder="Enter new password" style={inputStyle} />
+              <input
+                type="password"
+                placeholder="Enter new password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                style={inputStyle}
+              />
             </div>
             <div>
               <label style={labelStyle}>Confirm New Password</label>
-              <input type="password" placeholder="Confirm new password" style={inputStyle} />
+              <input
+                type="password"
+                placeholder="Confirm new password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                style={inputStyle}
+              />
             </div>
             <button
+              onClick={handlePasswordChange}
+              disabled={passwordSaving}
               style={{
                 background: "var(--ink)",
                 color: "var(--cream)",
@@ -211,9 +344,10 @@ export default function SettingsView({ landlord }: SettingsViewProps) {
                 cursor: "pointer",
                 fontFamily: "var(--font-sans), sans-serif",
                 alignSelf: "flex-start",
+                opacity: passwordSaving ? 0.6 : 1,
               }}
             >
-              Update Password
+              {passwordSaving ? "Updating..." : "Update Password"}
             </button>
           </div>
         </div>
@@ -234,6 +368,7 @@ export default function SettingsView({ landlord }: SettingsViewProps) {
               Once you delete your account, there is no going back. All your data, properties, and tenant records will be permanently removed.
             </p>
             <button
+              onClick={handleDeleteAccount}
               style={{
                 background: "none",
                 color: "var(--rust)",

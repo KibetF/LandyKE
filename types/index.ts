@@ -52,22 +52,38 @@ export interface MonthlyIncome {
 
 export interface MaintenanceRequest {
   id: string;
+  landlord_id: string;
   property_id: string;
-  unit_number: string;
-  tenant_name: string;
-  property_name: string;
+  tenant_id: string | null;
+  unit_number: string | null;
   description: string;
   priority: "low" | "medium" | "high" | "urgent";
   status: "open" | "in-progress" | "completed";
   date_submitted: string;
+  date_resolved: string | null;
+  notes: string | null;
+  created_at?: string;
 }
 
 export interface Document {
   id: string;
+  landlord_id: string;
+  property_id: string | null;
   name: string;
   type: "lease" | "invoice" | "receipt" | "report" | "legal";
-  property_name: string;
-  property_id: string;
-  date_uploaded: string;
-  file_size: string;
+  file_path: string;
+  file_size: number | null;
+  mime_type: string | null;
+  created_at?: string;
+}
+
+export interface Notification {
+  id: string;
+  landlord_id: string;
+  type: string;
+  title: string;
+  description: string;
+  is_read: boolean;
+  metadata: Record<string, unknown>;
+  created_at: string;
 }

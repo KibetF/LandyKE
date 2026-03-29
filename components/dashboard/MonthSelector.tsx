@@ -2,21 +2,29 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 
-const months = [
-  { value: "2026-03", label: "March 2026" },
-  { value: "2026-02", label: "February 2026" },
-  { value: "2026-01", label: "January 2026" },
-  { value: "2025-12", label: "December 2025" },
-];
+function generateMonths(count: number) {
+  const now = new Date();
+  const months: { value: string; label: string }[] = [];
+  for (let i = 0; i < count; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    const label = d.toLocaleDateString("en-KE", { month: "long", year: "numeric" });
+    months.push({ value, label });
+  }
+  return months;
+}
+
+const months = generateMonths(12);
+const currentMonth = new Date().toISOString().slice(0, 7);
 
 export default function MonthSelector() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const current = searchParams.get("month") || "2026-03";
+  const current = searchParams.get("month") || currentMonth;
 
   function handleChange(value: string) {
     const params = new URLSearchParams(searchParams.toString());
-    if (value === "2026-03") {
+    if (value === currentMonth) {
       params.delete("month");
     } else {
       params.set("month", value);

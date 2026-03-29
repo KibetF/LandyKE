@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { createNotification } from "@/lib/notifications";
 
 async function verifyAdmin() {
   const supabase = await createClient();
@@ -58,6 +59,21 @@ export async function POST(request: NextRequest) {
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+
+  // Create notification for payment received
+  if (data) {
+    const tenantName = data.tenants?.full_name || "Unknown";
+    const propertyName = data.tenants?.properties?.name || "";
+    await createNotification(
+      adminClient,
+      landlord_id,
+      "payment_received",
+      "Payment Received",
+      `KES ${Number(amount).toLocaleString()} from ${tenantName} — ${propertyName}`,
+      { payment_id: data.id, tenant_id, amount: Number(amount) }
+    );
+  }
+
   return NextResponse.json({ payment: data }, { status: 201 });
 }
 
@@ -87,5 +103,20 @@ export async function PATCH(request: NextRequest) {
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+
+  // Create notification if payment marked overdue
+  if (data && status === "overdue") {
+    const tenantName = data.tenants?.full_name || "Unknown";
+    const propertyName = data.tenants?.properties?.name || "";
+    await createNotification(
+      adminClient,
+      data.landlord_id,
+      "payment_overdue",
+      "Payment Overdue",
+      `${tenantName} — ${propertyName} payment is now overdue`,
+      { payment_id: data.id, tenant_id: data.tenant_id }
+    );
+  }
+
   return NextResponse.json({ payment: data });
 }

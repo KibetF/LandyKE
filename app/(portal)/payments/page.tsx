@@ -1,8 +1,15 @@
 import { createClient } from "@/lib/supabase/server";
-import { getLandlord, getProperties, getActiveTenants, getPayments } from "@/lib/queries";
+import { getLandlord, getProperties, getActiveTenants, getPaymentsPaginated } from "@/lib/queries";
 import PaymentsView from "@/components/payments/PaymentsView";
 
-export default async function PaymentsPage() {
+interface PageProps {
+  searchParams: Promise<{ page?: string }>;
+}
+
+export default async function PaymentsPage({ searchParams }: PageProps) {
+  const params = await searchParams;
+  const page = Math.max(1, Number(params.page) || 1);
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -22,6 +29,7 @@ export default async function PaymentsPage() {
 
   let expectedRent = 0;
   let properties: Array<{ id: string; name: string }> = [];
+  let totalPages = 1;
 
   if (user) {
     const landlord = await getLandlord(supabase, user.id);
@@ -31,7 +39,9 @@ export default async function PaymentsPage() {
 
       if (properties.length > 0) {
         const propertyIds = properties.map((p) => p.id);
-        payments = await getPayments(supabase, landlord.id);
+        const result = await getPaymentsPaginated(supabase, landlord.id, page);
+        payments = result.payments;
+        totalPages = result.totalPages;
 
         const activeTenants = await getActiveTenants(supabase, propertyIds);
         expectedRent = activeTenants.reduce(
@@ -47,6 +57,8 @@ export default async function PaymentsPage() {
       payments={payments}
       expectedRent={expectedRent}
       properties={properties}
+      currentPage={page}
+      totalPages={totalPages}
     />
   );
 }

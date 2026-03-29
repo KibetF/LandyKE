@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { createNotification } from "@/lib/notifications";
 
 async function verifyAdmin() {
   const supabase = await createClient();
@@ -76,6 +77,20 @@ export async function POST(request: NextRequest) {
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+
+  // Create notification for new tenant
+  if (data) {
+    const propertyName = data.properties?.name || "";
+    await createNotification(
+      adminClient,
+      landlord_id,
+      "tenant_added",
+      "New Tenant Added",
+      `${full_name} has been added to ${propertyName}${unit_number ? ` Unit ${unit_number}` : ""}`,
+      { tenant_id: data.id, property_id }
+    );
+  }
+
   return NextResponse.json({ tenant: data }, { status: 201 });
 }
 
@@ -96,9 +111,23 @@ export async function PATCH(request: NextRequest) {
     .from("tenants")
     .update({ status })
     .eq("id", tenant_id)
-    .select()
+    .select("*, properties(name)")
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+
+  // Create notification if tenant moved out
+  if (data && status === "moved") {
+    const propertyName = data.properties?.name || "";
+    await createNotification(
+      adminClient,
+      data.landlord_id,
+      "tenant_moved",
+      "Tenant Moved Out",
+      `${data.full_name} has moved out of ${propertyName}`,
+      { tenant_id: data.id }
+    );
+  }
+
   return NextResponse.json({ tenant: data });
 }

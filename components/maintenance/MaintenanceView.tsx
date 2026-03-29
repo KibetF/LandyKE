@@ -1,33 +1,31 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Wrench, AlertTriangle, CheckCircle, Clock } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Wrench, AlertTriangle, CheckCircle, Clock, Plus, X } from "lucide-react";
 import StatusPill from "@/components/ui/StatusPill";
-import type { MaintenanceRequest } from "@/types";
 
-const mockRequests: MaintenanceRequest[] = [
-  { id: "1", property_id: "p1", unit_number: "3", tenant_name: "James Waweru", property_name: "Elbros Business Park", description: "Leaking kitchen faucet, water pooling on floor", priority: "high", status: "open", date_submitted: "2026-03-18" },
-  { id: "2", property_id: "p2", unit_number: "2", tenant_name: "Grace Akinyi", property_name: "Sanshin House", description: "Office door handle broken, won't lock", priority: "medium", status: "in-progress", date_submitted: "2026-03-15" },
-  { id: "3", property_id: "p1", unit_number: "1", tenant_name: "Faith Kiprotich", property_name: "Elbros Business Park", description: "Power outlet in bedroom not working", priority: "high", status: "open", date_submitted: "2026-03-17" },
-  { id: "4", property_id: "p3", unit_number: "7", tenant_name: "Daniel Otieno", property_name: "Action Flats Phase 1", description: "Window glass cracked from storm damage", priority: "urgent", status: "open", date_submitted: "2026-03-19" },
-  { id: "5", property_id: "p4", unit_number: "1", tenant_name: "Samuel Mutua", property_name: "Action Flats Phase 2", description: "Ceiling paint peeling in living room", priority: "low", status: "completed", date_submitted: "2026-03-05" },
-  { id: "6", property_id: "p2", unit_number: "4", tenant_name: "Ruth Njeri", property_name: "Sanshin House", description: "Blocked kitchen sink drain", priority: "medium", status: "completed", date_submitted: "2026-03-08" },
-  { id: "7", property_id: "p5", unit_number: "5", tenant_name: "Peter Kamau", property_name: "Rock Center Parkview", description: "Main door lock is jammed", priority: "high", status: "in-progress", date_submitted: "2026-03-14" },
-  { id: "8", property_id: "p3", unit_number: "2", tenant_name: "Mary Wanjiku", property_name: "Action Flats Phase 1", description: "Hot water heater not working", priority: "urgent", status: "in-progress", date_submitted: "2026-03-16" },
-  { id: "9", property_id: "p6", unit_number: "2", tenant_name: "Joseph Kipchoge", property_name: "Eldoville Villa", description: "Toilet running continuously", priority: "medium", status: "open", date_submitted: "2026-03-19" },
-  { id: "10", property_id: "p5", unit_number: "6", tenant_name: "Anne Chebet", property_name: "Rock Center Parkview", description: "Broken curtain rail in master bedroom", priority: "low", status: "completed", date_submitted: "2026-03-02" },
-  { id: "11", property_id: "p4", unit_number: "1", tenant_name: "David Maina", property_name: "Action Flats Phase 2", description: "Wall crack near window expanding", priority: "high", status: "open", date_submitted: "2026-03-20" },
-  { id: "12", property_id: "p6", unit_number: "3", tenant_name: "Lucy Achieng", property_name: "Eldoville Villa", description: "Gate padlock replacement needed", priority: "low", status: "completed", date_submitted: "2026-03-01" },
-];
+interface MaintenanceRequest {
+  id: string;
+  property_id: string;
+  tenant_id: string | null;
+  unit_number: string | null;
+  description: string;
+  priority: "low" | "medium" | "high" | "urgent";
+  status: "open" | "in-progress" | "completed";
+  date_submitted: string;
+  date_resolved: string | null;
+  notes: string | null;
+  properties: { name: string };
+  tenants: { full_name: string } | null;
+}
 
-const properties = [
-  { id: "p1", name: "Elbros Business Park" },
-  { id: "p2", name: "Sanshin House" },
-  { id: "p3", name: "Action Flats Phase 1" },
-  { id: "p4", name: "Action Flats Phase 2" },
-  { id: "p5", name: "Rock Center Parkview" },
-  { id: "p6", name: "Eldoville Villa" },
-];
+interface MaintenanceViewProps {
+  requests: MaintenanceRequest[];
+  properties: Array<{ id: string; name: string }>;
+  tenants: Array<{ id: string; full_name: string; property_id: string; unit_number: string | null }>;
+  landlordId: string;
+}
 
 const selectStyle = {
   background: "var(--white)",
@@ -41,34 +39,204 @@ const selectStyle = {
   outline: "none",
 } as const;
 
-export default function MaintenanceView() {
+const inputStyle = {
+  width: "100%",
+  padding: "10px 14px",
+  border: "1px solid var(--warm)",
+  borderRadius: "6px",
+  fontSize: "0.85rem",
+  fontFamily: "var(--font-sans), sans-serif",
+  background: "var(--white)",
+  color: "var(--ink)",
+  outline: "none",
+} as const;
+
+const labelStyle = {
+  fontSize: "0.65rem",
+  textTransform: "uppercase" as const,
+  letterSpacing: "0.12em",
+  color: "var(--muted)",
+  marginBottom: "0.4rem",
+  fontWeight: 500,
+  display: "block",
+};
+
+export default function MaintenanceView({ requests, properties, tenants, landlordId }: MaintenanceViewProps) {
+  const router = useRouter();
   const [propertyFilter, setPropertyFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [priorityFilter, setPriorityFilter] = useState("all");
+  const [showForm, setShowForm] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+
+  // Form state
+  const [formPropertyId, setFormPropertyId] = useState("");
+  const [formTenantId, setFormTenantId] = useState("");
+  const [formUnitNumber, setFormUnitNumber] = useState("");
+  const [formDescription, setFormDescription] = useState("");
+  const [formPriority, setFormPriority] = useState("medium");
 
   const filtered = useMemo(() => {
-    return mockRequests.filter((r) => {
+    return requests.filter((r) => {
       if (propertyFilter !== "all" && r.property_id !== propertyFilter) return false;
       if (statusFilter !== "all" && r.status !== statusFilter) return false;
       if (priorityFilter !== "all" && r.priority !== priorityFilter) return false;
       return true;
     });
-  }, [propertyFilter, statusFilter, priorityFilter]);
+  }, [requests, propertyFilter, statusFilter, priorityFilter]);
 
-  const openCount = mockRequests.filter((r) => r.status === "open").length;
-  const inProgressCount = mockRequests.filter((r) => r.status === "in-progress").length;
-  const completedCount = mockRequests.filter((r) => r.status === "completed").length;
+  const openCount = requests.filter((r) => r.status === "open").length;
+  const inProgressCount = requests.filter((r) => r.status === "in-progress").length;
+  const completedCount = requests.filter((r) => r.status === "completed").length;
+
+  const filteredTenants = formPropertyId
+    ? tenants.filter((t) => t.property_id === formPropertyId)
+    : tenants;
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!formPropertyId || !formDescription || !formPriority) return;
+    setSubmitting(true);
+
+    const selectedTenant = tenants.find((t) => t.id === formTenantId);
+
+    await fetch("/api/admin/maintenance", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        landlord_id: landlordId,
+        property_id: formPropertyId,
+        tenant_id: formTenantId || null,
+        unit_number: formUnitNumber || selectedTenant?.unit_number || null,
+        description: formDescription,
+        priority: formPriority,
+      }),
+    });
+
+    setShowForm(false);
+    setFormPropertyId("");
+    setFormTenantId("");
+    setFormUnitNumber("");
+    setFormDescription("");
+    setFormPriority("medium");
+    setSubmitting(false);
+    router.refresh();
+  }
 
   return (
     <>
-      <div style={{ marginBottom: "2rem" }}>
-        <h1 className="font-serif" style={{ fontSize: "2rem", fontWeight: 300, color: "var(--ink)" }}>
-          Maintenance
-        </h1>
-        <p style={{ fontSize: "0.8rem", color: "var(--muted)", marginTop: "0.2rem" }}>
-          Track and manage maintenance requests
-        </p>
+      <div className="flex justify-between items-start" style={{ marginBottom: "2rem" }}>
+        <div>
+          <h1 className="font-serif" style={{ fontSize: "2rem", fontWeight: 300, color: "var(--ink)" }}>
+            Maintenance
+          </h1>
+          <p style={{ fontSize: "0.8rem", color: "var(--muted)", marginTop: "0.2rem" }}>
+            Track and manage maintenance requests
+          </p>
+        </div>
+        <button
+          onClick={() => setShowForm(true)}
+          className="flex items-center"
+          style={{
+            gap: "0.4rem",
+            background: "var(--ink)",
+            color: "var(--cream)",
+            border: "none",
+            padding: "0.6rem 1.2rem",
+            fontSize: "0.8rem",
+            borderRadius: "4px",
+            cursor: "pointer",
+            fontFamily: "var(--font-sans), sans-serif",
+          }}
+        >
+          <Plus size={14} />
+          New Request
+        </button>
       </div>
+
+      {/* New Request Form */}
+      {showForm && (
+        <div
+          style={{
+            background: "var(--white)",
+            borderRadius: "8px",
+            border: "1px solid rgba(200,150,62,0.08)",
+            padding: "1.5rem",
+            marginBottom: "1.5rem",
+          }}
+        >
+          <div className="flex justify-between items-center" style={{ marginBottom: "1rem" }}>
+            <h3 className="font-serif" style={{ fontSize: "1.1rem", fontWeight: 600 }}>New Maintenance Request</h3>
+            <button onClick={() => setShowForm(false)} style={{ background: "none", border: "none", cursor: "pointer" }}>
+              <X size={18} style={{ color: "var(--muted)" }} />
+            </button>
+          </div>
+          <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+              <div>
+                <label style={labelStyle}>Property *</label>
+                <select value={formPropertyId} onChange={(e) => setFormPropertyId(e.target.value)} style={{ ...inputStyle, cursor: "pointer" }} required>
+                  <option value="">Select property</option>
+                  {properties.map((p) => (
+                    <option key={p.id} value={p.id}>{p.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label style={labelStyle}>Tenant (optional)</label>
+                <select value={formTenantId} onChange={(e) => setFormTenantId(e.target.value)} style={{ ...inputStyle, cursor: "pointer" }}>
+                  <option value="">Select tenant</option>
+                  {filteredTenants.map((t) => (
+                    <option key={t.id} value={t.id}>{t.full_name}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label style={labelStyle}>Unit Number (optional)</label>
+                <input type="text" value={formUnitNumber} onChange={(e) => setFormUnitNumber(e.target.value)} placeholder="e.g., 3" style={inputStyle} />
+              </div>
+              <div>
+                <label style={labelStyle}>Priority *</label>
+                <select value={formPriority} onChange={(e) => setFormPriority(e.target.value)} style={{ ...inputStyle, cursor: "pointer" }} required>
+                  <option value="low">Low</option>
+                  <option value="medium">Medium</option>
+                  <option value="high">High</option>
+                  <option value="urgent">Urgent</option>
+                </select>
+              </div>
+            </div>
+            <div>
+              <label style={labelStyle}>Description *</label>
+              <textarea
+                value={formDescription}
+                onChange={(e) => setFormDescription(e.target.value)}
+                placeholder="Describe the maintenance issue..."
+                required
+                rows={3}
+                style={{ ...inputStyle, resize: "vertical" }}
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={submitting}
+              style={{
+                background: "var(--ink)",
+                color: "var(--cream)",
+                border: "none",
+                padding: "0.7rem 1.5rem",
+                fontSize: "0.8rem",
+                borderRadius: "4px",
+                cursor: "pointer",
+                fontFamily: "var(--font-sans), sans-serif",
+                alignSelf: "flex-start",
+                opacity: submitting ? 0.6 : 1,
+              }}
+            >
+              {submitting ? "Submitting..." : "Submit Request"}
+            </button>
+          </form>
+        </div>
+      )}
 
       {/* Filters */}
       <div className="flex items-center" style={{ gap: "0.75rem", marginBottom: "1.5rem", flexWrap: "wrap" }}>
@@ -98,8 +266,8 @@ export default function MaintenanceView() {
         {[
           { label: "Open Requests", value: openCount, color: "var(--rust)", Icon: AlertTriangle },
           { label: "In Progress", value: inProgressCount, color: "#1a5296", Icon: Clock },
-          { label: "Completed This Month", value: completedCount, color: "var(--green)", Icon: CheckCircle },
-          { label: "Avg Resolution Time", value: "3.2 days", color: "var(--muted)", Icon: Wrench },
+          { label: "Completed", value: completedCount, color: "var(--green)", Icon: CheckCircle },
+          { label: "Total Requests", value: requests.length, color: "var(--muted)", Icon: Wrench },
         ].map((kpi) => (
           <div
             key={kpi.label}
@@ -168,7 +336,7 @@ export default function MaintenanceView() {
                     {request.description}
                   </h4>
                   <span style={{ fontSize: "0.7rem", color: "var(--muted)" }}>
-                    {request.tenant_name} · {request.property_name} · Unit {request.unit_number}
+                    {request.tenants?.full_name || "—"} · {request.properties?.name}{request.unit_number ? ` · Unit ${request.unit_number}` : ""}
                   </span>
                 </div>
 

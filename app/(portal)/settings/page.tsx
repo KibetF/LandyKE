@@ -15,7 +15,7 @@ export default async function SettingsPage() {
   const { data: landlord } = await supabase
     .schema("landyke")
     .from("landlords")
-    .select("full_name, email, phone")
+    .select("full_name, email, phone, notification_preferences")
     .eq("user_id", user.id)
     .single();
 
@@ -23,6 +23,13 @@ export default async function SettingsPage() {
     full_name: landlord?.full_name || "",
     email: landlord?.email || user.email || "",
     phone: landlord?.phone || null,
+    notification_preferences: landlord?.notification_preferences || {
+      email: true,
+      sms: true,
+      paymentAlerts: true,
+      maintenanceUpdates: true,
+      monthlyReports: false,
+    },
   };
 
   return <SettingsView landlord={landlordData} />;
