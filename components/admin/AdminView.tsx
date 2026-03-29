@@ -224,6 +224,7 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
   const [accountForm, setAccountForm] = useState({ full_name: "", email: "", phone: "", password: "" });
   const [propertyForm, setPropertyForm] = useState({ name: "", location: "", total_units: "" });
   const [tenantForm, setTenantForm] = useState({ property_id: "", full_name: "", email: "", phone: "", rent_amount: "", unit_number: "", unit_type: "" });
+  const [paymentPropertyFilter, setPaymentPropertyFilter] = useState("");
   const [paymentForm, setPaymentForm] = useState({ tenant_id: "", amount: "", paid_date: "", due_date: "", notes: "M-Pesa", status: "paid" });
 
   // Edit modals
@@ -927,6 +928,7 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
                 setProperties([]);
                 setTenants([]);
                 setPayments([]);
+                setPaymentPropertyFilter("");
                 setMessage(null);
               }}
               style={{ ...inputStyle, paddingRight: "2rem", appearance: "none" }}
@@ -1233,28 +1235,48 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
                 </div>
               ) : (
                 <>
-                  <div style={{ marginBottom: "1rem" }}>
-                    <label style={labelStyle}>Tenant *</label>
-                    <select
-                      required
-                      value={paymentForm.tenant_id}
-                      onChange={(e) => {
-                        const tenant = tenants.find((t) => t.id === e.target.value);
-                        setPaymentForm((f) => ({
-                          ...f,
-                          tenant_id: e.target.value,
-                          amount: tenant ? String(tenant.rent_amount) : f.amount,
-                        }));
-                      }}
-                      style={inputStyle}
-                    >
-                      <option value="">— Select tenant —</option>
-                      {tenants.filter((t) => t.status === "active").map((t) => (
-                        <option key={t.id} value={t.id}>
-                          {t.full_name} — {t.properties?.name || ""}
-                        </option>
-                      ))}
-                    </select>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1rem" }}>
+                    <div>
+                      <label style={labelStyle}>Property</label>
+                      <select
+                        value={paymentPropertyFilter}
+                        onChange={(e) => {
+                          setPaymentPropertyFilter(e.target.value);
+                          setPaymentForm((f) => ({ ...f, tenant_id: "" }));
+                        }}
+                        style={inputStyle}
+                      >
+                        <option value="">— All properties —</option>
+                        {properties.map((p) => (
+                          <option key={p.id} value={p.id}>{p.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label style={labelStyle}>Tenant *</label>
+                      <select
+                        required
+                        value={paymentForm.tenant_id}
+                        onChange={(e) => {
+                          const tenant = tenants.find((t) => t.id === e.target.value);
+                          setPaymentForm((f) => ({
+                            ...f,
+                            tenant_id: e.target.value,
+                            amount: tenant ? String(tenant.rent_amount) : f.amount,
+                          }));
+                        }}
+                        style={inputStyle}
+                      >
+                        <option value="">— Select tenant —</option>
+                        {tenants
+                          .filter((t) => t.status === "active" && (!paymentPropertyFilter || t.property_id === paymentPropertyFilter))
+                          .map((t) => (
+                            <option key={t.id} value={t.id}>
+                              {t.full_name}{t.unit_number ? ` · Unit ${t.unit_number}` : ""}{!paymentPropertyFilter ? ` — ${t.properties?.name || ""}` : ""}
+                            </option>
+                          ))}
+                      </select>
+                    </div>
                   </div>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1rem" }}>
                     <div>
