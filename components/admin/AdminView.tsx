@@ -4,8 +4,10 @@ import { useState, useEffect, useCallback } from "react";
 import {
   UserPlus, Users, Check, AlertCircle, Home, CreditCard,
   Building2, Plus, ChevronDown, Pencil, Trash2, X,
-  LayoutDashboard, FileText, Send,
+  LayoutDashboard, FileText, Send, Download, BarChart3, AlertTriangle,
 } from "lucide-react";
+import { generateRentStatement, generatePropertySummary, generateTenantPaymentReport } from "@/lib/pdf/generate-report";
+import { getAvailableMonths } from "@/lib/queries";
 import {
   BarChart,
   Bar,
@@ -61,7 +63,16 @@ interface AdminViewProps {
   landlords: Landlord[];
 }
 
-type Tab = "overview" | "accounts" | "properties" | "tenants" | "payments";
+type Tab = "overview" | "accounts" | "properties" | "tenants" | "payments" | "reports";
+
+interface AdminReportData {
+  incomeData: { month: string; collected: number; expected: number }[];
+  occupancyData: { name: string; total: number; occupied: number; rate: number }[];
+  collectionRates: { month: string; rate: number }[];
+  arrearsData: { tenant: string; property: string; unit: string; amount: number; days: number }[];
+  tenantStatusData: { name: string; property: string; amount: number; date: string; status: "paid" | "pending" | "overdue" }[];
+  selectedMonth: string;
+}
 
 interface OverviewProperty {
   id: string;
@@ -198,6 +209,12 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
   const [overviewLoading, setOverviewLoading] = useState(true);
   const [expandedLandlord, setExpandedLandlord] = useState<string | null>(null);
 
+  // Reports state
+  const [reportLandlord, setReportLandlord] = useState<Landlord | null>(null);
+  const [reportMonth, setReportMonth] = useState(new Date().toISOString().slice(0, 7));
+  const [reportData, setReportData] = useState<AdminReportData | null>(null);
+  const [reportLoading, setReportLoading] = useState(false);
+
   // Data states
   const [properties, setProperties] = useState<Property[]>([]);
   const [tenants, setTenants] = useState<Tenant[]>([]);
@@ -280,6 +297,67 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
     });
     msg += `\n— LandyKE`;
     window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, "_blank");
+  }
+
+  const fetchReport = useCallback(async (landlordId: string, month: string) => {
+    setReportLoading(true);
+    try {
+      const res = await fetch(`/api/admin/reports?landlord_id=${landlordId}&month=${month}`);
+      const data = await res.json();
+      if (res.ok) setReportData(data);
+    } catch { /* ignore */ }
+    setReportLoading(false);
+  }, []);
+
+  useEffect(() => {
+    if (reportLandlord) {
+      fetchReport(reportLandlord.id, reportMonth);
+    }
+  }, [reportLandlord, reportMonth, fetchReport]);
+
+  function formatMonthLabel(key: string) {
+    const [year, month] = key.split("-");
+    const d = new Date(Number(year), Number(month) - 1);
+    return d.toLocaleDateString("en-KE", { month: "long", year: "numeric" });
+  }
+
+  function downloadAdminRentStatement() {
+    if (!reportData) return;
+    const totalRevenue = reportData.incomeData.reduce((s, d) => s + d.collected, 0);
+    const totalExpected = reportData.incomeData.reduce((s, d) => s + d.expected, 0);
+    const collectionRate = totalExpected > 0 ? Math.round((totalRevenue / totalExpected) * 100) : 0;
+    generateRentStatement({
+      month: formatMonthLabel(reportMonth),
+      incomeData: reportData.incomeData,
+      arrearsData: reportData.arrearsData,
+      collectionRate,
+      totalCollected: totalRevenue,
+      totalExpected,
+    });
+  }
+
+  function downloadAdminPropertySummary() {
+    if (!reportData) return;
+    generatePropertySummary({
+      month: formatMonthLabel(reportMonth),
+      occupancyData: reportData.occupancyData,
+      incomeData: reportData.incomeData,
+      arrearsData: reportData.arrearsData,
+    });
+  }
+
+  function downloadAdminTenantPayment() {
+    if (!reportData) return;
+    const totalRevenue = reportData.incomeData.reduce((s, d) => s + d.collected, 0);
+    const totalExpected = reportData.incomeData.reduce((s, d) => s + d.expected, 0);
+    const collectionRate = totalExpected > 0 ? Math.round((totalRevenue / totalExpected) * 100) : 0;
+    generateTenantPaymentReport({
+      month: formatMonthLabel(reportMonth),
+      tenants: reportData.tenantStatusData,
+      totalCollected: totalRevenue,
+      totalExpected,
+      collectionRate,
+    });
   }
 
   // === CREATE HANDLERS ===
@@ -582,6 +660,7 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
     { key: "properties", label: "Properties", icon: Home },
     { key: "tenants", label: "Tenants", icon: Users },
     { key: "payments", label: "Payments", icon: CreditCard },
+    { key: "reports", label: "Reports", icon: FileText },
   ];
 
   const actionBtnStyle = (color: string): React.CSSProperties => ({
@@ -1281,8 +1360,247 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
         </div>
       )}
 
+      {/* === REPORTS TAB === */}
+      {tab === "reports" && (
+        <>
+          {/* Landlord + Month selector */}
+          <div className="flex items-end" style={{ gap: "1rem", marginBottom: "1.5rem", flexWrap: "wrap" }}>
+            <div style={{ flex: 1, minWidth: "250px" }}>
+              <label style={labelStyle}>Select Landlord</label>
+              <div style={{ position: "relative" }}>
+                <select
+                  value={reportLandlord?.id || ""}
+                  onChange={(e) => {
+                    const l = landlords.find((l) => l.id === e.target.value) || null;
+                    setReportLandlord(l);
+                    setReportData(null);
+                  }}
+                  style={{ ...inputStyle, paddingRight: "2rem", appearance: "none" }}
+                >
+                  <option value="">— Choose a landlord —</option>
+                  {landlords.map((l) => (
+                    <option key={l.id} value={l.id}>{l.full_name} ({l.email})</option>
+                  ))}
+                </select>
+                <ChevronDown size={16} style={{ position: "absolute", right: "0.75rem", top: "50%", transform: "translateY(-50%)", color: "var(--muted)", pointerEvents: "none" }} />
+              </div>
+            </div>
+            <div style={{ minWidth: "180px" }}>
+              <label style={labelStyle}>Month</label>
+              <select
+                value={reportMonth}
+                onChange={(e) => setReportMonth(e.target.value)}
+                style={inputStyle}
+              >
+                {getAvailableMonths().map((m) => (
+                  <option key={m.value} value={m.value}>{m.label}</option>
+                ))}
+              </select>
+            </div>
+            {reportLandlord && reportData && (
+              <>
+                <button onClick={downloadAdminRentStatement} className="flex items-center" style={{ ...btnStyle, gap: "0.4rem", fontSize: "0.8rem", padding: "0.7rem 1rem" }}>
+                  <FileText size={14} />
+                  Rent Statement PDF
+                </button>
+                <button onClick={downloadAdminPropertySummary} className="flex items-center" style={{ ...btnStyle, gap: "0.4rem", fontSize: "0.8rem", padding: "0.7rem 1rem", background: "var(--sage)" }}>
+                  <FileText size={14} />
+                  Property Summary PDF
+                </button>
+                <button onClick={downloadAdminTenantPayment} className="flex items-center" style={{ ...btnStyle, gap: "0.4rem", fontSize: "0.8rem", padding: "0.7rem 1rem", background: "#1a5296" }}>
+                  <Users size={14} />
+                  Tenant Payments PDF
+                </button>
+              </>
+            )}
+          </div>
+
+          {!reportLandlord ? (
+            <div className="flex flex-col items-center justify-center" style={{ padding: "4rem", color: "var(--muted)" }}>
+              <FileText size={40} style={{ marginBottom: "1rem", opacity: 0.3 }} />
+              <span style={{ fontSize: "0.95rem" }}>Select a landlord above to view their reports</span>
+            </div>
+          ) : reportLoading ? (
+            <div className="flex flex-col items-center justify-center" style={{ padding: "4rem", color: "var(--muted)" }}>
+              <BarChart3 size={40} style={{ marginBottom: "1rem", opacity: 0.3 }} />
+              <span style={{ fontSize: "0.95rem" }}>Loading reports...</span>
+            </div>
+          ) : reportData ? (
+            <>
+              {/* KPI Cards */}
+              {(() => {
+                const totalRevenue = reportData.incomeData.reduce((s, d) => s + d.collected, 0);
+                const totalExpected = reportData.incomeData.reduce((s, d) => s + d.expected, 0);
+                const collectionRate = totalExpected > 0 ? Math.round((totalRevenue / totalExpected) * 100) : 0;
+                const totalUnits = reportData.occupancyData.reduce((s, d) => s + d.total, 0);
+                const occupiedUnits = reportData.occupancyData.reduce((s, d) => s + d.occupied, 0);
+                const occupancyRate = totalUnits > 0 ? Math.round((occupiedUnits / totalUnits) * 100) : 0;
+
+                return (
+                  <div className="reports-kpi-grid" style={{ marginBottom: "1.5rem" }}>
+                    {[
+                      { label: "Total Revenue", value: `KES ${totalRevenue.toLocaleString()}`, color: "var(--green)" },
+                      { label: "Collection Rate", value: `${collectionRate}%`, color: "var(--gold)" },
+                      { label: "Occupancy Rate", value: `${occupancyRate}%`, color: "#1a5296" },
+                      { label: "Total Tenants", value: `${occupiedUnits}`, color: "var(--ink)" },
+                    ].map((kpi) => (
+                      <div key={kpi.label} style={{ ...cardStyle, padding: "1rem 1.2rem" }}>
+                        <span style={{ fontSize: "0.6rem", textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--muted)" }}>
+                          {kpi.label}
+                        </span>
+                        <div className="font-serif" style={{ fontSize: "1.3rem", fontWeight: 600, color: kpi.color }}>
+                          {kpi.value}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
+
+              {/* Income Chart */}
+              <div style={{ ...cardStyle, marginBottom: "1.5rem" }}>
+                <div style={{ padding: "1.2rem 1.5rem", borderBottom: "1px solid var(--warm)" }}>
+                  <h3 className="font-serif" style={{ fontSize: "1.1rem", fontWeight: 600 }}>
+                    Income Overview — {reportLandlord.full_name}
+                  </h3>
+                </div>
+                <div style={{ padding: "1.5rem", height: "250px" }}>
+                  {reportData.incomeData.every((d) => d.collected === 0 && d.expected === 0) ? (
+                    <div className="flex flex-col items-center justify-center" style={{ height: "100%", color: "var(--muted)" }}>
+                      <BarChart3 size={32} style={{ marginBottom: "0.75rem", opacity: 0.4 }} />
+                      <span style={{ fontSize: "0.85rem" }}>No income data available</span>
+                    </div>
+                  ) : (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={reportData.incomeData} barGap={2} barCategoryGap="20%">
+                        <XAxis dataKey="month" tickLine={false} axisLine={false} tick={{ fontSize: 10, fill: "#7a7468" }} />
+                        <YAxis hide />
+                        <Tooltip
+                          formatter={(value) => `KES ${(Number(value) / 1000).toFixed(0)}k`}
+                          contentStyle={{ background: "var(--white)", border: "1px solid var(--warm)", borderRadius: "4px", fontSize: "0.75rem" }}
+                        />
+                        <Bar dataKey="expected" fill="#ede6d6" radius={[3, 3, 0, 0]} name="Expected" />
+                        <Bar dataKey="collected" fill="#c8963e" radius={[3, 3, 0, 0]} name="Collected" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  )}
+                </div>
+              </div>
+
+              {/* Occupancy + Collection Rate */}
+              <div className="occupancy-grid" style={{ marginBottom: "1.5rem" }}>
+                <div style={cardStyle}>
+                  <div style={{ padding: "1.2rem 1.5rem", borderBottom: "1px solid var(--warm)" }}>
+                    <h3 className="font-serif" style={{ fontSize: "1.1rem", fontWeight: 600 }}>Occupancy by Property</h3>
+                  </div>
+                  <div style={{ padding: "1rem 1.5rem" }}>
+                    {reportData.occupancyData.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center" style={{ padding: "2rem", color: "var(--muted)" }}>
+                        <Users size={28} style={{ marginBottom: "0.5rem", opacity: 0.4 }} />
+                        <span style={{ fontSize: "0.85rem" }}>No property data</span>
+                      </div>
+                    ) : (
+                      reportData.occupancyData.map((prop, i) => (
+                        <div key={prop.name} style={{ padding: "0.8rem 0", borderBottom: i < reportData.occupancyData.length - 1 ? "1px solid var(--warm)" : "none" }}>
+                          <div className="flex justify-between items-center" style={{ marginBottom: "0.4rem" }}>
+                            <span style={{ fontSize: "0.85rem", fontWeight: 500 }}>{prop.name}</span>
+                            <span style={{ fontSize: "0.75rem", color: "var(--muted)" }}>{prop.occupied}/{prop.total} units</span>
+                          </div>
+                          <div style={{ background: "var(--warm)", borderRadius: "4px", height: "6px", overflow: "hidden" }}>
+                            <div style={{
+                              width: `${prop.rate}%`, height: "100%",
+                              background: prop.rate === 100 ? "var(--green)" : "var(--gold)",
+                              borderRadius: "4px", transition: "width 0.5s ease",
+                            }} />
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+
+                <div style={cardStyle}>
+                  <div style={{ padding: "1.2rem 1.5rem", borderBottom: "1px solid var(--warm)" }}>
+                    <h3 className="font-serif" style={{ fontSize: "1.1rem", fontWeight: 600 }}>Payment Collection Rate</h3>
+                  </div>
+                  <div style={{ padding: "1rem 1.5rem" }}>
+                    {reportData.collectionRates.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center" style={{ padding: "2rem", color: "var(--muted)" }}>
+                        <BarChart3 size={28} style={{ marginBottom: "0.5rem", opacity: 0.4 }} />
+                        <span style={{ fontSize: "0.85rem" }}>No collection data</span>
+                      </div>
+                    ) : (
+                      reportData.collectionRates.map((m, i) => (
+                        <div key={m.month} style={{ padding: "0.6rem 0", borderBottom: i < reportData.collectionRates.length - 1 ? "1px solid var(--warm)" : "none" }}>
+                          <div className="flex justify-between items-center" style={{ marginBottom: "0.3rem" }}>
+                            <span style={{ fontSize: "0.8rem" }}>{m.month}</span>
+                            <span className="font-serif" style={{
+                              fontSize: "0.85rem", fontWeight: 600,
+                              color: m.rate >= 95 ? "var(--green)" : m.rate >= 90 ? "var(--gold)" : "var(--rust)",
+                            }}>
+                              {m.rate}%
+                            </span>
+                          </div>
+                          <div style={{ background: "var(--warm)", borderRadius: "4px", height: "5px", overflow: "hidden" }}>
+                            <div style={{
+                              width: `${m.rate}%`, height: "100%",
+                              background: m.rate >= 95 ? "var(--green)" : m.rate >= 90 ? "var(--gold)" : "var(--rust)",
+                              borderRadius: "4px",
+                            }} />
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Rent Arrears */}
+              <div style={cardStyle}>
+                <div style={{ padding: "1.2rem 1.5rem", borderBottom: "1px solid var(--warm)" }}>
+                  <h3 className="font-serif" style={{ fontSize: "1.1rem", fontWeight: 600 }}>Rent Arrears</h3>
+                </div>
+                {reportData.arrearsData.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center" style={{ padding: "2rem", color: "var(--muted)" }}>
+                    <AlertTriangle size={28} style={{ marginBottom: "0.5rem", opacity: 0.4 }} />
+                    <span style={{ fontSize: "0.85rem" }}>No overdue payments</span>
+                  </div>
+                ) : (
+                  <div>
+                    {reportData.arrearsData.map((tenant, i) => (
+                      <div
+                        key={tenant.tenant}
+                        className="items-center row-hover"
+                        style={{
+                          display: "grid", gridTemplateColumns: "1fr auto auto",
+                          gap: "1rem", padding: "1rem 1.5rem",
+                          borderBottom: i < reportData.arrearsData.length - 1 ? "1px solid var(--warm)" : "none",
+                        }}
+                      >
+                        <div>
+                          <h4 style={{ fontSize: "0.85rem", fontWeight: 500, marginBottom: "0.15rem" }}>{tenant.tenant}</h4>
+                          <span style={{ fontSize: "0.7rem", color: "var(--muted)" }}>
+                            {tenant.property}{tenant.unit ? ` · Unit ${tenant.unit}` : ""}
+                          </span>
+                        </div>
+                        <span className="font-serif" style={{ fontSize: "1rem", fontWeight: 600, color: "var(--rust)" }}>
+                          KES {tenant.amount.toLocaleString()}
+                        </span>
+                        <span className="status-pill" style={{ background: "var(--red-light)", color: "var(--red-soft)" }}>
+                          {tenant.days} days overdue
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </>
+          ) : null}
+        </>
+      )}
+
       {/* Prompt to select landlord */}
-      {tab !== "accounts" && tab !== "overview" && !selectedLandlord && (
+      {tab !== "accounts" && tab !== "overview" && tab !== "reports" && !selectedLandlord && (
         <div className="flex flex-col items-center justify-center" style={{ padding: "4rem", color: "var(--muted)" }}>
           <Users size={40} style={{ marginBottom: "1rem", opacity: 0.3 }} />
           <span style={{ fontSize: "0.95rem" }}>Select a landlord above to manage their data</span>
