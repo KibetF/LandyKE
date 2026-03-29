@@ -4,7 +4,16 @@ import { useState, useEffect, useCallback } from "react";
 import {
   UserPlus, Users, Check, AlertCircle, Home, CreditCard,
   Building2, Plus, ChevronDown, Pencil, Trash2, X,
+  LayoutDashboard, FileText, Send,
 } from "lucide-react";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
 
 interface Landlord {
   id: string;
@@ -52,7 +61,47 @@ interface AdminViewProps {
   landlords: Landlord[];
 }
 
-type Tab = "accounts" | "properties" | "tenants" | "payments";
+type Tab = "overview" | "accounts" | "properties" | "tenants" | "payments";
+
+interface OverviewProperty {
+  id: string;
+  name: string;
+  location: string | null;
+  totalUnits: number;
+  occupiedUnits: number;
+  occupancyRate: number;
+  tenantsPaid: number;
+  totalTenants: number;
+  collected: number;
+  expected: number;
+}
+
+interface LandlordOverview {
+  id: string;
+  name: string;
+  email: string;
+  totalProperties: number;
+  totalUnits: number;
+  activeTenants: number;
+  totalCollected: number;
+  totalExpected: number;
+  collectionRate: number;
+  properties: OverviewProperty[];
+}
+
+interface OverviewData {
+  totals: {
+    landlords: number;
+    properties: number;
+    units: number;
+    activeTenants: number;
+    collected: number;
+    occupancyRate: number;
+  };
+  landlordOverviews: LandlordOverview[];
+  incomeChart: { month: string; collected: number; expected: number }[];
+  currentMonth: string;
+}
 
 const UNIT_TYPES = ["Studio", "1 Bedroom", "2 Bedroom", "3 Bedroom", "4 Bedroom", "Bedsitter", "Shop", "Office"];
 
@@ -140,9 +189,14 @@ function Message({ message }: { message: { type: "success" | "error"; text: stri
 }
 
 export default function AdminView({ landlords: initialLandlords }: AdminViewProps) {
-  const [tab, setTab] = useState<Tab>("accounts");
+  const [tab, setTab] = useState<Tab>("overview");
   const [landlords, setLandlords] = useState(initialLandlords);
   const [selectedLandlord, setSelectedLandlord] = useState<Landlord | null>(null);
+
+  // Overview state
+  const [overviewData, setOverviewData] = useState<OverviewData | null>(null);
+  const [overviewLoading, setOverviewLoading] = useState(true);
+  const [expandedLandlord, setExpandedLandlord] = useState<string | null>(null);
 
   // Data states
   const [properties, setProperties] = useState<Property[]>([]);
@@ -193,6 +247,40 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
       fetchPayments(selectedLandlord.id);
     }
   }, [selectedLandlord, fetchProperties, fetchTenants, fetchPayments]);
+
+  const fetchOverview = useCallback(async () => {
+    setOverviewLoading(true);
+    try {
+      const res = await fetch("/api/admin/overview");
+      const data = await res.json();
+      if (res.ok) setOverviewData(data);
+    } catch { /* ignore */ }
+    setOverviewLoading(false);
+  }, []);
+
+  useEffect(() => {
+    fetchOverview();
+  }, [fetchOverview]);
+
+  function sendWhatsAppReport(landlord: LandlordOverview) {
+    const month = new Date().toLocaleDateString("en-KE", { month: "long", year: "numeric" });
+    let msg = `*LandyKE Report — ${month}*\n\n`;
+    msg += `Hi ${landlord.name.split(" ")[0]},\n\n`;
+    msg += `*Summary:*\n`;
+    msg += `Properties: ${landlord.totalProperties}\n`;
+    msg += `Active Tenants: ${landlord.activeTenants}\n`;
+    msg += `Collected: KES ${landlord.totalCollected.toLocaleString()}\n`;
+    msg += `Expected: KES ${landlord.totalExpected.toLocaleString()}\n`;
+    msg += `Collection Rate: ${landlord.collectionRate}%\n\n`;
+    msg += `*Property Breakdown:*\n`;
+    landlord.properties.forEach((p) => {
+      msg += `\n_${p.name}_\n`;
+      msg += `${p.occupiedUnits}/${p.totalUnits} occupied (${p.occupancyRate}%)\n`;
+      msg += `${p.tenantsPaid}/${p.totalTenants} paid · KES ${p.collected.toLocaleString()}\n`;
+    });
+    msg += `\n— LandyKE`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, "_blank");
+  }
 
   // === CREATE HANDLERS ===
 
@@ -489,6 +577,7 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
   }
 
   const tabs: { key: Tab; label: string; icon: React.ElementType }[] = [
+    { key: "overview", label: "Overview", icon: LayoutDashboard },
     { key: "accounts", label: "Accounts", icon: Users },
     { key: "properties", label: "Properties", icon: Home },
     { key: "tenants", label: "Tenants", icon: Users },
@@ -549,8 +638,205 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
         })}
       </div>
 
+      {/* === OVERVIEW TAB === */}
+      {tab === "overview" && (
+        overviewLoading ? (
+          <div className="flex flex-col items-center justify-center" style={{ padding: "4rem", color: "var(--muted)" }}>
+            <LayoutDashboard size={40} style={{ marginBottom: "1rem", opacity: 0.3 }} />
+            <span style={{ fontSize: "0.95rem" }}>Loading overview...</span>
+          </div>
+        ) : overviewData ? (
+          <>
+            {/* Global KPIs */}
+            <div className="reports-kpi-grid" style={{ marginBottom: "1.5rem" }}>
+              {[
+                { label: "Landlords", value: overviewData.totals.landlords, color: "var(--ink)" },
+                { label: "Properties", value: overviewData.totals.properties, color: "var(--gold)" },
+                { label: "Total Units", value: overviewData.totals.units, color: "#1a5296" },
+                { label: "Active Tenants", value: overviewData.totals.activeTenants, color: "var(--green)" },
+                { label: "Collected This Month", value: `KES ${overviewData.totals.collected.toLocaleString()}`, color: "var(--green)" },
+                { label: "Occupancy Rate", value: `${overviewData.totals.occupancyRate}%`, color: "var(--gold)" },
+              ].map((kpi) => (
+                <div key={kpi.label} style={{ ...cardStyle, padding: "1rem 1.2rem" }}>
+                  <span style={{ fontSize: "0.6rem", textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--muted)" }}>
+                    {kpi.label}
+                  </span>
+                  <div className="font-serif" style={{ fontSize: "1.3rem", fontWeight: 600, color: kpi.color }}>
+                    {kpi.value}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Income Chart */}
+            {overviewData.incomeChart.length > 0 && (
+              <div style={{ ...cardStyle, marginBottom: "1.5rem" }}>
+                <div style={{ padding: "1.2rem 1.5rem", borderBottom: "1px solid var(--warm)" }}>
+                  <h3 className="font-serif" style={{ fontSize: "1.1rem", fontWeight: 600 }}>
+                    Total Income — All Clients
+                  </h3>
+                </div>
+                <div style={{ padding: "1.5rem", height: "220px" }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={overviewData.incomeChart} barGap={2} barCategoryGap="20%">
+                      <XAxis dataKey="month" tickLine={false} axisLine={false} tick={{ fontSize: 10, fill: "#7a7468" }} />
+                      <YAxis hide />
+                      <Tooltip
+                        formatter={(value) => `KES ${(Number(value) / 1000).toFixed(0)}k`}
+                        contentStyle={{ background: "var(--white)", border: "1px solid var(--warm)", borderRadius: "4px", fontSize: "0.75rem" }}
+                      />
+                      <Bar dataKey="expected" fill="#ede6d6" radius={[3, 3, 0, 0]} name="Expected" />
+                      <Bar dataKey="collected" fill="#c8963e" radius={[3, 3, 0, 0]} name="Collected" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            )}
+
+            {/* Per-landlord breakdown */}
+            <div style={{ marginBottom: "0.75rem" }}>
+              <h3 className="font-serif" style={{ fontSize: "1.1rem", fontWeight: 600, color: "var(--ink)" }}>
+                Client Portfolios
+              </h3>
+            </div>
+
+            {overviewData.landlordOverviews.map((landlord) => (
+              <div key={landlord.id} style={{ ...cardStyle, marginBottom: "1rem" }}>
+                {/* Landlord header */}
+                <div
+                  className="row-hover"
+                  style={{ padding: "1rem 1.5rem", cursor: "pointer", borderBottom: expandedLandlord === landlord.id ? "1px solid var(--warm)" : "none" }}
+                  onClick={() => setExpandedLandlord(expandedLandlord === landlord.id ? null : landlord.id)}
+                >
+                  <div className="flex justify-between items-center">
+                    <div className="flex items-center" style={{ gap: "0.75rem" }}>
+                      <div style={{
+                        width: "36px", height: "36px", borderRadius: "50%",
+                        background: "var(--gold)", color: "var(--white)",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        fontSize: "0.8rem", fontWeight: 600,
+                      }}>
+                        {landlord.name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()}
+                      </div>
+                      <div>
+                        <h4 style={{ fontSize: "0.9rem", fontWeight: 600, marginBottom: "0.1rem" }}>{landlord.name}</h4>
+                        <span style={{ fontSize: "0.7rem", color: "var(--muted)" }}>
+                          {landlord.totalProperties} properties · {landlord.activeTenants} tenants · {landlord.totalUnits} units
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex items-center" style={{ gap: "1rem" }}>
+                      <div className="text-right" style={{ marginRight: "0.5rem" }}>
+                        <span className="font-serif" style={{ fontSize: "1rem", fontWeight: 600, color: "var(--green)" }}>
+                          KES {landlord.totalCollected.toLocaleString()}
+                        </span>
+                        <span style={{ display: "block", fontSize: "0.65rem", color: "var(--muted)" }}>
+                          of KES {landlord.totalExpected.toLocaleString()} · {landlord.collectionRate}%
+                        </span>
+                      </div>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); sendWhatsAppReport(landlord); }}
+                        className="flex items-center"
+                        style={{
+                          gap: "0.3rem", background: "#25D366", color: "#fff", border: "none",
+                          padding: "0.4rem 0.7rem", fontSize: "0.7rem", borderRadius: "4px", cursor: "pointer",
+                          fontFamily: "var(--font-sans), sans-serif",
+                        }}
+                        title="Send report via WhatsApp"
+                      >
+                        <Send size={12} />
+                        WhatsApp
+                      </button>
+                      <ChevronDown
+                        size={16}
+                        style={{
+                          color: "var(--muted)",
+                          transition: "transform 0.2s",
+                          transform: expandedLandlord === landlord.id ? "rotate(180deg)" : "rotate(0deg)",
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Expanded property details */}
+                {expandedLandlord === landlord.id && (
+                  <div>
+                    {landlord.properties.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center" style={{ padding: "1.5rem", color: "var(--muted)" }}>
+                        <Home size={24} style={{ marginBottom: "0.5rem", opacity: 0.4 }} />
+                        <span style={{ fontSize: "0.8rem" }}>No properties yet</span>
+                      </div>
+                    ) : (
+                      landlord.properties.map((prop, i) => (
+                        <div
+                          key={prop.id}
+                          style={{
+                            padding: "1rem 1.5rem",
+                            borderBottom: i < landlord.properties.length - 1 ? "1px solid var(--warm)" : "none",
+                            background: "var(--cream)",
+                          }}
+                        >
+                          <div className="flex justify-between items-center" style={{ marginBottom: "0.6rem" }}>
+                            <div>
+                              <h5 style={{ fontSize: "0.85rem", fontWeight: 600, marginBottom: "0.1rem" }}>{prop.name}</h5>
+                              <span style={{ fontSize: "0.7rem", color: "var(--muted)" }}>
+                                {prop.location || "No location"} · {prop.totalUnits} units
+                              </span>
+                            </div>
+                            <div className="text-right">
+                              <span className="font-serif" style={{ fontSize: "0.9rem", fontWeight: 600, color: prop.collected > 0 ? "var(--green)" : "var(--muted)" }}>
+                                KES {prop.collected.toLocaleString()}
+                              </span>
+                              <span style={{ display: "block", fontSize: "0.65rem", color: "var(--muted)" }}>
+                                of KES {prop.expected.toLocaleString()}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="flex items-center" style={{ gap: "1.5rem" }}>
+                            {/* Occupancy bar */}
+                            <div style={{ flex: 1 }}>
+                              <div className="flex justify-between" style={{ fontSize: "0.65rem", color: "var(--muted)", marginBottom: "0.25rem" }}>
+                                <span>Occupancy</span>
+                                <span>{prop.occupiedUnits}/{prop.totalUnits} ({prop.occupancyRate}%)</span>
+                              </div>
+                              <div style={{ background: "var(--warm)", borderRadius: "4px", height: "6px", overflow: "hidden" }}>
+                                <div style={{
+                                  width: `${prop.occupancyRate}%`, height: "100%",
+                                  background: prop.occupancyRate === 100 ? "var(--green)" : prop.occupancyRate >= 70 ? "var(--gold)" : "var(--rust)",
+                                  borderRadius: "4px", transition: "width 0.5s ease",
+                                }} />
+                              </div>
+                            </div>
+                            {/* Payment status */}
+                            <div style={{ minWidth: "100px" }}>
+                              <div className="flex justify-between" style={{ fontSize: "0.65rem", color: "var(--muted)", marginBottom: "0.25rem" }}>
+                                <span>Payments</span>
+                                <span>{prop.tenantsPaid}/{prop.totalTenants} paid</span>
+                              </div>
+                              <div style={{ background: "var(--warm)", borderRadius: "4px", height: "6px", overflow: "hidden" }}>
+                                <div style={{
+                                  width: prop.totalTenants > 0 ? `${Math.round((prop.tenantsPaid / prop.totalTenants) * 100)}%` : "0%",
+                                  height: "100%",
+                                  background: prop.tenantsPaid === prop.totalTenants && prop.totalTenants > 0 ? "var(--green)" : "var(--gold)",
+                                  borderRadius: "4px",
+                                }} />
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                )}
+              </div>
+            ))}
+          </>
+        ) : null
+      )}
+
       {/* Landlord selector */}
-      {tab !== "accounts" && (
+      {tab !== "accounts" && tab !== "overview" && (
         <div style={{ marginBottom: "1.5rem" }}>
           <label style={labelStyle}>Select Landlord</label>
           <div style={{ position: "relative", maxWidth: "400px" }}>
@@ -996,7 +1282,7 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
       )}
 
       {/* Prompt to select landlord */}
-      {tab !== "accounts" && !selectedLandlord && (
+      {tab !== "accounts" && tab !== "overview" && !selectedLandlord && (
         <div className="flex flex-col items-center justify-center" style={{ padding: "4rem", color: "var(--muted)" }}>
           <Users size={40} style={{ marginBottom: "1rem", opacity: 0.3 }} />
           <span style={{ fontSize: "0.95rem" }}>Select a landlord above to manage their data</span>
