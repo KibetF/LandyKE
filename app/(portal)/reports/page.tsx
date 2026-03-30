@@ -34,7 +34,7 @@ export default async function ReportsPage({
   let occupancyData: { name: string; total: number; occupied: number; rate: number }[] = [];
   let collectionRates: { month: string; rate: number }[] = [];
   let arrearsData: { tenant: string; property: string; unit: string; amount: number; days: number }[] = [];
-  let tenantStatusData: { name: string; property: string; amount: number; date: string; status: "paid" | "pending" | "overdue" }[] = [];
+  let tenantStatusData: { name: string; property: string; unit: string; amount: number; date: string; status: "paid" | "pending" | "overdue" }[] = [];
 
   if (user) {
     const landlord = await getLandlord(supabase, user.id);
@@ -69,6 +69,7 @@ export default async function ReportsPage({
         tenantStatusData = statusList.map((t) => ({
           name: t.name,
           property: t.property,
+          unit: t.unit,
           amount: t.amount,
           date: t.date,
           status: t.status,

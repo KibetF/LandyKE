@@ -135,6 +135,7 @@ interface TenantPaymentReportData {
   tenants: {
     name: string;
     property: string;
+    unit?: string;
     amount: number;
     date: string;
     status: "paid" | "pending" | "overdue";
@@ -197,11 +198,12 @@ export function generateTenantPaymentReport(data: TenantPaymentReportData) {
 
   autoTable(doc, {
     startY: y,
-    head: [["#", "Tenant Name", "Property", "Rent (KES)", "Status", "Payment Date"]],
+    head: [["#", "Tenant Name", "Property", "Unit", "Rent (KES)", "Status", "Payment Date"]],
     body: data.tenants.map((t, i) => [
       (i + 1).toString(),
       t.name,
       t.property,
+      t.unit || "—",
       `KES ${t.amount.toLocaleString()}`,
       t.status.charAt(0).toUpperCase() + t.status.slice(1),
       t.date,
@@ -225,11 +227,12 @@ export function generateTenantPaymentReport(data: TenantPaymentReportData) {
     columnStyles: {
       0: { halign: "center", cellWidth: 10 },
       1: { fontStyle: "bold" },
-      3: { halign: "right" },
-      4: { halign: "center" },
+      3: { halign: "center" },
+      4: { halign: "right" },
+      5: { halign: "center" },
     },
     didParseCell: (hookData) => {
-      if (hookData.section === "body" && hookData.column.index === 4) {
+      if (hookData.section === "body" && hookData.column.index === 5) {
         const val = (hookData.cell.raw as string).toLowerCase();
         if (val === "paid") {
           hookData.cell.styles.textColor = COLORS.green;

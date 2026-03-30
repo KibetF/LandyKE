@@ -85,7 +85,7 @@ interface AdminReportData {
   occupancyData: { name: string; total: number; occupied: number; rate: number }[];
   collectionRates: { month: string; rate: number }[];
   arrearsData: { tenant: string; property: string; unit: string; amount: number; days: number }[];
-  tenantStatusData: { name: string; property: string; amount: number; date: string; status: "paid" | "pending" | "overdue" }[];
+  tenantStatusData: { name: string; property: string; unit?: string; amount: number; date: string; status: "paid" | "pending" | "overdue" }[];
   propertyBreakdown: PropertyBreakdown[];
   selectedMonth: string;
 }
@@ -407,12 +407,12 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
 
     if (paid.length > 0) {
       msg += `*Paid (${paid.length}):*\n`;
-      paid.forEach((t) => { msg += `✓ ${t.name} — KES ${t.amount.toLocaleString()}\n`; });
+      paid.forEach((t) => { msg += `✓ ${t.name}${t.unit ? ` (Unit ${t.unit})` : ""} — KES ${t.amount.toLocaleString()}\n`; });
       msg += `\n`;
     }
     if (unpaid.length > 0) {
       msg += `*Not Paid (${unpaid.length}):*\n`;
-      unpaid.forEach((t) => { msg += `✗ ${t.name} — KES ${t.amount.toLocaleString()} (${t.status})\n`; });
+      unpaid.forEach((t) => { msg += `✗ ${t.name}${t.unit ? ` (Unit ${t.unit})` : ""} — KES ${t.amount.toLocaleString()} (${t.status})\n`; });
     }
     msg += `\n— LandyKE`;
     window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, "_blank");

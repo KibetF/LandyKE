@@ -138,6 +138,7 @@ export async function GET(request: NextRequest) {
     return {
       name: t.full_name,
       property: getPropertyName(t),
+      unit: t.unit_number || "",
       amount: Number(t.rent_amount),
       date,
       status,

@@ -229,7 +229,7 @@ export function computePropertyBreakdown(
 const AVATAR_COLORS = ["#4a5c4e", "#8b3a2a", "#c8963e", "#2d6a4f", "#6b3d8a", "#3d6b8a", "#1a5296", "#8b6914"];
 
 export function computeTenantStatus(
-  tenants: Array<{ id: string; full_name: string; rent_amount: number; property_id: string; created_at?: string; properties?: { name: string; location: string | null } }>,
+  tenants: Array<{ id: string; full_name: string; rent_amount: number; property_id: string; unit_number?: string | null; created_at?: string; properties?: { name: string; location: string | null } }>,
   payments: Array<{ tenant_id: string; amount: number; paid_date: string | null; status: string }>,
   monthKey: string
 ) {
@@ -268,6 +268,7 @@ export function computeTenantStatus(
       color: AVATAR_COLORS[i % AVATAR_COLORS.length],
       name: t.full_name,
       property: t.properties?.name || "",
+      unit: t.unit_number || "",
       amount: Number(t.rent_amount),
       date,
       status,
