@@ -77,6 +77,8 @@ interface PropertyBreakdown {
   tenantsPaid: number;
   collected: number;
   expected: number;
+  receivedInAccount?: number;
+  paidToExternal?: number;
   rate: number;
 }
 
@@ -85,7 +87,7 @@ interface AdminReportData {
   occupancyData: { name: string; total: number; occupied: number; rate: number }[];
   collectionRates: { month: string; rate: number }[];
   arrearsData: { tenant: string; property: string; unit: string; amount: number; days: number }[];
-  tenantStatusData: { name: string; property: string; unit?: string; amount: number; date: string; status: "paid" | "pending" | "overdue" }[];
+  tenantStatusData: { name: string; property: string; unit?: string; amount: number; date: string; status: "paid" | "pending" | "overdue"; notes?: string }[];
   propertyBreakdown: PropertyBreakdown[];
   selectedMonth: string;
 }
@@ -369,12 +371,18 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
     const totalRevenue = reportData.incomeData.reduce((s, d) => s + d.collected, 0);
     const totalExpected = reportData.incomeData.reduce((s, d) => s + d.expected, 0);
     const collectionRate = totalExpected > 0 ? Math.round((totalRevenue / totalExpected) * 100) : 0;
+    const totals = reportData.propertyBreakdown.reduce((acc, p) => ({
+      receivedInAccount: acc.receivedInAccount + (p.receivedInAccount || 0),
+      paidToExternal: acc.paidToExternal + (p.paidToExternal || 0),
+    }), { receivedInAccount: 0, paidToExternal: 0 });
     generateTenantPaymentReport({
       month: formatMonthLabel(reportMonth),
       tenants: reportData.tenantStatusData,
       totalCollected: totalRevenue,
       totalExpected,
       collectionRate,
+      receivedInAccount: totals.receivedInAccount,
+      paidToExternal: totals.paidToExternal,
     });
   }
 
@@ -388,6 +396,8 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
       totalCollected: propBreakdown?.collected || 0,
       totalExpected: propBreakdown?.expected || 0,
       collectionRate: propBreakdown?.rate || 0,
+      receivedInAccount: propBreakdown?.receivedInAccount,
+      paidToExternal: propBreakdown?.paidToExternal,
     });
   }
 
@@ -1730,7 +1740,7 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
                                       <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.8rem" }}>
                                         <thead>
                                           <tr style={{ borderBottom: "1px solid rgba(200,150,62,0.15)" }}>
-                                            {["#", "Tenant", "Unit", "Rent (KES)", "Status", "Payment Date"].map((h) => (
+                                            {["#", "Tenant", "Unit", "Rent (KES)", "Status", "Payment Date", "Channel"].map((h) => (
                                               <th key={h} style={{ padding: "0.6rem 1rem", textAlign: "left", fontSize: "0.65rem", textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--muted)", fontWeight: 600 }}>
                                                 {h}
                                               </th>
@@ -1738,25 +1748,45 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
                                           </tr>
                                         </thead>
                                         <tbody>
-                                          {propertyTenants.map((t, ti) => (
-                                            <tr key={t.name + ti} style={{ borderBottom: ti < propertyTenants.length - 1 ? "1px solid rgba(200,150,62,0.1)" : "none" }}>
-                                              <td style={{ padding: "0.6rem 1rem", color: "var(--muted)" }}>{ti + 1}</td>
-                                              <td style={{ padding: "0.6rem 1rem", fontWeight: 500 }}>{t.name}</td>
-                                              <td style={{ padding: "0.6rem 1rem", color: "var(--muted)" }}>{t.unit || "—"}</td>
-                                              <td style={{ padding: "0.6rem 1rem" }}>KES {t.amount.toLocaleString()}</td>
-                                              <td style={{ padding: "0.6rem 1rem" }}>
-                                                <span className="status-pill" style={{
-                                                  background: t.status === "paid" ? "var(--green-light)" : t.status === "pending" ? "var(--gold-light)" : "var(--red-light)",
-                                                  color: t.status === "paid" ? "var(--green)" : t.status === "pending" ? "var(--gold)" : "var(--rust)",
-                                                }}>
-                                                  {t.status.charAt(0).toUpperCase() + t.status.slice(1)}
-                                                </span>
-                                              </td>
-                                              <td style={{ padding: "0.6rem 1rem", fontSize: "0.75rem", color: "var(--muted)" }}>{t.date}</td>
-                                            </tr>
-                                          ))}
+                                          {propertyTenants.map((t, ti) => {
+                                            const isExternal = t.notes && /kcb/i.test(t.notes);
+                                            return (
+                                              <tr key={t.name + ti} style={{ borderBottom: ti < propertyTenants.length - 1 ? "1px solid rgba(200,150,62,0.1)" : "none" }}>
+                                                <td style={{ padding: "0.6rem 1rem", color: "var(--muted)" }}>{ti + 1}</td>
+                                                <td style={{ padding: "0.6rem 1rem", fontWeight: 500 }}>{t.name}</td>
+                                                <td style={{ padding: "0.6rem 1rem", color: "var(--muted)" }}>{t.unit || "—"}</td>
+                                                <td style={{ padding: "0.6rem 1rem" }}>KES {t.amount.toLocaleString()}</td>
+                                                <td style={{ padding: "0.6rem 1rem" }}>
+                                                  <span className="status-pill" style={{
+                                                    background: t.status === "paid" ? "var(--green-light)" : t.status === "pending" ? "var(--gold-light)" : "var(--red-light)",
+                                                    color: t.status === "paid" ? "var(--green)" : t.status === "pending" ? "var(--gold)" : "var(--rust)",
+                                                  }}>
+                                                    {t.status.charAt(0).toUpperCase() + t.status.slice(1)}
+                                                  </span>
+                                                </td>
+                                                <td style={{ padding: "0.6rem 1rem", fontSize: "0.75rem", color: "var(--muted)" }}>{t.date}</td>
+                                                <td style={{ padding: "0.6rem 1rem" }}>
+                                                  {isExternal ? (
+                                                    <span style={{ display: "inline-block", padding: "0.15rem 0.5rem", fontSize: "0.65rem", fontWeight: 600, borderRadius: "3px", background: "#fff3e0", color: "#e65100", border: "1px solid #ffcc80" }}>
+                                                      KCB
+                                                    </span>
+                                                  ) : t.status === "paid" ? (
+                                                    <span style={{ fontSize: "0.7rem", color: "var(--green)" }}>Our A/C</span>
+                                                  ) : null}
+                                                </td>
+                                              </tr>
+                                            );
+                                          })}
                                         </tbody>
                                       </table>
+                                      {/* Reconciliation footer */}
+                                      {(prop.paidToExternal || 0) > 0 && (
+                                        <div style={{ padding: "0.6rem 1rem", background: "#fff8e1", borderTop: "1px solid #ffcc80", fontSize: "0.75rem", display: "flex", gap: "1.5rem", alignItems: "center" }}>
+                                          <span style={{ color: "#e65100", fontWeight: 600 }}>Reconciliation:</span>
+                                          <span>Received in our A/C: <strong style={{ color: "var(--green)" }}>KES {(prop.receivedInAccount || 0).toLocaleString()}</strong></span>
+                                          <span>Paid to KCB (old A/C): <strong style={{ color: "#e65100" }}>KES {(prop.paidToExternal || 0).toLocaleString()}</strong></span>
+                                        </div>
+                                      )}
                                       <div style={{ padding: "0.6rem 1rem", display: "flex", justifyContent: "flex-end", gap: "0.5rem" }}>
                                         <button
                                           onClick={() => downloadPropertyReport(prop.name)}

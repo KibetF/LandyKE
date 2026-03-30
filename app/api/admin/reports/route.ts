@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
   const [propertyRes, tenantRes, paymentRes] = await Promise.all([
     adminClient.schema("landyke").from("properties").select("id, name, location, total_units, collection_start_month").eq("landlord_id", landlordId),
     adminClient.schema("landyke").from("tenants").select("id, full_name, rent_amount, status, property_id, unit_number, unit_type, created_at, properties(name)").eq("landlord_id", landlordId).eq("status", "active"),
-    adminClient.schema("landyke").from("payments").select("id, amount, paid_date, status, tenant_id, landlord_id, tenants(full_name, property_id, properties(name))").eq("landlord_id", landlordId).order("paid_date", { ascending: false }),
+    adminClient.schema("landyke").from("payments").select("id, amount, paid_date, status, notes, tenant_id, landlord_id, tenants(full_name, property_id, properties(name))").eq("landlord_id", landlordId).order("paid_date", { ascending: false }),
   ]);
 
   const properties = propertyRes.data || [];
@@ -125,14 +125,17 @@ export async function GET(request: NextRequest) {
 
     let status: "paid" | "pending" | "overdue" = "overdue";
     let date = "No payment";
+    let paymentNotes = "";
     if (paidPayment && paidPayment.paid_date) {
       status = "paid";
       date = new Date(paidPayment.paid_date).toLocaleDateString("en-KE", { day: "numeric", month: "short", year: "numeric" });
+      paymentNotes = paidPayment.notes || "";
     } else if (pendingPayment) {
       status = "pending";
       date = pendingPayment.paid_date
         ? `Due ${new Date(pendingPayment.paid_date).toLocaleDateString("en-KE", { day: "numeric", month: "short" })}`
         : "Pending";
+      paymentNotes = pendingPayment.notes || "";
     }
 
     return {
@@ -142,6 +145,7 @@ export async function GET(request: NextRequest) {
       amount: Number(t.rent_amount),
       date,
       status,
+      notes: paymentNotes,
     };
   });
 
@@ -154,6 +158,8 @@ export async function GET(request: NextRequest) {
         pTenants.some((t) => t.id === p.tenant_id)
     );
     const pCollected = pPaidPayments.reduce((s, p) => s + Number(p.amount), 0);
+    const pExternalPayments = pPaidPayments.filter((p) => p.notes && /kcb/i.test(p.notes));
+    const pExternal = pExternalPayments.reduce((s, p) => s + Number(p.amount), 0);
     const paidTenantIds = new Set(pPaidPayments.map((p) => p.tenant_id));
     const tenantsPaid = pTenants.filter((t) => paidTenantIds.has(t.id)).length;
 
@@ -164,6 +170,8 @@ export async function GET(request: NextRequest) {
       tenantsPaid,
       collected: pCollected,
       expected: pExpected,
+      receivedInAccount: pCollected - pExternal,
+      paidToExternal: pExternal,
       rate: pExpected > 0 ? Math.round((pCollected / pExpected) * 100) : 0,
     };
   });

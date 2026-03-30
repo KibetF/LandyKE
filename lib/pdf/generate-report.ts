@@ -139,10 +139,13 @@ interface TenantPaymentReportData {
     amount: number;
     date: string;
     status: "paid" | "pending" | "overdue";
+    notes?: string;
   }[];
   totalCollected: number;
   totalExpected: number;
   collectionRate: number;
+  receivedInAccount?: number;
+  paidToExternal?: number;
 }
 
 export function generateTenantPaymentReport(data: TenantPaymentReportData) {
@@ -180,8 +183,10 @@ export function generateTenantPaymentReport(data: TenantPaymentReportData) {
   y += 28;
 
   // Financial summary line
+  const hasExternal = (data.paidToExternal || 0) > 0;
+  const summaryHeight = hasExternal ? 20 : 12;
   doc.setFillColor(...COLORS.cream);
-  doc.roundedRect(20, y, 170, 12, 2, 2, "F");
+  doc.roundedRect(20, y, 170, summaryHeight, 2, 2, "F");
   doc.setFont("helvetica", "bold");
   doc.setFontSize(7.5);
   doc.setTextColor(...COLORS.ink);
@@ -190,24 +195,38 @@ export function generateTenantPaymentReport(data: TenantPaymentReportData) {
     25,
     y + 7.5
   );
+  if (hasExternal) {
+    doc.setFontSize(6.5);
+    doc.setTextColor(230, 81, 0);
+    doc.text(
+      `Received in our A/C: KES ${(data.receivedInAccount || 0).toLocaleString()}  |  Paid to old A/C (KCB): KES ${(data.paidToExternal || 0).toLocaleString()}`,
+      25,
+      y + 15
+    );
+  }
 
-  y += 20;
+  y += summaryHeight + 8;
 
   // Tenant payment table
   y = addSectionTitle(doc, "Payment Status by Tenant", y);
 
   autoTable(doc, {
     startY: y,
-    head: [["#", "Tenant Name", "Property", "Unit", "Rent (KES)", "Status", "Payment Date"]],
-    body: data.tenants.map((t, i) => [
-      (i + 1).toString(),
-      t.name,
-      t.property,
-      t.unit || "—",
-      `KES ${t.amount.toLocaleString()}`,
-      t.status.charAt(0).toUpperCase() + t.status.slice(1),
-      t.date,
-    ]),
+    head: [["#", "Tenant Name", "Property", "Unit", "Rent (KES)", "Status", "Payment Date", hasExternal ? "Channel" : ""].filter(Boolean)],
+    body: data.tenants.map((t, i) => {
+      const isKcb = t.notes && /kcb/i.test(t.notes);
+      const row = [
+        (i + 1).toString(),
+        t.name,
+        t.property,
+        t.unit || "—",
+        `KES ${t.amount.toLocaleString()}`,
+        t.status.charAt(0).toUpperCase() + t.status.slice(1),
+        t.date,
+      ];
+      if (hasExternal) row.push(isKcb ? "KCB" : t.status === "paid" ? "Our A/C" : "");
+      return row;
+    }),
     theme: "plain",
     styles: {
       font: "helvetica",
@@ -230,6 +249,7 @@ export function generateTenantPaymentReport(data: TenantPaymentReportData) {
       3: { halign: "center" },
       4: { halign: "right" },
       5: { halign: "center" },
+      ...(hasExternal ? { 7: { halign: "center", fontSize: 7 } } : {}),
     },
     didParseCell: (hookData) => {
       if (hookData.section === "body" && hookData.column.index === 5) {
@@ -242,6 +262,16 @@ export function generateTenantPaymentReport(data: TenantPaymentReportData) {
           hookData.cell.styles.textColor = COLORS.rust;
         }
         hookData.cell.styles.fontStyle = "bold";
+      }
+      // Color the Channel column
+      if (hasExternal && hookData.section === "body" && hookData.column.index === 7) {
+        const val = (hookData.cell.raw as string);
+        if (val === "KCB") {
+          hookData.cell.styles.textColor = [230, 81, 0];
+          hookData.cell.styles.fontStyle = "bold";
+        } else if (val === "Our A/C") {
+          hookData.cell.styles.textColor = COLORS.green;
+        }
       }
     },
   });
