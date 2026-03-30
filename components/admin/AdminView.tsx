@@ -236,7 +236,7 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
   const [propertyForm, setPropertyForm] = useState({ name: "", location: "", total_units: "" });
   const [tenantForm, setTenantForm] = useState({ property_id: "", full_name: "", email: "", phone: "", rent_amount: "", unit_number: "", unit_type: "" });
   const [paymentPropertyFilter, setPaymentPropertyFilter] = useState("");
-  const [paymentForm, setPaymentForm] = useState({ tenant_id: "", amount: "", paid_date: "", due_date: "", notes: "M-Pesa", status: "paid" });
+  const [paymentForm, setPaymentForm] = useState({ tenant_id: "", amount: "", paid_date: "", due_date: "", method: "M-Pesa", notes: "", status: "paid" });
 
   // Edit modals
   const [editingProperty, setEditingProperty] = useState<Property | null>(null);
@@ -460,7 +460,11 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
       const res = await fetch("/api/admin/payments", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...paymentForm, landlord_id: selectedLandlord.id }),
+        body: JSON.stringify({
+          ...paymentForm,
+          notes: paymentForm.notes ? `${paymentForm.method} — ${paymentForm.notes}` : paymentForm.method,
+          landlord_id: selectedLandlord.id,
+        }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -468,7 +472,7 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
       } else {
         setMessage({ type: "success", text: "Payment recorded" });
         setPayments((prev) => [data.payment, ...prev]);
-        setPaymentForm({ tenant_id: "", amount: "", paid_date: "", due_date: "", notes: "M-Pesa", status: "paid" });
+        setPaymentForm({ tenant_id: "", amount: "", paid_date: "", due_date: "", method: "M-Pesa", notes: "", status: "paid" });
       }
     } catch {
       setMessage({ type: "error", text: "Network error" });
@@ -1313,14 +1317,20 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
                       </select>
                     </div>
                   </div>
-                  <div style={{ marginBottom: "1.5rem" }}>
-                    <label style={labelStyle}>Payment Method / Notes</label>
-                    <select value={paymentForm.notes} onChange={(e) => setPaymentForm((f) => ({ ...f, notes: e.target.value }))} style={inputStyle}>
-                      <option value="M-Pesa">M-Pesa</option>
-                      <option value="Bank Transfer">Bank Transfer</option>
-                      <option value="Cash">Cash</option>
-                      <option value="Cheque">Cheque</option>
-                    </select>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1.5rem" }}>
+                    <div>
+                      <label style={labelStyle}>Payment Method</label>
+                      <select value={paymentForm.method} onChange={(e) => setPaymentForm((f) => ({ ...f, method: e.target.value }))} style={inputStyle}>
+                        <option value="M-Pesa">M-Pesa</option>
+                        <option value="Bank Transfer">Bank Transfer</option>
+                        <option value="Cash">Cash</option>
+                        <option value="Cheque">Cheque</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label style={labelStyle}>Notes</label>
+                      <input type="text" value={paymentForm.notes} onChange={(e) => setPaymentForm((f) => ({ ...f, notes: e.target.value }))} placeholder="e.g. Covers Feb arrears" style={inputStyle} />
+                    </div>
                   </div>
                   <button type="submit" disabled={loading} className="flex items-center justify-center" style={{ ...btnStyle, width: "100%", opacity: loading ? 0.6 : 1 }}>
                     <CreditCard size={16} />
