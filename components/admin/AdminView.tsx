@@ -35,6 +35,7 @@ interface Property {
   location: string | null;
   total_units: number;
   landlord_id: string;
+  collection_start_month: string | null;
 }
 
 interface Tenant {
@@ -237,7 +238,7 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
 
   // Form states
   const [accountForm, setAccountForm] = useState({ full_name: "", email: "", phone: "", password: "" });
-  const [propertyForm, setPropertyForm] = useState({ name: "", location: "", total_units: "" });
+  const [propertyForm, setPropertyForm] = useState({ name: "", location: "", total_units: "", collection_start_month: "" });
   const [tenantForm, setTenantForm] = useState({ property_id: "", full_name: "", email: "", phone: "", rent_amount: "", unit_number: "", unit_type: "" });
   const [paymentPropertyFilter, setPaymentPropertyFilter] = useState("");
   const [paymentForm, setPaymentForm] = useState({ tenant_id: "", amount: "", paid_date: "", due_date: "", method: "M-Pesa", notes: "", status: "paid" });
@@ -248,7 +249,7 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
   const [editingPayment, setEditingPayment] = useState<Payment | null>(null);
 
   // Edit form states
-  const [editPropertyForm, setEditPropertyForm] = useState({ name: "", location: "", total_units: "" });
+  const [editPropertyForm, setEditPropertyForm] = useState({ name: "", location: "", total_units: "", collection_start_month: "" });
   const [editTenantForm, setEditTenantForm] = useState({ full_name: "", email: "", phone: "", rent_amount: "", unit_number: "", unit_type: "", property_id: "", status: "" });
   const [editPaymentForm, setEditPaymentForm] = useState({ amount: "", paid_date: "", due_date: "", notes: "", status: "" });
 
@@ -461,7 +462,7 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
       } else {
         setMessage({ type: "success", text: `${propertyForm.name} added` });
         setProperties((prev) => [data.property, ...prev]);
-        setPropertyForm({ name: "", location: "", total_units: "" });
+        setPropertyForm({ name: "", location: "", total_units: "", collection_start_month: "" });
       }
     } catch {
       setMessage({ type: "error", text: "Network error" });
@@ -686,7 +687,7 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
   // === OPEN EDIT MODALS ===
 
   function openEditProperty(p: Property) {
-    setEditPropertyForm({ name: p.name, location: p.location || "", total_units: String(p.total_units) });
+    setEditPropertyForm({ name: p.name, location: p.location || "", total_units: String(p.total_units), collection_start_month: p.collection_start_month || "" });
     setEditingProperty(p);
   }
 
@@ -1092,9 +1093,15 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
                 <label style={labelStyle}>Location</label>
                 <input type="text" value={propertyForm.location} onChange={(e) => setPropertyForm((f) => ({ ...f, location: e.target.value }))} placeholder="e.g. Near Royalton, Eldoret" style={inputStyle} />
               </div>
-              <div style={{ marginBottom: "1.5rem" }}>
-                <label style={labelStyle}>Total Units *</label>
-                <input type="number" required min={1} value={propertyForm.total_units} onChange={(e) => setPropertyForm((f) => ({ ...f, total_units: e.target.value }))} placeholder="e.g. 18" style={inputStyle} />
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1.5rem" }}>
+                <div>
+                  <label style={labelStyle}>Total Units *</label>
+                  <input type="number" required min={1} value={propertyForm.total_units} onChange={(e) => setPropertyForm((f) => ({ ...f, total_units: e.target.value }))} placeholder="e.g. 18" style={inputStyle} />
+                </div>
+                <div>
+                  <label style={labelStyle}>Collection Start Month</label>
+                  <input type="month" value={propertyForm.collection_start_month} onChange={(e) => setPropertyForm((f) => ({ ...f, collection_start_month: e.target.value }))} style={inputStyle} />
+                </div>
               </div>
               <button type="submit" disabled={loading} className="flex items-center justify-center" style={{ ...btnStyle, width: "100%", opacity: loading ? 0.6 : 1 }}>
                 <Building2 size={16} />
@@ -1125,7 +1132,10 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
                     <div className="flex justify-between items-center">
                       <div>
                         <h4 style={{ fontSize: "0.85rem", fontWeight: 500, marginBottom: "0.15rem" }}>{p.name}</h4>
-                        <span style={{ fontSize: "0.7rem", color: "var(--muted)" }}>{p.location || "No location"}</span>
+                        <span style={{ fontSize: "0.7rem", color: "var(--muted)" }}>
+                          {p.location || "No location"}
+                          {p.collection_start_month && ` · Collecting from ${p.collection_start_month}`}
+                        </span>
                       </div>
                       <div className="flex items-center" style={{ gap: "0.5rem" }}>
                         <span className="font-serif" style={{ fontSize: "0.9rem", fontWeight: 600 }}>{p.total_units} units</span>
@@ -1908,9 +1918,15 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
                 <label style={labelStyle}>Location</label>
                 <input type="text" value={editPropertyForm.location} onChange={(e) => setEditPropertyForm((f) => ({ ...f, location: e.target.value }))} style={inputStyle} />
               </div>
-              <div style={{ marginBottom: "1.5rem" }}>
-                <label style={labelStyle}>Total Units *</label>
-                <input type="number" required min={1} value={editPropertyForm.total_units} onChange={(e) => setEditPropertyForm((f) => ({ ...f, total_units: e.target.value }))} style={inputStyle} />
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1.5rem" }}>
+                <div>
+                  <label style={labelStyle}>Total Units *</label>
+                  <input type="number" required min={1} value={editPropertyForm.total_units} onChange={(e) => setEditPropertyForm((f) => ({ ...f, total_units: e.target.value }))} style={inputStyle} />
+                </div>
+                <div>
+                  <label style={labelStyle}>Collection Start Month</label>
+                  <input type="month" value={editPropertyForm.collection_start_month} onChange={(e) => setEditPropertyForm((f) => ({ ...f, collection_start_month: e.target.value }))} style={inputStyle} />
+                </div>
               </div>
               <button type="submit" disabled={loading} className="flex items-center justify-center" style={{ ...btnStyle, width: "100%", opacity: loading ? 0.6 : 1 }}>
                 {loading ? "Saving..." : "Save Changes"}

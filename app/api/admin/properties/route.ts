@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
   if (!user) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const body = await request.json();
-  const { landlord_id, name, location, total_units } = body;
+  const { landlord_id, name, location, total_units, collection_start_month } = body;
 
   if (!landlord_id || !name || !total_units) {
     return NextResponse.json({ error: "landlord_id, name, and total_units are required" }, { status: 400 });
@@ -45,7 +45,11 @@ export async function POST(request: NextRequest) {
   const { data, error } = await adminClient
     .schema("landyke")
     .from("properties")
-    .insert({ landlord_id, name, address: location || name, location: location || null, total_units: Number(total_units) })
+    .insert({
+      landlord_id, name, address: location || name, location: location || null,
+      total_units: Number(total_units),
+      collection_start_month: collection_start_month || null,
+    })
     .select()
     .single();
 
@@ -58,7 +62,7 @@ export async function PATCH(request: NextRequest) {
   if (!user) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const body = await request.json();
-  const { property_id, name, location, total_units } = body;
+  const { property_id, name, location, total_units, collection_start_month } = body;
 
   if (!property_id) {
     return NextResponse.json({ error: "property_id is required" }, { status: 400 });
@@ -68,6 +72,7 @@ export async function PATCH(request: NextRequest) {
   if (name !== undefined) { updateData.name = name; updateData.address = location || name; }
   if (location !== undefined) updateData.location = location || null;
   if (total_units !== undefined) updateData.total_units = Number(total_units);
+  if (collection_start_month !== undefined) updateData.collection_start_month = collection_start_month || null;
 
   const adminClient = createAdminClient();
   const { data, error } = await adminClient

@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
 
   // Fetch all data for this landlord
   const [propertyRes, tenantRes, paymentRes] = await Promise.all([
-    adminClient.schema("landyke").from("properties").select("id, name, location, total_units").eq("landlord_id", landlordId),
+    adminClient.schema("landyke").from("properties").select("id, name, location, total_units, collection_start_month").eq("landlord_id", landlordId),
     adminClient.schema("landyke").from("tenants").select("id, full_name, rent_amount, status, property_id, unit_number, unit_type, created_at, properties(name)").eq("landlord_id", landlordId).eq("status", "active"),
     adminClient.schema("landyke").from("payments").select("id, amount, paid_date, status, tenant_id, landlord_id, tenants(full_name, property_id, properties(name))").eq("landlord_id", landlordId).order("paid_date", { ascending: false }),
   ]);
@@ -52,10 +52,18 @@ export async function GET(request: NextRequest) {
 
   const monthEnd = getMonthEnd(selectedMonth);
 
-  // Tenants eligible for this month (created during or before selected month)
-  const tenantsForMonth = activeTenants.filter(
-    (t: { created_at?: string }) => !t.created_at || t.created_at <= monthEnd
-  );
+  // Build map of property collection start months
+  const propStartMap = new Map(properties.map((p) => [p.id, p.collection_start_month]));
+
+  // Tenants eligible for this month:
+  // - created during or before selected month
+  // - property's collection_start_month <= selected month (if set)
+  const tenantsForMonth = activeTenants.filter((t) => {
+    if (t.created_at && t.created_at > monthEnd) return false;
+    const propStart = propStartMap.get(t.property_id);
+    if (propStart && propStart > selectedMonth) return false;
+    return true;
+  });
   const totalExpected = tenantsForMonth.reduce((s: number, t: { rent_amount: number }) => s + Number(t.rent_amount), 0);
 
   // Income by month

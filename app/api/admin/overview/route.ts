@@ -30,7 +30,7 @@ export async function GET() {
   // Fetch all data in parallel
   const [landlordRes, propertyRes, tenantRes, paymentRes] = await Promise.all([
     adminClient.schema("landyke").from("landlords").select("id, full_name, email"),
-    adminClient.schema("landyke").from("properties").select("id, name, location, total_units, landlord_id"),
+    adminClient.schema("landyke").from("properties").select("id, name, location, total_units, landlord_id, collection_start_month"),
     adminClient.schema("landyke").from("tenants").select("id, full_name, rent_amount, status, property_id, landlord_id, unit_number, unit_type, created_at"),
     adminClient.schema("landyke").from("payments").select("id, amount, paid_date, status, tenant_id, landlord_id").gte("paid_date", monthStart).lte("paid_date", monthEnd),
   ]);
@@ -49,21 +49,27 @@ export async function GET() {
     const paidPayments = lPayments.filter((p) => p.status === "paid");
     const totalCollected = paidPayments.reduce((s, p) => s + Number(p.amount), 0);
     const totalExpected = activeTenants
-      .filter((t) => !t.created_at || t.created_at <= monthEnd)
+      .filter((t) => {
+        if (t.created_at && t.created_at > monthEnd) return false;
+        const prop = lProperties.find((p) => p.id === t.property_id);
+        if (prop?.collection_start_month && prop.collection_start_month > currentMonth) return false;
+        return true;
+      })
       .reduce((s, t) => s + Number(t.rent_amount), 0);
     const totalUnits = lProperties.reduce((s, p) => s + (p.total_units || 0), 0);
 
     const propertyDetails = lProperties.map((p) => {
       const pTenants = activeTenants.filter((t) => t.property_id === p.id);
+      const collectionStarted = !p.collection_start_month || p.collection_start_month <= currentMonth;
       const pPaidTenants = pTenants.filter((t) =>
         paidPayments.some((pay) => pay.tenant_id === t.id)
       );
       const pCollected = paidPayments
         .filter((pay) => pTenants.some((t) => t.id === pay.tenant_id))
         .reduce((s, pay) => s + Number(pay.amount), 0);
-      const pExpected = pTenants
+      const pExpected = collectionStarted ? pTenants
         .filter((t) => !t.created_at || t.created_at <= monthEnd)
-        .reduce((s, t) => s + Number(t.rent_amount), 0);
+        .reduce((s, t) => s + Number(t.rent_amount), 0) : 0;
 
       return {
         id: p.id,
@@ -113,7 +119,13 @@ export async function GET() {
     .lte("paid_date", monthEnd);
 
   const totalExpectedAll = tenants
-    .filter((t) => t.status === "active" && (!t.created_at || t.created_at <= monthEnd))
+    .filter((t) => {
+      if (t.status !== "active") return false;
+      if (t.created_at && t.created_at > monthEnd) return false;
+      const prop = properties.find((p) => p.id === t.property_id);
+      if (prop?.collection_start_month && prop.collection_start_month > currentMonth) return false;
+      return true;
+    })
     .reduce((s, t) => s + Number(t.rent_amount), 0);
 
   const incomeChart = months.map((key) => {

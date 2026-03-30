@@ -79,10 +79,17 @@ export default async function DashboardPage({
         const activeTenants = await getActiveTenants(supabase, propertyIds);
 
         // Count tenants created during or before the selected month for expected rent
+        // Also skip tenants from properties where collection hasn't started yet
         const monthStart = getMonthStart(selectedMonth);
         const monthEndStr = getMonthEnd(selectedMonth);
+        const propStartMap = new Map(dbProperties.map((p: { id: string; collection_start_month?: string | null }) => [p.id, p.collection_start_month]));
         const tenantsForMonth = activeTenants.filter(
-          (t: { created_at?: string }) => !t.created_at || t.created_at <= monthEndStr
+          (t: { created_at?: string; property_id: string }) => {
+            if (t.created_at && t.created_at > monthEndStr) return false;
+            const propStart = propStartMap.get(t.property_id);
+            if (propStart && propStart > selectedMonth) return false;
+            return true;
+          }
         );
         const totalTenants = tenantsForMonth.length;
         const totalExpected = tenantsForMonth.reduce((sum: number, t: { rent_amount: number }) => sum + Number(t.rent_amount), 0);

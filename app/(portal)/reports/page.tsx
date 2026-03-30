@@ -45,7 +45,16 @@ export default async function ReportsPage({
         const allPayments = await getPayments(supabase, landlord.id);
         const activeTenants = await getActiveTenants(supabase, propertyIds);
 
-        const totalExpected = activeTenants.reduce(
+        // Filter out tenants from properties where collection hasn't started
+        const propStartMap = new Map(dbProperties.map((p: { id: string; collection_start_month?: string | null }) => [p.id, p.collection_start_month]));
+        const eligibleTenants = activeTenants.filter(
+          (t: { property_id: string }) => {
+            const propStart = propStartMap.get(t.property_id);
+            return !propStart || propStart <= selectedMonth;
+          }
+        );
+
+        const totalExpected = eligibleTenants.reduce(
           (sum: number, t: { rent_amount: number }) => sum + Number(t.rent_amount),
           0
         );
@@ -54,9 +63,9 @@ export default async function ReportsPage({
         incomeData = computeIncomeByMonth(allPayments, totalExpected, months);
         occupancyData = computeOccupancyData(dbProperties, activeTenants);
         collectionRates = computeCollectionRates(allPayments, totalExpected, months);
-        arrearsData = computeArrears(activeTenants, allPayments, selectedMonth);
+        arrearsData = computeArrears(eligibleTenants, allPayments, selectedMonth);
 
-        const statusList = computeTenantStatus(activeTenants, allPayments, selectedMonth);
+        const statusList = computeTenantStatus(eligibleTenants, allPayments, selectedMonth);
         tenantStatusData = statusList.map((t) => ({
           name: t.name,
           property: t.property,
