@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, Fragment } from "react";
 import {
   UserPlus, Users, Check, AlertCircle, Home, CreditCard,
-  Building2, Plus, ChevronDown, Pencil, Trash2, X,
-  LayoutDashboard, FileText, Send, Download, BarChart3, AlertTriangle,
+  Building2, Plus, ChevronDown, ChevronUp, Pencil, Trash2, X,
+  LayoutDashboard, FileText, Send, Download, BarChart3, AlertTriangle, Eye,
 } from "lucide-react";
 import { generateRentStatement, generatePropertySummary, generateTenantPaymentReport } from "@/lib/pdf/generate-report";
 import { getAvailableMonths } from "@/lib/queries";
@@ -229,6 +229,7 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
   const [reportLandlord, setReportLandlord] = useState<Landlord | null>(null);
   const [reportMonth, setReportMonth] = useState(new Date().toISOString().slice(0, 7));
   const [reportData, setReportData] = useState<AdminReportData | null>(null);
+  const [expandedProperty, setExpandedProperty] = useState<string | null>(null);
   const [reportLoading, setReportLoading] = useState(false);
 
   // Data states
@@ -1652,66 +1653,133 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
                         </tr>
                       </thead>
                       <tbody>
-                        {reportData.propertyBreakdown.map((prop, i) => (
-                          <tr key={prop.name} style={{ borderBottom: i < reportData.propertyBreakdown.length - 1 ? "1px solid var(--warm)" : "none" }} className="row-hover">
-                            <td style={{ padding: "0.85rem 1rem" }}>
-                              <span style={{ fontWeight: 600 }}>{prop.name}</span>
-                              {prop.location && <span style={{ display: "block", fontSize: "0.7rem", color: "var(--muted)" }}>{prop.location}</span>}
-                            </td>
-                            <td style={{ padding: "0.85rem 1rem" }}>
-                              <span style={{ fontWeight: 600 }}>{prop.tenantsPaid}</span>
-                              <span style={{ color: "var(--muted)" }}> / {prop.totalTenants}</span>
-                            </td>
-                            <td style={{ padding: "0.85rem 1rem" }}>
-                              <span className="font-serif" style={{ fontWeight: 600, color: prop.collected > 0 ? "var(--green)" : "var(--muted)" }}>
-                                KES {prop.collected.toLocaleString()}
-                              </span>
-                            </td>
-                            <td style={{ padding: "0.85rem 1rem" }}>
-                              <span style={{ color: "var(--muted)" }}>KES {prop.expected.toLocaleString()}</span>
-                            </td>
-                            <td style={{ padding: "0.85rem 1rem" }}>
-                              <span className="font-serif" style={{ fontWeight: 600, color: prop.expected - prop.collected > 0 ? "var(--rust)" : "var(--green)" }}>
-                                KES {Math.max(0, prop.expected - prop.collected).toLocaleString()}
-                              </span>
-                            </td>
-                            <td style={{ padding: "0.85rem 1rem" }}>
-                              <div className="flex items-center" style={{ gap: "0.5rem" }}>
-                                <div style={{ flex: 1, background: "var(--warm)", borderRadius: "4px", height: "6px", overflow: "hidden", minWidth: "60px" }}>
-                                  <div style={{
-                                    width: `${prop.rate}%`, height: "100%",
-                                    background: prop.rate >= 100 ? "var(--green)" : prop.rate >= 50 ? "var(--gold)" : "var(--rust)",
-                                    borderRadius: "4px",
-                                  }} />
-                                </div>
-                                <span className="font-serif" style={{
-                                  fontSize: "0.85rem", fontWeight: 600,
-                                  color: prop.rate >= 100 ? "var(--green)" : prop.rate >= 50 ? "var(--gold)" : "var(--rust)",
-                                }}>
-                                  {prop.rate}%
-                                </span>
-                              </div>
-                            </td>
-                            <td style={{ padding: "0.85rem 0.5rem" }}>
-                              <div className="flex items-center" style={{ gap: "0.3rem" }}>
-                                <button
-                                  onClick={() => downloadPropertyReport(prop.name)}
-                                  title={`Download ${prop.name} report`}
-                                  style={{ background: "none", border: "none", cursor: "pointer", padding: "0.3rem", borderRadius: "4px", color: "var(--ink)", display: "flex", alignItems: "center" }}
-                                >
-                                  <Download size={14} />
-                                </button>
-                                <button
-                                  onClick={() => sendPropertyWhatsApp(prop.name)}
-                                  title={`Send ${prop.name} report via WhatsApp`}
-                                  style={{ background: "none", border: "none", cursor: "pointer", padding: "0.3rem", borderRadius: "4px", color: "#25D366", display: "flex", alignItems: "center" }}
-                                >
-                                  <Send size={14} />
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
+                        {reportData.propertyBreakdown.map((prop, i) => {
+                          const isExpanded = expandedProperty === prop.name;
+                          const propertyTenants = reportData.tenantStatusData.filter((t) => t.property === prop.name);
+                          return (
+                            <Fragment key={prop.name}>
+                              <tr style={{ borderBottom: isExpanded ? "none" : (i < reportData.propertyBreakdown.length - 1 ? "1px solid var(--warm)" : "none") }} className="row-hover">
+                                <td style={{ padding: "0.85rem 1rem" }}>
+                                  <span style={{ fontWeight: 600 }}>{prop.name}</span>
+                                  {prop.location && <span style={{ display: "block", fontSize: "0.7rem", color: "var(--muted)" }}>{prop.location}</span>}
+                                </td>
+                                <td style={{ padding: "0.85rem 1rem" }}>
+                                  <span style={{ fontWeight: 600 }}>{prop.tenantsPaid}</span>
+                                  <span style={{ color: "var(--muted)" }}> / {prop.totalTenants}</span>
+                                </td>
+                                <td style={{ padding: "0.85rem 1rem" }}>
+                                  <span className="font-serif" style={{ fontWeight: 600, color: prop.collected > 0 ? "var(--green)" : "var(--muted)" }}>
+                                    KES {prop.collected.toLocaleString()}
+                                  </span>
+                                </td>
+                                <td style={{ padding: "0.85rem 1rem" }}>
+                                  <span style={{ color: "var(--muted)" }}>KES {prop.expected.toLocaleString()}</span>
+                                </td>
+                                <td style={{ padding: "0.85rem 1rem" }}>
+                                  <span className="font-serif" style={{ fontWeight: 600, color: prop.expected - prop.collected > 0 ? "var(--rust)" : "var(--green)" }}>
+                                    KES {Math.max(0, prop.expected - prop.collected).toLocaleString()}
+                                  </span>
+                                </td>
+                                <td style={{ padding: "0.85rem 1rem" }}>
+                                  <div className="flex items-center" style={{ gap: "0.5rem" }}>
+                                    <div style={{ flex: 1, background: "var(--warm)", borderRadius: "4px", height: "6px", overflow: "hidden", minWidth: "60px" }}>
+                                      <div style={{
+                                        width: `${prop.rate}%`, height: "100%",
+                                        background: prop.rate >= 100 ? "var(--green)" : prop.rate >= 50 ? "var(--gold)" : "var(--rust)",
+                                        borderRadius: "4px",
+                                      }} />
+                                    </div>
+                                    <span className="font-serif" style={{
+                                      fontSize: "0.85rem", fontWeight: 600,
+                                      color: prop.rate >= 100 ? "var(--green)" : prop.rate >= 50 ? "var(--gold)" : "var(--rust)",
+                                    }}>
+                                      {prop.rate}%
+                                    </span>
+                                  </div>
+                                </td>
+                                <td style={{ padding: "0.85rem 0.5rem" }}>
+                                  <div className="flex items-center" style={{ gap: "0.3rem" }}>
+                                    <button
+                                      onClick={() => setExpandedProperty(isExpanded ? null : prop.name)}
+                                      title={`Preview ${prop.name} tenants`}
+                                      style={{ background: "none", border: "none", cursor: "pointer", padding: "0.3rem", borderRadius: "4px", color: isExpanded ? "var(--gold)" : "var(--muted)", display: "flex", alignItems: "center" }}
+                                    >
+                                      {isExpanded ? <ChevronUp size={14} /> : <Eye size={14} />}
+                                    </button>
+                                    <button
+                                      onClick={() => downloadPropertyReport(prop.name)}
+                                      title={`Download ${prop.name} report`}
+                                      style={{ background: "none", border: "none", cursor: "pointer", padding: "0.3rem", borderRadius: "4px", color: "var(--ink)", display: "flex", alignItems: "center" }}
+                                    >
+                                      <Download size={14} />
+                                    </button>
+                                    <button
+                                      onClick={() => sendPropertyWhatsApp(prop.name)}
+                                      title={`Send ${prop.name} report via WhatsApp`}
+                                      style={{ background: "none", border: "none", cursor: "pointer", padding: "0.3rem", borderRadius: "4px", color: "#25D366", display: "flex", alignItems: "center" }}
+                                    >
+                                      <Send size={14} />
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                              {isExpanded && (
+                                <tr>
+                                  <td colSpan={7} style={{ padding: 0 }}>
+                                    <div style={{ background: "var(--cream)", borderBottom: i < reportData.propertyBreakdown.length - 1 ? "1px solid var(--warm)" : "none" }}>
+                                      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.8rem" }}>
+                                        <thead>
+                                          <tr style={{ borderBottom: "1px solid rgba(200,150,62,0.15)" }}>
+                                            {["#", "Tenant", "Unit", "Rent (KES)", "Status", "Payment Date"].map((h) => (
+                                              <th key={h} style={{ padding: "0.6rem 1rem", textAlign: "left", fontSize: "0.65rem", textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--muted)", fontWeight: 600 }}>
+                                                {h}
+                                              </th>
+                                            ))}
+                                          </tr>
+                                        </thead>
+                                        <tbody>
+                                          {propertyTenants.map((t, ti) => (
+                                            <tr key={t.name + ti} style={{ borderBottom: ti < propertyTenants.length - 1 ? "1px solid rgba(200,150,62,0.1)" : "none" }}>
+                                              <td style={{ padding: "0.6rem 1rem", color: "var(--muted)" }}>{ti + 1}</td>
+                                              <td style={{ padding: "0.6rem 1rem", fontWeight: 500 }}>{t.name}</td>
+                                              <td style={{ padding: "0.6rem 1rem", color: "var(--muted)" }}>{t.unit || "—"}</td>
+                                              <td style={{ padding: "0.6rem 1rem" }}>KES {t.amount.toLocaleString()}</td>
+                                              <td style={{ padding: "0.6rem 1rem" }}>
+                                                <span className="status-pill" style={{
+                                                  background: t.status === "paid" ? "var(--green-light)" : t.status === "pending" ? "var(--gold-light)" : "var(--red-light)",
+                                                  color: t.status === "paid" ? "var(--green)" : t.status === "pending" ? "var(--gold)" : "var(--rust)",
+                                                }}>
+                                                  {t.status.charAt(0).toUpperCase() + t.status.slice(1)}
+                                                </span>
+                                              </td>
+                                              <td style={{ padding: "0.6rem 1rem", fontSize: "0.75rem", color: "var(--muted)" }}>{t.date}</td>
+                                            </tr>
+                                          ))}
+                                        </tbody>
+                                      </table>
+                                      <div style={{ padding: "0.6rem 1rem", display: "flex", justifyContent: "flex-end", gap: "0.5rem" }}>
+                                        <button
+                                          onClick={() => downloadPropertyReport(prop.name)}
+                                          className="flex items-center"
+                                          style={{ gap: "0.3rem", background: "var(--ink)", color: "var(--cream)", border: "none", padding: "0.4rem 0.8rem", fontSize: "0.75rem", borderRadius: "4px", cursor: "pointer" }}
+                                        >
+                                          <Download size={12} /> Download PDF
+                                        </button>
+                                        <button
+                                          onClick={() => sendPropertyWhatsApp(prop.name)}
+                                          className="flex items-center"
+                                          style={{ gap: "0.3rem", background: "#25D366", color: "#fff", border: "none", padding: "0.4rem 0.8rem", fontSize: "0.75rem", borderRadius: "4px", cursor: "pointer" }}
+                                        >
+                                          <Send size={12} /> WhatsApp
+                                        </button>
+                                      </div>
+                                    </div>
+                                  </td>
+                                </tr>
+                              )}
+                            </Fragment>
+                          );
+                        })}
                         {/* Totals row */}
                         {(() => {
                           const totals = reportData.propertyBreakdown.reduce((acc, p) => ({
