@@ -15,6 +15,10 @@ import {
   YAxis,
   Tooltip,
   ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  Legend,
 } from "recharts";
 
 interface Landlord {
@@ -370,6 +374,47 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
       totalExpected,
       collectionRate,
     });
+  }
+
+  function downloadPropertyReport(propertyName: string) {
+    if (!reportData) return;
+    const propertyTenants = reportData.tenantStatusData.filter((t) => t.property === propertyName);
+    const propBreakdown = reportData.propertyBreakdown.find((p) => p.name === propertyName);
+    generateTenantPaymentReport({
+      month: `${formatMonthLabel(reportMonth)} — ${propertyName}`,
+      tenants: propertyTenants,
+      totalCollected: propBreakdown?.collected || 0,
+      totalExpected: propBreakdown?.expected || 0,
+      collectionRate: propBreakdown?.rate || 0,
+    });
+  }
+
+  function sendPropertyWhatsApp(propertyName: string) {
+    if (!reportData) return;
+    const propertyTenants = reportData.tenantStatusData.filter((t) => t.property === propertyName);
+    const propBreakdown = reportData.propertyBreakdown.find((p) => p.name === propertyName);
+    const month = formatMonthLabel(reportMonth);
+
+    let msg = `*LandyKE — ${propertyName}*\n`;
+    msg += `*${month} Rent Collection*\n\n`;
+    msg += `Collected: KES ${(propBreakdown?.collected || 0).toLocaleString()}\n`;
+    msg += `Expected: KES ${(propBreakdown?.expected || 0).toLocaleString()}\n`;
+    msg += `Rate: ${propBreakdown?.rate || 0}%\n\n`;
+
+    const paid = propertyTenants.filter((t) => t.status === "paid");
+    const unpaid = propertyTenants.filter((t) => t.status !== "paid");
+
+    if (paid.length > 0) {
+      msg += `*Paid (${paid.length}):*\n`;
+      paid.forEach((t) => { msg += `✓ ${t.name} — KES ${t.amount.toLocaleString()}\n`; });
+      msg += `\n`;
+    }
+    if (unpaid.length > 0) {
+      msg += `*Not Paid (${unpaid.length}):*\n`;
+      unpaid.forEach((t) => { msg += `✗ ${t.name} — KES ${t.amount.toLocaleString()} (${t.status})\n`; });
+    }
+    msg += `\n— LandyKE`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, "_blank");
   }
 
   // === CREATE HANDLERS ===
@@ -1500,6 +1545,83 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
                 );
               })()}
 
+              {/* Pie Charts */}
+              {(() => {
+                const totalRevenue = reportData.incomeData.reduce((s, d) => s + d.collected, 0);
+                const totalExpected = reportData.incomeData.reduce((s, d) => s + d.expected, 0);
+                const outstanding = Math.max(0, totalExpected - totalRevenue);
+                const paidCount = reportData.tenantStatusData.filter((t) => t.status === "paid").length;
+                const pendingCount = reportData.tenantStatusData.filter((t) => t.status === "pending").length;
+                const overdueCount = reportData.tenantStatusData.filter((t) => t.status === "overdue").length;
+
+                const collectionData = [
+                  { name: "Collected", value: totalRevenue },
+                  { name: "Outstanding", value: outstanding },
+                ];
+                const collectionColors = ["#2d6a4f", "#8b3a2a"];
+
+                const statusData = [
+                  { name: "Paid", value: paidCount },
+                  { name: "Pending", value: pendingCount },
+                  { name: "Overdue", value: overdueCount },
+                ].filter((d) => d.value > 0);
+                const statusColors = ["#2d6a4f", "#c8963e", "#8b3a2a"];
+
+                return (
+                  <div className="occupancy-grid" style={{ marginBottom: "1.5rem" }}>
+                    <div style={cardStyle}>
+                      <div style={{ padding: "1.2rem 1.5rem", borderBottom: "1px solid var(--warm)" }}>
+                        <h3 className="font-serif" style={{ fontSize: "1.1rem", fontWeight: 600 }}>Collection Overview</h3>
+                      </div>
+                      <div style={{ padding: "1rem", height: "220px" }}>
+                        {totalExpected === 0 ? (
+                          <div className="flex flex-col items-center justify-center" style={{ height: "100%", color: "var(--muted)" }}>
+                            <span style={{ fontSize: "0.85rem" }}>No data</span>
+                          </div>
+                        ) : (
+                          <ResponsiveContainer width="100%" height="100%">
+                            <PieChart>
+                              <Pie data={collectionData} cx="50%" cy="50%" innerRadius={50} outerRadius={75} paddingAngle={3} dataKey="value">
+                                {collectionData.map((_, i) => (
+                                  <Cell key={i} fill={collectionColors[i]} />
+                                ))}
+                              </Pie>
+                              <Tooltip formatter={(value) => `KES ${Number(value).toLocaleString()}`} contentStyle={{ fontSize: "0.75rem", borderRadius: "4px" }} />
+                              <Legend wrapperStyle={{ fontSize: "0.75rem" }} />
+                            </PieChart>
+                          </ResponsiveContainer>
+                        )}
+                      </div>
+                    </div>
+
+                    <div style={cardStyle}>
+                      <div style={{ padding: "1.2rem 1.5rem", borderBottom: "1px solid var(--warm)" }}>
+                        <h3 className="font-serif" style={{ fontSize: "1.1rem", fontWeight: 600 }}>Tenant Payment Status</h3>
+                      </div>
+                      <div style={{ padding: "1rem", height: "220px" }}>
+                        {statusData.length === 0 ? (
+                          <div className="flex flex-col items-center justify-center" style={{ height: "100%", color: "var(--muted)" }}>
+                            <span style={{ fontSize: "0.85rem" }}>No tenants</span>
+                          </div>
+                        ) : (
+                          <ResponsiveContainer width="100%" height="100%">
+                            <PieChart>
+                              <Pie data={statusData} cx="50%" cy="50%" innerRadius={50} outerRadius={75} paddingAngle={3} dataKey="value">
+                                {statusData.map((entry, i) => (
+                                  <Cell key={i} fill={entry.name === "Paid" ? statusColors[0] : entry.name === "Pending" ? statusColors[1] : statusColors[2]} />
+                                ))}
+                              </Pie>
+                              <Tooltip formatter={(value) => `${value} tenants`} contentStyle={{ fontSize: "0.75rem", borderRadius: "4px" }} />
+                              <Legend wrapperStyle={{ fontSize: "0.75rem" }} />
+                            </PieChart>
+                          </ResponsiveContainer>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+
               {/* Property Payment Breakdown */}
               {reportData.propertyBreakdown && reportData.propertyBreakdown.length > 0 && (
                 <div style={{ ...cardStyle, marginBottom: "1.5rem" }}>
@@ -1512,7 +1634,7 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
                     <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.85rem" }}>
                       <thead>
                         <tr style={{ borderBottom: "1px solid var(--warm)", background: "var(--cream)" }}>
-                          {["Property", "Tenants Paid", "Collected", "Expected", "Outstanding", "Rate"].map((h) => (
+                          {["Property", "Tenants Paid", "Collected", "Expected", "Outstanding", "Rate", ""].map((h) => (
                             <th key={h} style={{ padding: "0.75rem 1rem", textAlign: "left", fontSize: "0.7rem", textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--muted)", fontWeight: 600 }}>
                               {h}
                             </th>
@@ -1560,6 +1682,24 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
                                 </span>
                               </div>
                             </td>
+                            <td style={{ padding: "0.85rem 0.5rem" }}>
+                              <div className="flex items-center" style={{ gap: "0.3rem" }}>
+                                <button
+                                  onClick={() => downloadPropertyReport(prop.name)}
+                                  title={`Download ${prop.name} report`}
+                                  style={{ background: "none", border: "none", cursor: "pointer", padding: "0.3rem", borderRadius: "4px", color: "var(--ink)", display: "flex", alignItems: "center" }}
+                                >
+                                  <Download size={14} />
+                                </button>
+                                <button
+                                  onClick={() => sendPropertyWhatsApp(prop.name)}
+                                  title={`Send ${prop.name} report via WhatsApp`}
+                                  style={{ background: "none", border: "none", cursor: "pointer", padding: "0.3rem", borderRadius: "4px", color: "#25D366", display: "flex", alignItems: "center" }}
+                                >
+                                  <Send size={14} />
+                                </button>
+                              </div>
+                            </td>
                           </tr>
                         ))}
                         {/* Totals row */}
@@ -1589,6 +1729,7 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
                                   {totalRate}%
                                 </span>
                               </td>
+                              <td></td>
                             </tr>
                           );
                         })()}
