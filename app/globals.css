@@ -871,6 +871,23 @@ body {
   }
 }
 
+/* Caretaker portal layout */
+@media (max-width: 768px) {
+  .caretaker-layout {
+    flex-direction: column !important;
+  }
+  .caretaker-sidebar {
+    display: none !important;
+  }
+  .caretaker-mobile-nav {
+    display: flex !important;
+  }
+  .caretaker-main {
+    padding: 1.5rem 1rem !important;
+    padding-bottom: 5rem !important;
+  }
+}
+
 /* Trust section quote mark */
 .trust-section-bg::before {
   content: '\201C';

@@ -41,7 +41,22 @@ export interface Payment {
   paid_date: string | null;
   status: string;
   notes: string | null;
+  marked_by?: string | null;
   created_at?: string;
+}
+
+export interface CaretakerAssignment {
+  id: string;
+  caretaker_id: string;
+  property_id: string;
+  created_at: string;
+  properties?: {
+    id: string;
+    name: string;
+    location: string | null;
+    total_units: number | null;
+    landlord_id: string;
+  };
 }
 
 export interface MonthlyIncome {

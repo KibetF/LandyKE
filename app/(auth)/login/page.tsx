@@ -29,7 +29,19 @@ function LoginForm() {
       setError(authError.message);
       setLoading(false);
     } else {
-      router.push("/dashboard");
+      // Check role to determine redirect target
+      const { data: roleData } = await supabase
+        .schema("landyke")
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", (await supabase.auth.getUser()).data.user?.id)
+        .single();
+
+      if (roleData?.role === "caretaker") {
+        router.push("/caretaker/dashboard");
+      } else {
+        router.push("/dashboard");
+      }
     }
   }
 
