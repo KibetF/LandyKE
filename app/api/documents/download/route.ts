@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
   const documentId = request.nextUrl.searchParams.get("id");
   if (!documentId) return NextResponse.json({ error: "id required" }, { status: 400 });
 
-  // Verify landlord owns document
+  // Check if user is a landlord or a tenant
   const { data: landlord } = await supabase
     .schema("landyke")
     .from("landlords")
@@ -18,21 +18,34 @@ export async function GET(request: NextRequest) {
     .eq("user_id", user.id)
     .single();
 
-  if (!landlord) return NextResponse.json({ error: "Landlord not found" }, { status: 404 });
+  const { data: tenant } = await supabase
+    .schema("landyke")
+    .from("tenants")
+    .select("id, property_id")
+    .eq("user_id", user.id)
+    .single();
+
+  if (!landlord && !tenant) return NextResponse.json({ error: "User not found" }, { status: 404 });
 
   const adminClient = createAdminClient();
   const { data: doc } = await adminClient
     .schema("landyke")
     .from("documents")
-    .select("file_path, landlord_id")
+    .select("file_path, landlord_id, tenant_id, property_id")
     .eq("id", documentId)
     .single();
 
   if (!doc) return NextResponse.json({ error: "Document not found" }, { status: 404 });
 
-  // Check admin or owner
+  // Check access: admin, landlord owner, or tenant (own docs or property-wide docs)
   const isAdmin = user.email === process.env.ADMIN_EMAIL;
-  if (!isAdmin && doc.landlord_id !== landlord.id) {
+  const isLandlordOwner = landlord && doc.landlord_id === landlord.id;
+  const isTenantOwner = tenant && (
+    doc.tenant_id === tenant.id ||
+    (doc.tenant_id === null && doc.property_id === tenant.property_id)
+  );
+
+  if (!isAdmin && !isLandlordOwner && !isTenantOwner) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

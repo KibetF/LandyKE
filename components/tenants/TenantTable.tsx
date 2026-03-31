@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Send } from "lucide-react";
 import StatusPill from "@/components/ui/StatusPill";
 import Pagination from "@/components/ui/Pagination";
 
@@ -9,9 +10,11 @@ interface TenantData {
   property_id: string;
   unit_number: string | null;
   full_name: string;
+  email: string | null;
   phone: string | null;
   rent_amount: number;
   status: string;
+  user_id: string | null;
   properties: { name: string; location: string | null };
 }
 
@@ -44,6 +47,32 @@ function getInitials(name: string) {
 
 export default function TenantTable({ tenants, properties, currentPage = 1, totalPages = 1 }: TenantTableProps) {
   const [filter, setFilter] = useState("all");
+  const [inviting, setInviting] = useState<string | null>(null);
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteMsg, setInviteMsg] = useState<{ id: string; msg: string; ok: boolean } | null>(null);
+
+  async function handleInvite(tenantId: string) {
+    if (!inviteEmail.trim()) return;
+    setInviting(tenantId);
+    setInviteMsg(null);
+    try {
+      const res = await fetch("/api/tenants/invite", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: "Bearer token" },
+        body: JSON.stringify({ tenantId, email: inviteEmail.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setInviteMsg({ id: tenantId, msg: data.error || "Failed to invite", ok: false });
+      } else {
+        setInviteMsg({ id: tenantId, msg: "Invite sent!", ok: true });
+        setInviteEmail("");
+      }
+    } catch {
+      setInviteMsg({ id: tenantId, msg: "Network error", ok: false });
+    }
+    setInviting(null);
+  }
 
   const filtered =
     filter === "all"
@@ -305,10 +334,69 @@ export default function TenantTable({ tenants, properties, currentPage = 1, tota
                     {tenant.phone || "—"}
                   </span>
 
-                  {/* Status */}
-                  <StatusPill
-                    status={tenant.status === "active" ? "active" : tenant.status === "moved" ? "moved" : "inactive"}
-                  />
+                  {/* Status + Portal */}
+                  <div className="flex items-center" style={{ gap: "0.5rem" }}>
+                    <StatusPill
+                      status={tenant.status === "active" ? "active" : tenant.status === "moved" ? "moved" : "inactive"}
+                    />
+                    {tenant.user_id ? (
+                      <span
+                        className="status-pill"
+                        style={{
+                          background: "var(--green-light)",
+                          color: "var(--green)",
+                        }}
+                      >
+                        Portal
+                      </span>
+                    ) : tenant.status === "active" ? (
+                      <div className="flex items-center" style={{ gap: "0.3rem" }}>
+                        {inviteMsg?.id === tenant.id && (
+                          <span style={{ fontSize: "0.65rem", color: inviteMsg.ok ? "var(--green)" : "var(--red-soft)" }}>
+                            {inviteMsg.msg}
+                          </span>
+                        )}
+                        <input
+                          type="email"
+                          placeholder={tenant.email || "Email"}
+                          value={inviting === tenant.id ? inviteEmail : (inviteEmail && inviteMsg?.id === tenant.id ? inviteEmail : "")}
+                          onChange={(e) => { setInviteEmail(e.target.value); setInviteMsg(null); }}
+                          onFocus={() => { if (tenant.email && !inviteEmail) setInviteEmail(tenant.email); }}
+                          style={{
+                            width: "140px",
+                            padding: "0.3rem 0.5rem",
+                            fontSize: "0.7rem",
+                            border: "1px solid var(--warm)",
+                            borderRadius: "3px",
+                            outline: "none",
+                            background: "var(--cream)",
+                            fontFamily: "var(--font-sans), sans-serif",
+                          }}
+                        />
+                        <button
+                          onClick={() => handleInvite(tenant.id)}
+                          disabled={inviting === tenant.id}
+                          title="Invite to Tenant Portal"
+                          style={{
+                            background: "var(--ink)",
+                            color: "var(--cream)",
+                            border: "none",
+                            borderRadius: "3px",
+                            padding: "0.3rem 0.5rem",
+                            cursor: inviting === tenant.id ? "not-allowed" : "pointer",
+                            opacity: inviting === tenant.id ? 0.6 : 1,
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "0.2rem",
+                            fontSize: "0.65rem",
+                          }}
+                        >
+                          <Send size={11} />
+                          Invite
+                        </button>
+                      </div>
+                    ) : null}
+                  </div>
                 </div>
               );
             })}

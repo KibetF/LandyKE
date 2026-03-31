@@ -33,20 +33,37 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const protectedPaths = ["/dashboard", "/properties", "/tenants", "/payments", "/reports", "/maintenance", "/documents", "/settings"];
-  const isProtected = protectedPaths.some((path) =>
+  const landlordPaths = ["/dashboard", "/properties", "/tenants", "/payments", "/reports", "/maintenance", "/documents", "/settings"];
+  const tenantPaths = ["/my"];
+
+  const isLandlordProtected = landlordPaths.some((path) =>
+    request.nextUrl.pathname.startsWith(path)
+  );
+  const isTenantProtected = tenantPaths.some((path) =>
     request.nextUrl.pathname.startsWith(path)
   );
 
-  if (isProtected && !user) {
+  if (isLandlordProtected && !user) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
+    return NextResponse.redirect(url);
+  }
+
+  if (isTenantProtected && !user) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/tenant-login";
     return NextResponse.redirect(url);
   }
 
   if (request.nextUrl.pathname === "/login" && user) {
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";
+    return NextResponse.redirect(url);
+  }
+
+  if (request.nextUrl.pathname === "/tenant-login" && user) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/my/dashboard";
     return NextResponse.redirect(url);
   }
 

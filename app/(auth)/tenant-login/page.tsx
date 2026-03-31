@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 
-function LoginForm() {
+function TenantLoginForm() {
   const searchParams = useSearchParams();
   const errorParam = searchParams.get("error");
   const [email, setEmail] = useState("");
@@ -29,7 +29,7 @@ function LoginForm() {
       setError(authError.message);
       setLoading(false);
     } else {
-      router.push("/dashboard");
+      router.push("/my/dashboard");
     }
   }
 
@@ -65,10 +65,10 @@ function LoginForm() {
             marginBottom: "0.5rem",
           }}
         >
-          Client Portal
+          Tenant Portal
         </h1>
         <p style={{ fontSize: "0.85rem", color: "var(--muted)" }}>
-          Sign in to manage your properties
+          Sign in to view your rent & submit requests
         </p>
       </div>
 
@@ -101,7 +101,7 @@ function LoginForm() {
               outline: "none",
               background: "var(--cream)",
             }}
-            placeholder="margaret@example.com"
+            placeholder="you@example.com"
           />
         </div>
 
@@ -176,20 +176,9 @@ function LoginForm() {
         </button>
       </form>
 
-      <div className="text-center" style={{ marginTop: "1.5rem", display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+      <div className="text-center" style={{ marginTop: "1.5rem" }}>
         <Link
-          href="/tenant-login"
-          className="no-underline"
-          style={{
-            fontSize: "0.8rem",
-            color: "var(--muted)",
-            transition: "color 0.2s",
-          }}
-        >
-          Are you a tenant? Sign in here
-        </Link>
-        <Link
-          href="/"
+          href="/login"
           className="no-underline"
           style={{
             fontSize: "0.8rem",
@@ -197,14 +186,14 @@ function LoginForm() {
             transition: "color 0.2s",
           }}
         >
-          ← Back to website
+          Are you a landlord? Sign in here
         </Link>
       </div>
     </div>
   );
 }
 
-export default function LoginPage() {
+export default function TenantLoginPage() {
   return (
     <div
       className="flex items-center justify-center"
@@ -214,7 +203,7 @@ export default function LoginPage() {
       }}
     >
       <Suspense>
-        <LoginForm />
+        <TenantLoginForm />
       </Suspense>
     </div>
   );

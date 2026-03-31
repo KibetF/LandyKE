@@ -20,9 +20,11 @@ export default async function TenantsPage({ searchParams }: PageProps) {
     property_id: string;
     unit_number: string | null;
     full_name: string;
+    email: string | null;
     phone: string | null;
     rent_amount: number;
     status: string;
+    user_id: string | null;
     properties: { name: string; location: string | null };
   }> = [];
 

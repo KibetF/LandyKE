@@ -87,3 +87,26 @@ export interface Notification {
   metadata: Record<string, unknown>;
   created_at: string;
 }
+
+export interface TenantProfile {
+  id: string;
+  user_id: string;
+  full_name: string;
+  email: string | null;
+  phone: string | null;
+  property_id: string;
+  unit_number: string | null;
+  rent_amount: number;
+  lease_start: string | null;
+  lease_end: string | null;
+  status: string;
+  unit_type: string | null;
+  properties?: { name: string; location: string | null };
+}
+
+export interface TenantPaymentSummary {
+  currentMonthStatus: "paid" | "pending" | "overdue";
+  balance: number;
+  lastPaymentDate: string | null;
+  lastPaymentAmount: number | null;
+}
