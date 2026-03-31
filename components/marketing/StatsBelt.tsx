@@ -3,8 +3,8 @@
 import { useCountUp } from "@/hooks/useCountUp";
 
 const stats = [
-  { num: "6", label: "Properties Under Management" },
-  { num: "78", label: "Units Managed" },
+  { num: "11", label: "Properties Under Management" },
+  { num: "260", label: "Units Managed" },
   { num: "96%", label: "Average Occupancy Rate" },
   { num: "4", label: "Landlord Clients" },
 ];

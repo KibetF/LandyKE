@@ -123,8 +123,8 @@ export default function AboutSection() {
           >
             {[
               { num: "2021", label: "Founded" },
-              { num: "6", label: "Properties" },
-              { num: "78+", label: "Units Managed" },
+              { num: "11", label: "Properties" },
+              { num: "260+", label: "Units Managed" },
             ].map((s) => (
               <div
                 key={s.label}
