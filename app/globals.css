@@ -349,6 +349,43 @@ body {
   padding: 5rem 5rem;
 }
 
+/* Stats belt grid */
+.stats-belt-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0;
+}
+
+/* Steps grid (How it Works) */
+.steps-container {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0;
+}
+
+/* How it Works section */
+.how-it-works {
+  padding: 5rem 5rem 3.5rem;
+}
+
+/* Trust section grid */
+.trust-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+
+/* CTA band grid */
+.cta-band {
+  display: grid;
+  grid-template-columns: 1fr auto;
+}
+
+/* Form row grid */
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+
 /* Services grids */
 .services-grid-3 {
   display: grid;
@@ -430,6 +467,24 @@ body {
     padding: 3rem 1.5rem !important;
     gap: 2rem !important;
   }
+  .cta-band .flex {
+    flex-direction: column;
+    width: 100%;
+  }
+  .cta-band .flex a {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Trust clients grid */
+  .trust-clients-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Form row single column */
+  .form-row {
+    grid-template-columns: 1fr !important;
+  }
 
   /* How it works */
   .how-it-works {
@@ -479,9 +534,6 @@ body {
 
 @media (max-width: 768px) {
   .values-grid {
-    grid-template-columns: 1fr !important;
-  }
-  .form-row {
     grid-template-columns: 1fr !important;
   }
 }

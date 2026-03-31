@@ -65,9 +65,6 @@ export default function StatsBelt() {
         borderTop: "1px solid var(--gold)",
         borderBottom: "1px solid var(--gold)",
         padding: "3rem 5rem",
-        display: "grid",
-        gridTemplateColumns: "repeat(4, 1fr)",
-        gap: 0,
       }}
     >
       {stats.map((s, i) => (

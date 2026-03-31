@@ -25,7 +25,7 @@ const steps = [
 
 export default function HowItWorks() {
   return (
-    <section className="how-it-works" style={{ padding: "5rem 5rem 3.5rem", background: "var(--white)" }}>
+    <section className="how-it-works" style={{ background: "var(--white)" }}>
       <ScrollReveal>
         <div
           className="section-tag flex items-center uppercase"
@@ -59,9 +59,6 @@ export default function HowItWorks() {
       <div
         className="steps-container relative"
         style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(4, 1fr)",
-          gap: 0,
           marginTop: "1rem",
         }}
       >

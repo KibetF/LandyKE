@@ -47,13 +47,11 @@ export default function ServicePageLayout({
           </Link>
 
           <div
+            className="contact-grid"
             style={{
-              display: "grid",
-              gridTemplateColumns: "1fr auto",
               gap: "3rem",
               alignItems: "start",
             }}
-            className="contact-grid"
           >
             <div>
               <div
@@ -180,12 +178,8 @@ export default function ServicePageLayout({
             Why LandyKe
           </h2>
           <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "1fr 1fr",
-              gap: "1rem",
-            }}
             className="form-row"
+            style={{ gap: "1rem" }}
           >
             {whyUs.map((item) => (
               <div

@@ -52,8 +52,6 @@ export default function TrustSection() {
       <div
         className="trust-grid"
         style={{
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr",
           gap: "4rem",
           alignItems: "start",
         }}
@@ -109,6 +107,7 @@ export default function TrustSection() {
             investors who want professional management without the headache.
           </p>
           <div
+            className="trust-clients-grid"
             style={{
               display: "grid",
               gridTemplateColumns: "1fr 1fr",

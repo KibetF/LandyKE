@@ -5,8 +5,6 @@ export default function CtaBand() {
       style={{
         padding: "80px 5rem",
         background: "var(--cream)",
-        display: "grid",
-        gridTemplateColumns: "1fr auto",
         alignItems: "center",
         gap: "4rem",
         borderTop: "1px solid var(--warm)",

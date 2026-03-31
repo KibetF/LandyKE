@@ -72,7 +72,6 @@ export default function ContactSection() {
   return (
     <section id="contact" className="marketing-section">
       <div
-        style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "5rem", alignItems: "start" }}
         className="contact-grid"
       >
         {/* Left — Info */}
@@ -154,7 +153,7 @@ export default function ContactSection() {
             </div>
           ) : (
             <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "1.2rem" }}>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.2rem" }} className="form-row">
+              <div className="form-row" style={{ display: "grid", gap: "1.2rem" }}>
                 <div>
                   <label className="block uppercase" style={fieldLabelStyle}>Full Name</label>
                   <input name="name" type="text" placeholder="John Kamau" required style={fieldInputStyle} />
