@@ -19,6 +19,7 @@ import PropertyBreakdown from "@/components/dashboard/PropertyBreakdown";
 import TenantStatusList from "@/components/dashboard/TenantStatusList";
 import RecentTransactions from "@/components/dashboard/RecentTransactions";
 import MonthSelector from "@/components/dashboard/MonthSelector";
+import LandlordReports from "@/components/dashboard/LandlordReports";
 
 function getGreeting() {
   const hour = new Date().getHours();
@@ -193,6 +194,9 @@ export default async function DashboardPage({
         <TenantStatusList tenants={tenants} />
         <RecentTransactions transactions={transactions} />
       </div>
+
+      {/* Reports Section — Pie charts, property breakdown with tenant preview & downloads */}
+      <LandlordReports selectedMonth={selectedMonth} />
     </>
   );
 }
