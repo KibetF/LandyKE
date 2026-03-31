@@ -507,6 +507,35 @@ body {
   }
 }
 
+/* About page responsive */
+@media (max-width: 768px) {
+  .about-hero-content {
+    padding: 3rem 1.5rem 2.5rem !important;
+  }
+  .about-stats-belt {
+    grid-template-columns: repeat(2, 1fr) !important;
+    padding: 2rem 1.5rem !important;
+    gap: 1.5rem !important;
+  }
+  .about-section-padded {
+    padding: 4rem 1.5rem !important;
+  }
+  .about-cta {
+    padding: 4rem 1.5rem !important;
+  }
+  .about-cta .flex {
+    flex-direction: column;
+    align-items: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .about-stats-belt {
+    grid-template-columns: 1fr !important;
+    padding: 1.5rem 1.5rem !important;
+  }
+}
+
 /* Footer responsive */
 @media (max-width: 768px) {
   .marketing-footer {

@@ -58,7 +58,7 @@ const milestones = [
   { year: "2023", event: "Launched the LandyKe client portal for real-time reporting" },
   { year: "2024", event: "Expanded to manage Action Flats and Rock Center Parkview" },
   { year: "2025", event: "Added Eldoville Villa and Elbros Business Park to the portfolio" },
-  { year: "2026", event: "Managing 6 properties and 78+ units across Eldoret" },
+  { year: "2026", event: "Managing 11 properties and 260+ units across Eldoret" },
 ];
 
 export default function AboutPage() {
@@ -73,6 +73,7 @@ export default function AboutPage() {
         }}
       >
         <div
+          className="about-hero-content"
           style={{
             padding: "5rem 5rem 4rem",
             maxWidth: "800px",
@@ -126,6 +127,7 @@ export default function AboutPage() {
 
       {/* Stats belt */}
       <div
+        className="about-stats-belt"
         style={{
           background: "linear-gradient(135deg, #1a1a1a 0%, #2d2006 100%)",
           borderTop: "1px solid var(--gold)",
@@ -138,8 +140,8 @@ export default function AboutPage() {
       >
         {[
           { num: "2021", label: "Founded" },
-          { num: "6", label: "Properties" },
-          { num: "78+", label: "Units Managed" },
+          { num: "11", label: "Properties" },
+          { num: "260+", label: "Units Managed" },
           { num: "4", label: "Landlord Clients" },
         ].map((s, i, arr) => (
           <div
@@ -167,8 +169,8 @@ export default function AboutPage() {
       </div>
 
       {/* Our Story */}
-      <section style={{ padding: "5rem 5rem", background: "var(--white)" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "5rem", alignItems: "start" }} className="about-grid">
+      <section className="about-section-padded" style={{ padding: "5rem 5rem", background: "var(--white)" }}>
+        <div className="about-grid">
           <div>
             <div
               className="section-tag flex items-center uppercase"
@@ -279,12 +281,8 @@ export default function AboutPage() {
           <em style={{ fontStyle: "italic", color: "var(--gold)" }}>LandyKe</em>
         </h2>
         <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(3, 1fr)",
-            gap: "2rem",
-          }}
           className="services-grid-3"
+          style={{ gap: "2rem" }}
         >
           {team.map((t) => (
             <div
@@ -354,7 +352,7 @@ export default function AboutPage() {
       </section>
 
       {/* Values */}
-      <section style={{ padding: "5rem 5rem", background: "var(--white)" }}>
+      <section className="about-section-padded" style={{ padding: "5rem 5rem", background: "var(--white)" }}>
         <div
           className="section-tag flex items-center uppercase"
           style={{
@@ -382,11 +380,6 @@ export default function AboutPage() {
           <em style={{ fontStyle: "italic", color: "var(--gold)" }}>everything we do</em>
         </h2>
         <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(4, 1fr)",
-            gap: "1.5rem",
-          }}
           className="services-grid-4"
         >
           {values.map((v) => (
@@ -458,11 +451,6 @@ export default function AboutPage() {
           <em style={{ fontStyle: "italic", color: "var(--gold)" }}>portfolio</em>
         </h2>
         <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(3, 1fr)",
-            gap: "1.5rem",
-          }}
           className="services-grid-3"
         >
           {[
@@ -522,6 +510,7 @@ export default function AboutPage() {
 
       {/* CTA */}
       <div
+        className="about-cta"
         style={{
           padding: "80px 5rem",
           background: "var(--ink)",
