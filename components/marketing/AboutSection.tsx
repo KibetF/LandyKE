@@ -114,10 +114,8 @@ export default function AboutSection() {
 
           {/* Quick stats */}
           <div
+            className="about-quick-stats"
             style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(3, 1fr)",
-              gap: "1.5rem",
               marginTop: "2.5rem",
             }}
           >
@@ -162,11 +160,6 @@ export default function AboutSection() {
 
         {/* Right — Values */}
         <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr",
-            gap: "1.5rem",
-          }}
           className="values-grid"
         >
           {values.map((v) => (

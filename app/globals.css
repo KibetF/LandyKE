@@ -386,6 +386,20 @@ body {
   grid-template-columns: 1fr 1fr;
 }
 
+/* Values grid (About section) */
+.values-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+/* About quick stats */
+.about-quick-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+}
+
 /* Services grids */
 .services-grid-3 {
   display: grid;
@@ -534,6 +548,16 @@ body {
 
 @media (max-width: 768px) {
   .values-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .about-quick-stats {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 1rem !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .about-quick-stats {
     grid-template-columns: 1fr !important;
   }
 }
