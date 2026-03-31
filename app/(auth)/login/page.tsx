@@ -29,19 +29,9 @@ function LoginForm() {
       setError(authError.message);
       setLoading(false);
     } else {
-      // Check role to determine redirect target
-      const { data: roleData } = await supabase
-        .schema("landyke")
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", (await supabase.auth.getUser()).data.user?.id)
-        .single();
-
-      if (roleData?.role === "caretaker") {
-        router.push("/caretaker/dashboard");
-      } else {
-        router.push("/dashboard");
-      }
+      // Middleware handles role-aware redirects — caretakers get
+      // redirected to /caretaker/dashboard automatically
+      router.push("/dashboard");
     }
   }
 
