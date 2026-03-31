@@ -21,8 +21,6 @@ export default function HeroSection() {
       <div
         className="hero-grid"
         style={{
-          display: "grid",
-          gridTemplateColumns: "3fr 2fr",
           alignItems: "center",
           maxWidth: "1400px",
           margin: "0 auto",
@@ -88,7 +86,7 @@ export default function HeroSection() {
             financial reporting. You stay informed, we handle everything else.
           </p>
 
-          <div className="flex flex-wrap" style={{ gap: "1rem" }}>
+          <div className="flex flex-wrap hero-buttons" style={{ gap: "1rem" }}>
             <Link
               href="/login"
               className="no-underline uppercase"

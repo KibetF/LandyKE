@@ -50,9 +50,6 @@ export default function KpiRow({ data }: { data: KpiData }) {
     <div
       className="kpi-grid"
       style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(4, 1fr)",
-        gap: "1rem",
         marginBottom: "2rem",
       }}
     >

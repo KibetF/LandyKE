@@ -238,6 +238,32 @@ body {
   border-color: rgba(200,150,62,0.4);
 }
 
+/* Hero grid */
+.hero-grid {
+  display: grid;
+  grid-template-columns: 3fr 2fr;
+}
+
+/* Dashboard grids */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+}
+.dashboard-grid-2 {
+  display: grid;
+  grid-template-columns: 1.6fr 1fr;
+  gap: 1.5rem;
+}
+
+/* Marketing footer */
+.marketing-footer {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: 3rem;
+  padding: 4rem 5rem;
+}
+
 /* Responsive dashboard grid */
 @media (max-width: 1024px) {
   .dashboard-grid-2 {
@@ -368,6 +394,14 @@ body {
   padding: 5rem 5rem 3.5rem;
 }
 
+/* About stats belt */
+.about-stats-belt {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0;
+  padding: 2.5rem 5rem;
+}
+
 /* Trust section grid */
 .trust-grid {
   display: grid;
@@ -458,6 +492,23 @@ body {
   /* Hero responsive stacking */
   .hero-grid {
     grid-template-columns: 1fr !important;
+  }
+  .hero-buttons {
+    justify-content: center;
+  }
+  .hero-buttons a {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Navbar padding */
+  .navbar-inner {
+    padding: 0 1.5rem !important;
+  }
+
+  /* Footer padding */
+  .marketing-footer {
+    padding: 3rem 1.5rem !important;
   }
 
   /* Stats belt 2x2 */

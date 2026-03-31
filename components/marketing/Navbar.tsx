@@ -36,7 +36,7 @@ export default function Navbar() {
     >
       {/* Constrained inner container */}
       <div
-        className="flex justify-between items-center"
+        className="flex justify-between items-center navbar-inner"
         style={{
           maxWidth: "1400px",
           margin: "0 auto",

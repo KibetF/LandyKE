@@ -170,12 +170,7 @@ export default async function DashboardPage({
       {/* Chart + Properties */}
       <div
         className="dashboard-grid-2"
-        style={{
-          display: "grid",
-          gridTemplateColumns: "1.6fr 1fr",
-          gap: "1.5rem",
-          marginBottom: "1.5rem",
-        }}
+        style={{ marginBottom: "1.5rem" }}
       >
         <IncomeChart data={incomeData} />
         <PropertyBreakdown properties={properties} />
@@ -184,12 +179,7 @@ export default async function DashboardPage({
       {/* Tenants + Transactions */}
       <div
         className="dashboard-grid-2"
-        style={{
-          display: "grid",
-          gridTemplateColumns: "1.6fr 1fr",
-          gap: "1.5rem",
-          marginBottom: "1.5rem",
-        }}
+        style={{ marginBottom: "1.5rem" }}
       >
         <TenantStatusList tenants={tenants} />
         <RecentTransactions transactions={transactions} />

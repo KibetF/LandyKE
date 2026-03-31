@@ -22,10 +22,6 @@ export default function Footer() {
         style={{
           background: "var(--ink)",
           borderTop: "4px solid var(--gold)",
-          padding: "4rem 5rem",
-          display: "grid",
-          gridTemplateColumns: "2fr 1fr 1fr 1fr",
-          gap: "3rem",
         }}
       >
         <div>
@@ -172,7 +168,7 @@ export default function Footer() {
         style={{
           background: "rgba(0,0,0,0.3)",
           borderTop: "1px solid rgba(255,255,255,0.1)",
-          padding: "1.2rem 5rem",
+          padding: "1.2rem 2.5rem",
           fontSize: "0.7rem",
           color: "rgba(245,240,232,0.25)",
           letterSpacing: "0.05em",

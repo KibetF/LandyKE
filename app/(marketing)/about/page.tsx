@@ -132,10 +132,6 @@ export default function AboutPage() {
           background: "linear-gradient(135deg, #1a1a1a 0%, #2d2006 100%)",
           borderTop: "1px solid var(--gold)",
           borderBottom: "1px solid var(--gold)",
-          padding: "2.5rem 5rem",
-          display: "grid",
-          gridTemplateColumns: "repeat(4, 1fr)",
-          gap: 0,
         }}
       >
         {[
