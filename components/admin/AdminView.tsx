@@ -988,7 +988,7 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
       )}
 
       {/* Landlord selector */}
-      {tab !== "accounts" && tab !== "overview" && (
+      {tab !== "accounts" && tab !== "overview" && tab !== "reports" && (
         <div style={{ marginBottom: "1.5rem" }}>
           <label style={labelStyle}>Select Landlord</label>
           <div style={{ position: "relative", maxWidth: "400px" }}>
