@@ -10,6 +10,10 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
 } from "recharts";
 
 interface PropertyBreakdown {
@@ -474,6 +478,104 @@ export default function LandlordReports({ selectedMonth }: { selectedMonth: stri
           </div>
         </div>
       )}
+
+      {/* Income Overview Bar Chart */}
+      <div style={{ ...cardStyle, marginBottom: "1.5rem" }}>
+        <div style={{ padding: "1.2rem 1.5rem", borderBottom: "1px solid var(--warm)" }}>
+          <h3 className="font-serif" style={{ fontSize: "1.1rem", fontWeight: 600 }}>
+            Income Overview
+          </h3>
+        </div>
+        <div style={{ padding: "1.5rem", height: "250px" }}>
+          {reportData.incomeData.every((d) => d.collected === 0 && d.expected === 0) ? (
+            <div className="flex flex-col items-center justify-center" style={{ height: "100%", color: "var(--muted)" }}>
+              <BarChart3 size={32} style={{ marginBottom: "0.75rem", opacity: 0.4 }} />
+              <span style={{ fontSize: "0.85rem" }}>No income data available</span>
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={reportData.incomeData} barGap={2} barCategoryGap="20%">
+                <XAxis dataKey="month" tickLine={false} axisLine={false} tick={{ fontSize: 10, fill: "#7a7468" }} />
+                <YAxis hide />
+                <Tooltip
+                  formatter={(value) => `KES ${(Number(value) / 1000).toFixed(0)}k`}
+                  contentStyle={{ background: "var(--white)", border: "1px solid var(--warm)", borderRadius: "4px", fontSize: "0.75rem" }}
+                />
+                <Bar dataKey="expected" fill="#ede6d6" radius={[3, 3, 0, 0]} name="Expected" />
+                <Bar dataKey="collected" fill="#c8963e" radius={[3, 3, 0, 0]} name="Collected" />
+              </BarChart>
+            </ResponsiveContainer>
+          )}
+        </div>
+      </div>
+
+      {/* Occupancy by Property + Collection Rate */}
+      <div className="occupancy-grid" style={{ marginBottom: "1.5rem" }}>
+        <div style={cardStyle}>
+          <div style={{ padding: "1.2rem 1.5rem", borderBottom: "1px solid var(--warm)" }}>
+            <h3 className="font-serif" style={{ fontSize: "1.1rem", fontWeight: 600 }}>Occupancy by Property</h3>
+          </div>
+          <div style={{ padding: "1rem 1.5rem" }}>
+            {reportData.occupancyData.length === 0 ? (
+              <div className="flex flex-col items-center justify-center" style={{ padding: "2rem", color: "var(--muted)" }}>
+                <Users size={28} style={{ marginBottom: "0.5rem", opacity: 0.4 }} />
+                <span style={{ fontSize: "0.85rem" }}>No property data</span>
+              </div>
+            ) : (
+              reportData.occupancyData.map((prop, i) => (
+                <div key={prop.name} style={{ padding: "0.8rem 0", borderBottom: i < reportData.occupancyData.length - 1 ? "1px solid var(--warm)" : "none" }}>
+                  <div className="flex justify-between items-center" style={{ marginBottom: "0.4rem" }}>
+                    <span style={{ fontSize: "0.85rem", fontWeight: 500 }}>{prop.name}</span>
+                    <span style={{ fontSize: "0.75rem", color: "var(--muted)" }}>{prop.occupied}/{prop.total} units</span>
+                  </div>
+                  <div style={{ background: "var(--warm)", borderRadius: "4px", height: "6px", overflow: "hidden" }}>
+                    <div style={{
+                      width: `${prop.rate}%`, height: "100%",
+                      background: prop.rate === 100 ? "var(--green)" : "var(--gold)",
+                      borderRadius: "4px", transition: "width 0.5s ease",
+                    }} />
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+        <div style={cardStyle}>
+          <div style={{ padding: "1.2rem 1.5rem", borderBottom: "1px solid var(--warm)" }}>
+            <h3 className="font-serif" style={{ fontSize: "1.1rem", fontWeight: 600 }}>Payment Collection Rate</h3>
+          </div>
+          <div style={{ padding: "1rem 1.5rem" }}>
+            {reportData.collectionRates.length === 0 ? (
+              <div className="flex flex-col items-center justify-center" style={{ padding: "2rem", color: "var(--muted)" }}>
+                <BarChart3 size={28} style={{ marginBottom: "0.5rem", opacity: 0.4 }} />
+                <span style={{ fontSize: "0.85rem" }}>No collection data</span>
+              </div>
+            ) : (
+              reportData.collectionRates.map((m, i) => (
+                <div key={m.month} style={{ padding: "0.6rem 0", borderBottom: i < reportData.collectionRates.length - 1 ? "1px solid var(--warm)" : "none" }}>
+                  <div className="flex justify-between items-center" style={{ marginBottom: "0.3rem" }}>
+                    <span style={{ fontSize: "0.8rem" }}>{m.month}</span>
+                    <span className="font-serif" style={{
+                      fontSize: "0.85rem", fontWeight: 600,
+                      color: m.rate >= 95 ? "var(--green)" : m.rate >= 90 ? "var(--gold)" : "var(--rust)",
+                    }}>
+                      {m.rate}%
+                    </span>
+                  </div>
+                  <div style={{ background: "var(--warm)", borderRadius: "4px", height: "5px", overflow: "hidden" }}>
+                    <div style={{
+                      width: `${m.rate}%`, height: "100%",
+                      background: m.rate >= 95 ? "var(--green)" : m.rate >= 90 ? "var(--gold)" : "var(--rust)",
+                      borderRadius: "4px",
+                    }} />
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </div>
     </>
   );
 }
