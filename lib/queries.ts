@@ -239,6 +239,11 @@ export function computeTenantStatus(
   // Include tenants created during or before the selected month
   const eligibleTenants = tenants.filter((t) => !t.created_at || t.created_at <= end);
 
+  // If viewing the current month and today is before the 5th, rent is not yet due
+  const today = new Date();
+  const currentMonthKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}`;
+  const rentNotYetDue = monthKey === currentMonthKey && today.getDate() < 5;
+
   return eligibleTenants.map((t, i) => {
     const names = t.full_name.split(" ");
     const initials = names.length >= 2
@@ -251,8 +256,8 @@ export function computeTenantStatus(
     const paidPayment = tenantPayments.find((p) => p.status === "paid");
     const pendingPayment = tenantPayments.find((p) => p.status === "pending");
 
-    let status: "paid" | "pending" | "overdue" = "overdue";
-    let date = "No payment";
+    let status: "paid" | "pending" | "overdue" = rentNotYetDue ? "pending" : "overdue";
+    let date = rentNotYetDue ? "Due 5th" : "No payment";
     if (paidPayment && paidPayment.paid_date) {
       status = "paid";
       date = new Date(paidPayment.paid_date).toLocaleDateString("en-KE", { day: "numeric", month: "short", year: "numeric" });

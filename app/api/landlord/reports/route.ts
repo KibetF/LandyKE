@@ -81,6 +81,12 @@ export async function GET(request: NextRequest) {
     return { month: formatMonthKey(key).split(" ")[0], rate };
   });
 
+  // Determine if the selected month's rent is not yet due (before the 5th)
+  const today = new Date();
+  const currentMonthKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}`;
+  const isCurrentMonth = selectedMonth === currentMonthKey;
+  const rentNotYetDue = isCurrentMonth && today.getDate() < 5;
+
   // Tenant status
   const tenantStatusData = tenantsForMonth.map((t) => {
     const tenantPayments = allPayments.filter(
@@ -89,8 +95,9 @@ export async function GET(request: NextRequest) {
     const paidPayment = tenantPayments.find((p) => p.status === "paid");
     const pendingPayment = tenantPayments.find((p) => p.status === "pending");
 
-    let status: "paid" | "pending" | "overdue" = "overdue";
-    let date = "No payment";
+    // Default: if rent is not yet due (before 5th of current month), show as pending instead of overdue
+    let status: "paid" | "pending" | "overdue" = rentNotYetDue ? "pending" : "overdue";
+    let date = rentNotYetDue ? "Due 5th" : "No payment";
     let paymentNotes = "";
     if (paidPayment && paidPayment.paid_date) {
       status = "paid";
