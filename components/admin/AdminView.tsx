@@ -7,6 +7,7 @@ import {
   LayoutDashboard, FileText, Send, Download, BarChart3, AlertTriangle, Eye,
 } from "lucide-react";
 import { generateRentStatement, generatePropertySummary, generateTenantPaymentReport } from "@/lib/pdf/generate-report";
+import { generateReceipt, generateReceiptBlob, generateReceiptNumber, type ReceiptData } from "@/lib/pdf/generate-receipt";
 import { getAvailableMonths } from "@/lib/queries";
 import {
   BarChart,
@@ -61,7 +62,7 @@ interface Payment {
   due_date: string | null;
   notes: string | null;
   status: string;
-  tenants?: { full_name: string; property_id: string; properties?: { name: string } };
+  tenants?: { full_name: string; property_id: string; unit_number?: string | null; phone?: string | null; properties?: { name: string; location?: string | null } };
 }
 
 interface AdminViewProps {
@@ -251,6 +252,8 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
   const [editingProperty, setEditingProperty] = useState<Property | null>(null);
   const [editingTenant, setEditingTenant] = useState<Tenant | null>(null);
   const [editingPayment, setEditingPayment] = useState<Payment | null>(null);
+  const [receiptPayment, setReceiptPayment] = useState<Payment | null>(null);
+  const [receiptPreviewUrl, setReceiptPreviewUrl] = useState<string | null>(null);
 
   // Edit form states
   const [editPropertyForm, setEditPropertyForm] = useState({ name: "", location: "", total_units: "", collection_start_month: "" });
@@ -530,6 +533,9 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
       } else {
         setMessage({ type: "success", text: "Payment recorded" });
         setPayments((prev) => [data.payment, ...prev]);
+        if (data.payment.status === "paid") {
+          openReceiptPreview(data.payment);
+        }
         setPaymentForm({ tenant_id: "", amount: "", paid_date: "", due_date: "", method: "M-Pesa", notes: "", status: "paid" });
       }
     } catch {
@@ -715,6 +721,53 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
       status: t.status,
     });
     setEditingTenant(t);
+  }
+
+  function buildReceiptData(p: Payment): ReceiptData {
+    const receiptNumber = generateReceiptNumber(p.id, p.paid_date || new Date().toISOString().slice(0, 10));
+    return {
+      receiptNumber,
+      tenantName: p.tenants?.full_name || "Unknown",
+      propertyName: p.tenants?.properties?.name || "—",
+      propertyLocation: p.tenants?.properties?.location || null,
+      unitNumber: p.tenants?.unit_number || null,
+      amount: Number(p.amount),
+      paidDate: p.paid_date || new Date().toISOString().slice(0, 10),
+      dueDate: p.due_date,
+      paymentMethod: p.notes,
+      notes: null,
+    };
+  }
+
+  function openReceiptPreview(p: Payment) {
+    const data = buildReceiptData(p);
+    const blob = generateReceiptBlob(data);
+    const url = URL.createObjectURL(blob);
+    setReceiptPayment(p);
+    setReceiptPreviewUrl(url);
+  }
+
+  function closeReceiptPreview() {
+    if (receiptPreviewUrl) URL.revokeObjectURL(receiptPreviewUrl);
+    setReceiptPayment(null);
+    setReceiptPreviewUrl(null);
+  }
+
+  function downloadReceipt() {
+    if (!receiptPayment) return;
+    const data = buildReceiptData(receiptPayment);
+    generateReceipt(data);
+  }
+
+  function shareViaWhatsApp() {
+    if (!receiptPayment) return;
+    const phone = receiptPayment.tenants?.phone;
+    const amount = Number(receiptPayment.amount).toLocaleString();
+    const text = `Hi ${receiptPayment.tenants?.full_name}, your rent receipt for KES ${amount} has been generated. Please find it attached.`;
+    const url = phone
+      ? `https://wa.me/${phone.replace(/\D/g, "")}?text=${encodeURIComponent(text)}`
+      : `https://wa.me/?text=${encodeURIComponent(text)}`;
+    window.open(url, "_blank");
   }
 
   function openEditPayment(p: Payment) {
@@ -1475,6 +1528,11 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
                             {p.status === "vacated_unpaid" ? "vacated - unpaid" : p.status}
                           </span>
                         </div>
+                        {p.status === "paid" && (
+                          <button onClick={() => openReceiptPreview(p)} style={actionBtnStyle("var(--green)")} title="Receipt">
+                            <FileText size={14} />
+                          </button>
+                        )}
                         <button onClick={() => openEditPayment(p)} style={actionBtnStyle("var(--gold)")} title="Edit">
                           <Pencil size={14} />
                         </button>
@@ -1486,6 +1544,40 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
                   </div>
                 ))
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* === RECEIPT PREVIEW MODAL === */}
+      {receiptPayment && receiptPreviewUrl && (
+        <div style={modalOverlayStyle} onClick={closeReceiptPreview}>
+          <div style={{ ...modalStyle, maxWidth: "700px" }} onClick={(e) => e.stopPropagation()}>
+            <div className="flex justify-between items-center" style={{ marginBottom: "1rem" }}>
+              <h3 className="font-serif" style={{ fontSize: "1.1rem", fontWeight: 600 }}>Receipt Preview</h3>
+              <button onClick={closeReceiptPreview} style={{ background: "none", border: "none", cursor: "pointer" }}>
+                <X size={18} style={{ color: "var(--muted)" }} />
+              </button>
+            </div>
+            <iframe
+              src={receiptPreviewUrl}
+              style={{ width: "100%", height: "500px", border: "1px solid var(--warm)", borderRadius: "4px" }}
+            />
+            <div className="flex" style={{ gap: "0.75rem", marginTop: "1rem" }}>
+              <button
+                onClick={downloadReceipt}
+                className="flex items-center"
+                style={{ ...btnStyle, flex: 1, justifyContent: "center", gap: "0.4rem" }}
+              >
+                <Download size={14} /> Download PDF
+              </button>
+              <button
+                onClick={shareViaWhatsApp}
+                className="flex items-center"
+                style={{ ...btnStyle, flex: 1, justifyContent: "center", gap: "0.4rem", background: "#25D366", color: "#fff" }}
+              >
+                <Send size={14} /> WhatsApp
+              </button>
             </div>
           </div>
         </div>

@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
   const { data, error } = await adminClient
     .schema("landyke")
     .from("payments")
-    .select("*, tenants(full_name, property_id, properties(name))")
+    .select("*, tenants(full_name, property_id, unit_number, phone, properties(name, location))")
     .eq("landlord_id", landlordId)
     .order("paid_date", { ascending: false });
 
@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
       notes: notes || null,
       status,
     })
-    .select("*, tenants(full_name, property_id, properties(name))")
+    .select("*, tenants(full_name, property_id, unit_number, phone, properties(name, location))")
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
@@ -99,7 +99,7 @@ export async function PATCH(request: NextRequest) {
     .from("payments")
     .update(updateData)
     .eq("id", payment_id)
-    .select("*, tenants(full_name, property_id, properties(name))")
+    .select("*, tenants(full_name, property_id, unit_number, phone, properties(name, location))")
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
