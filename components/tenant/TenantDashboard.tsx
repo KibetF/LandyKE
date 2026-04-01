@@ -36,6 +36,7 @@ const statusConfig = {
   paid: { bg: "var(--green-light)", color: "var(--green)", label: "Paid", Icon: CheckCircle },
   pending: { bg: "var(--amber-light)", color: "var(--gold)", label: "Pending", Icon: Clock },
   overdue: { bg: "var(--red-light)", color: "var(--red-soft)", label: "Overdue", Icon: AlertCircle },
+  vacated_unpaid: { bg: "#f0eded", color: "#6b5e5e", label: "Vacated - Unpaid", Icon: AlertCircle },
 };
 
 export default function TenantDashboard({ tenant, payments, balance }: Props) {

@@ -120,7 +120,7 @@ export interface TenantProfile {
 }
 
 export interface TenantPaymentSummary {
-  currentMonthStatus: "paid" | "pending" | "overdue";
+  currentMonthStatus: "paid" | "pending" | "overdue" | "vacated_unpaid";
   balance: number;
   lastPaymentDate: string | null;
   lastPaymentAmount: number | null;

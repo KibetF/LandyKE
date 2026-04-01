@@ -50,7 +50,7 @@ export default async function DashboardPage({
   let userName = "User";
   let incomeData: { month: string; collected: number; expected: number }[] = [];
   let properties: { name: string; location: string; units: number; income: number; occupancy: string }[] = [];
-  let tenants: { initials: string; color: string; name: string; property: string; amount: number; date: string; status: "paid" | "pending" | "overdue" }[] = [];
+  let tenants: { initials: string; color: string; name: string; property: string; amount: number; date: string; status: "paid" | "pending" | "overdue" | "vacated_unpaid" }[] = [];
   let transactions: { title: string; detail: string; amount: string; isDeduction?: boolean }[] = [];
   let kpiData = {
     totalCollected: 0,

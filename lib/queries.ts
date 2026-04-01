@@ -255,12 +255,16 @@ export function computeTenantStatus(
     );
     const paidPayment = tenantPayments.find((p) => p.status === "paid");
     const pendingPayment = tenantPayments.find((p) => p.status === "pending");
+    const vacatedPayment = tenantPayments.find((p) => p.status === "vacated_unpaid");
 
-    let status: "paid" | "pending" | "overdue" = rentNotYetDue ? "pending" : "overdue";
+    let status: "paid" | "pending" | "overdue" | "vacated_unpaid" = rentNotYetDue ? "pending" : "overdue";
     let date = rentNotYetDue ? "Due 5th" : "No payment";
     if (paidPayment && paidPayment.paid_date) {
       status = "paid";
       date = new Date(paidPayment.paid_date).toLocaleDateString("en-KE", { day: "numeric", month: "short", year: "numeric" });
+    } else if (vacatedPayment) {
+      status = "vacated_unpaid";
+      date = "Vacated";
     } else if (pendingPayment) {
       status = "pending";
       date = pendingPayment.paid_date
@@ -320,7 +324,11 @@ export function computeArrears(
       const hasPaid = payments.some(
         (p) => p.tenant_id === t.id && p.paid_date && p.paid_date >= start && p.paid_date <= end && p.status === "paid"
       );
-      return !hasPaid;
+      // Exclude vacated_unpaid — those are write-offs, not active arrears
+      const isVacated = payments.some(
+        (p) => p.tenant_id === t.id && p.status === "vacated_unpaid" && p.paid_date && p.paid_date >= start && p.paid_date <= end
+      );
+      return !hasPaid && !isVacated;
     })
     .map((t) => {
       const daysOverdue = Math.max(0, Math.floor((today.getTime() - new Date(start).getTime()) / (1000 * 60 * 60 * 24)));

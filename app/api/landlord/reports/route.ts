@@ -94,15 +94,20 @@ export async function GET(request: NextRequest) {
     );
     const paidPayment = tenantPayments.find((p) => p.status === "paid");
     const pendingPayment = tenantPayments.find((p) => p.status === "pending");
+    const vacatedPayment = tenantPayments.find((p) => p.status === "vacated_unpaid");
 
     // Default: if rent is not yet due (before 5th of current month), show as pending instead of overdue
-    let status: "paid" | "pending" | "overdue" = rentNotYetDue ? "pending" : "overdue";
+    let status: "paid" | "pending" | "overdue" | "vacated_unpaid" = rentNotYetDue ? "pending" : "overdue";
     let date = rentNotYetDue ? "Due 5th" : "No payment";
     let paymentNotes = "";
     if (paidPayment && paidPayment.paid_date) {
       status = "paid";
       date = new Date(paidPayment.paid_date).toLocaleDateString("en-KE", { day: "numeric", month: "short", year: "numeric" });
       paymentNotes = paidPayment.notes || "";
+    } else if (vacatedPayment) {
+      status = "vacated_unpaid";
+      date = "Vacated";
+      paymentNotes = vacatedPayment.notes || "";
     } else if (pendingPayment) {
       status = "pending";
       date = pendingPayment.paid_date

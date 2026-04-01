@@ -138,7 +138,7 @@ interface TenantPaymentReportData {
     unit?: string;
     amount: number;
     date: string;
-    status: "paid" | "pending" | "overdue";
+    status: "paid" | "pending" | "overdue" | "vacated_unpaid";
     notes?: string;
   }[];
   totalCollected: number;
@@ -156,13 +156,17 @@ export function generateTenantPaymentReport(data: TenantPaymentReportData) {
   const paidCount = data.tenants.filter((t) => t.status === "paid").length;
   const overdueCount = data.tenants.filter((t) => t.status === "overdue").length;
   const pendingCount = data.tenants.filter((t) => t.status === "pending").length;
+  const vacatedCount = data.tenants.filter((t) => t.status === "vacated_unpaid").length;
 
-  const summaryItems = [
+  const summaryItems: { label: string; value: string; color: [number, number, number] }[] = [
     { label: "Total Tenants", value: `${data.tenants.length}`, color: COLORS.ink },
     { label: "Paid", value: `${paidCount}`, color: COLORS.green },
     { label: "Pending", value: `${pendingCount}`, color: COLORS.gold },
     { label: "Overdue", value: `${overdueCount}`, color: COLORS.rust },
   ];
+  if (vacatedCount > 0) {
+    summaryItems.push({ label: "Vacated Unpaid", value: `${vacatedCount}`, color: [107, 94, 94] });
+  }
 
   const boxWidth = 40;
   const startX = 20;
@@ -221,7 +225,7 @@ export function generateTenantPaymentReport(data: TenantPaymentReportData) {
         t.property,
         t.unit || "—",
         `KES ${t.amount.toLocaleString()}`,
-        t.status.charAt(0).toUpperCase() + t.status.slice(1),
+        t.status === "vacated_unpaid" ? "Vacated - Unpaid" : t.status.charAt(0).toUpperCase() + t.status.slice(1),
         t.date,
       ];
       if (hasExternal) row.push(isKcb ? "KCB" : t.status === "paid" ? "Our A/C" : "");
@@ -258,6 +262,8 @@ export function generateTenantPaymentReport(data: TenantPaymentReportData) {
           hookData.cell.styles.textColor = COLORS.green;
         } else if (val === "pending") {
           hookData.cell.styles.textColor = COLORS.gold;
+        } else if (val === "vacated - unpaid") {
+          hookData.cell.styles.textColor = [107, 94, 94];
         } else {
           hookData.cell.styles.textColor = COLORS.rust;
         }
