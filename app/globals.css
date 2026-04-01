@@ -293,30 +293,71 @@ body {
     flex-direction: column !important;
   }
   .portal-sidebar {
-    position: relative !important;
-    width: 100% !important;
-    min-width: 100% !important;
-    height: auto !important;
-    padding: 1rem 0 !important;
-    flex-direction: row !important;
-    overflow-x: auto;
+    display: none !important;
   }
-  .portal-sidebar .sidebar-user { display: none; }
-  .portal-sidebar nav {
+  .landlord-mobile-nav {
     display: flex !important;
-    flex-direction: row !important;
-    gap: 0.25rem;
-    padding: 0 0.5rem !important;
-    overflow-x: auto;
   }
-  .portal-sidebar nav a {
-    white-space: nowrap;
-    margin-bottom: 0 !important;
-  }
-  .portal-sidebar .sidebar-signout-wrap,
-  .portal-sidebar .sidebar-footer { display: none; }
   .portal-main {
     padding: 1.5rem 1rem !important;
+    padding-bottom: 5rem !important;
+  }
+}
+
+/* Data grid responsive */
+.payment-row { grid-template-columns: auto 1fr auto auto auto; }
+.tenant-row { grid-template-columns: auto 1fr auto auto auto; }
+.tenant-status-row { grid-template-columns: auto 1fr auto auto; }
+.admin-payment-row { grid-template-columns: 1fr auto; }
+
+.form-grid-2col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+@media (max-width: 768px) {
+  .payment-row {
+    grid-template-columns: auto 1fr auto !important;
+  }
+  .payment-row > :nth-child(4),
+  .payment-row > :nth-child(5) {
+    display: none;
+  }
+  .tenant-row {
+    grid-template-columns: auto 1fr auto !important;
+  }
+  .tenant-row > :nth-child(4),
+  .tenant-row > :nth-child(5) {
+    display: none;
+  }
+  .tenant-status-row {
+    grid-template-columns: auto 1fr auto !important;
+  }
+  .tenant-status-row > :nth-child(4) {
+    display: none;
+  }
+  .form-grid-2col {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .payment-row {
+    grid-template-columns: 1fr !important;
+    gap: 0.5rem !important;
+    padding: 1rem !important;
+  }
+  .payment-row > :nth-child(1) {
+    display: none;
+  }
+  .tenant-row {
+    grid-template-columns: 1fr !important;
+    gap: 0.5rem !important;
+    padding: 1rem !important;
+  }
+  .tenant-row > :nth-child(1) {
+    display: none;
   }
 }
 
@@ -828,6 +869,16 @@ body {
   box-shadow: 0 8px 32px rgba(0,0,0,0.1);
   z-index: 50;
   overflow: hidden;
+}
+
+@media (max-width: 480px) {
+  .notification-dropdown {
+    width: calc(100vw - 2rem) !important;
+    right: -1rem !important;
+  }
+  .portal-search {
+    max-width: 100% !important;
+  }
 }
 
 /* Settings sections grid */

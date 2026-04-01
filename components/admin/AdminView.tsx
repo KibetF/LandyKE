@@ -191,10 +191,11 @@ const modalStyle: React.CSSProperties = {
   background: "var(--white)",
   borderRadius: "8px",
   padding: "1.5rem",
-  width: "100%",
+  width: "calc(100% - 2rem)",
   maxWidth: "500px",
   maxHeight: "90vh",
   overflowY: "auto",
+  margin: "1rem",
 };
 
 function Message({ message }: { message: { type: "success" | "error"; text: string } | null }) {
@@ -1158,7 +1159,7 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
                 <label style={labelStyle}>Location</label>
                 <input type="text" value={propertyForm.location} onChange={(e) => setPropertyForm((f) => ({ ...f, location: e.target.value }))} placeholder="e.g. Near Royalton, Eldoret" style={inputStyle} />
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1.5rem" }}>
+              <div className="form-grid-2col" style={{ marginBottom: "1.5rem" }}>
                 <div>
                   <label style={labelStyle}>Total Units *</label>
                   <input type="number" required min={1} value={propertyForm.total_units} onChange={(e) => setPropertyForm((f) => ({ ...f, total_units: e.target.value }))} placeholder="e.g. 18" style={inputStyle} />
@@ -1245,7 +1246,7 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
                       ))}
                     </select>
                   </div>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1rem" }}>
+                  <div className="form-grid-2col" style={{ marginBottom: "1rem" }}>
                     <div>
                       <label style={labelStyle}>Full Name *</label>
                       <input type="text" required value={tenantForm.full_name} onChange={(e) => setTenantForm((f) => ({ ...f, full_name: e.target.value }))} placeholder="e.g. James Waweru" style={inputStyle} />
@@ -1255,7 +1256,7 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
                       <input type="text" value={tenantForm.unit_number} onChange={(e) => setTenantForm((f) => ({ ...f, unit_number: e.target.value }))} placeholder="e.g. A3" style={inputStyle} />
                     </div>
                   </div>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1rem" }}>
+                  <div className="form-grid-2col" style={{ marginBottom: "1rem" }}>
                     <div>
                       <label style={labelStyle}>Unit Type</label>
                       <select value={tenantForm.unit_type} onChange={(e) => setTenantForm((f) => ({ ...f, unit_type: e.target.value }))} style={inputStyle}>
@@ -1270,7 +1271,7 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
                       <input type="number" required min={1} value={tenantForm.rent_amount} onChange={(e) => setTenantForm((f) => ({ ...f, rent_amount: e.target.value }))} placeholder="e.g. 12500" style={inputStyle} />
                     </div>
                   </div>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1rem" }}>
+                  <div className="form-grid-2col" style={{ marginBottom: "1rem" }}>
                     <div>
                       <label style={labelStyle}>Email</label>
                       <input type="email" value={tenantForm.email} onChange={(e) => setTenantForm((f) => ({ ...f, email: e.target.value }))} placeholder="e.g. james@email.com" style={inputStyle} />
@@ -1370,7 +1371,7 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
                 </div>
               ) : (
                 <>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1rem" }}>
+                  <div className="form-grid-2col" style={{ marginBottom: "1rem" }}>
                     <div>
                       <label style={labelStyle}>Property</label>
                       <select
@@ -1413,7 +1414,7 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
                       </select>
                     </div>
                   </div>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1rem" }}>
+                  <div className="form-grid-2col" style={{ marginBottom: "1rem" }}>
                     <div>
                       <label style={labelStyle}>Amount (KES) *</label>
                       <input type="number" required min={1} value={paymentForm.amount} onChange={(e) => setPaymentForm((f) => ({ ...f, amount: e.target.value }))} placeholder="e.g. 12500" style={inputStyle} />
@@ -1423,7 +1424,7 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
                       <input type="date" value={paymentForm.paid_date} onChange={(e) => setPaymentForm((f) => ({ ...f, paid_date: e.target.value }))} style={inputStyle} />
                     </div>
                   </div>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1rem" }}>
+                  <div className="form-grid-2col" style={{ marginBottom: "1rem" }}>
                     <div>
                       <label style={labelStyle}>Due Date</label>
                       <input type="date" value={paymentForm.due_date} onChange={(e) => setPaymentForm((f) => ({ ...f, due_date: e.target.value }))} style={inputStyle} />
@@ -1438,7 +1439,7 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
                       </select>
                     </div>
                   </div>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1.5rem" }}>
+                  <div className="form-grid-2col" style={{ marginBottom: "1.5rem" }}>
                     <div>
                       <label style={labelStyle}>Payment Method</label>
                       <select value={paymentForm.method} onChange={(e) => setPaymentForm((f) => ({ ...f, method: e.target.value }))} style={inputStyle}>
@@ -2130,7 +2131,7 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
                 <label style={labelStyle}>Location</label>
                 <input type="text" value={editPropertyForm.location} onChange={(e) => setEditPropertyForm((f) => ({ ...f, location: e.target.value }))} style={inputStyle} />
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1.5rem" }}>
+              <div className="form-grid-2col" style={{ marginBottom: "1.5rem" }}>
                 <div>
                   <label style={labelStyle}>Total Units *</label>
                   <input type="number" required min={1} value={editPropertyForm.total_units} onChange={(e) => setEditPropertyForm((f) => ({ ...f, total_units: e.target.value }))} style={inputStyle} />
@@ -2167,7 +2168,7 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
                   ))}
                 </select>
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1rem" }}>
+              <div className="form-grid-2col" style={{ marginBottom: "1rem" }}>
                 <div>
                   <label style={labelStyle}>Full Name *</label>
                   <input type="text" required value={editTenantForm.full_name} onChange={(e) => setEditTenantForm((f) => ({ ...f, full_name: e.target.value }))} style={inputStyle} />
@@ -2177,7 +2178,7 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
                   <input type="text" value={editTenantForm.unit_number} onChange={(e) => setEditTenantForm((f) => ({ ...f, unit_number: e.target.value }))} style={inputStyle} />
                 </div>
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1rem" }}>
+              <div className="form-grid-2col" style={{ marginBottom: "1rem" }}>
                 <div>
                   <label style={labelStyle}>Unit Type</label>
                   <select value={editTenantForm.unit_type} onChange={(e) => setEditTenantForm((f) => ({ ...f, unit_type: e.target.value }))} style={inputStyle}>
@@ -2192,7 +2193,7 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
                   <input type="number" required min={1} value={editTenantForm.rent_amount} onChange={(e) => setEditTenantForm((f) => ({ ...f, rent_amount: e.target.value }))} style={inputStyle} />
                 </div>
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1rem" }}>
+              <div className="form-grid-2col" style={{ marginBottom: "1rem" }}>
                 <div>
                   <label style={labelStyle}>Email</label>
                   <input type="email" value={editTenantForm.email} onChange={(e) => setEditTenantForm((f) => ({ ...f, email: e.target.value }))} style={inputStyle} />
@@ -2233,7 +2234,7 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
                 <label style={labelStyle}>Tenant</label>
                 <input type="text" readOnly value={editingPayment.tenants?.full_name || "—"} style={{ ...inputStyle, background: "var(--cream)", cursor: "default" }} />
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1rem" }}>
+              <div className="form-grid-2col" style={{ marginBottom: "1rem" }}>
                 <div>
                   <label style={labelStyle}>Amount (KES)</label>
                   <input type="text" readOnly value={`KES ${Number(editPaymentForm.amount).toLocaleString()}`} style={{ ...inputStyle, background: "var(--cream)", cursor: "default" }} />
@@ -2248,7 +2249,7 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
                   </select>
                 </div>
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1.5rem" }}>
+              <div className="form-grid-2col" style={{ marginBottom: "1.5rem" }}>
                 <div>
                   <label style={labelStyle}>Paid Date</label>
                   <input type="date" value={editPaymentForm.paid_date} onChange={(e) => setEditPaymentForm((f) => ({ ...f, paid_date: e.target.value }))} style={inputStyle} />

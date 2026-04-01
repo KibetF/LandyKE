@@ -235,10 +235,9 @@ export default function PaymentsView({
               return (
                 <div
                   key={payment.id}
-                  className="items-center row-hover"
+                  className="payment-row items-center row-hover"
                   style={{
                     display: "grid",
-                    gridTemplateColumns: "auto 1fr auto auto auto",
                     gap: "1rem",
                     padding: "1rem 1.5rem",
                     borderBottom: i < filtered.length - 1 ? "1px solid var(--warm)" : "none",

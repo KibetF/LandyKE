@@ -254,10 +254,9 @@ export default function TenantTable({ tenants, properties, currentPage = 1, tota
               return (
                 <div
                   key={tenant.id}
-                  className="items-center row-hover"
+                  className="tenant-row items-center row-hover"
                   style={{
                     display: "grid",
-                    gridTemplateColumns: "auto 1fr auto auto auto",
                     gap: "1rem",
                     padding: "1rem 1.5rem",
                     borderBottom:

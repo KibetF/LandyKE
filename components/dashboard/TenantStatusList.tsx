@@ -71,10 +71,9 @@ export default function TenantStatusList({
           tenants.map((t) => (
             <div
               key={t.name}
-              className="items-center cursor-pointer row-hover"
+              className="tenant-status-row items-center cursor-pointer row-hover"
               style={{
                 display: "grid",
-                gridTemplateColumns: "auto 1fr auto auto",
                 gap: "1rem",
                 padding: "0.9rem 1rem",
                 borderRadius: "6px",
