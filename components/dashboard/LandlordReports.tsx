@@ -287,9 +287,17 @@ export default function LandlordReports({ selectedMonth }: { selectedMonth: stri
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.85rem" }}>
               <thead>
                 <tr style={{ borderBottom: "1px solid var(--warm)", background: "var(--cream)" }}>
-                  {["Property", "Tenants Paid", "Collected", "Expected", "Outstanding", "Rate", ""].map((h) => (
-                    <th key={h} style={{ padding: "0.75rem 1rem", textAlign: "left", fontSize: "0.7rem", textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--muted)", fontWeight: 600 }}>
-                      {h}
+                  {[
+                    { label: "Property", hide: false },
+                    { label: "Tenants Paid", hide: true },
+                    { label: "Collected", hide: false },
+                    { label: "Expected", hide: true },
+                    { label: "Outstanding", hide: false },
+                    { label: "Rate", hide: true },
+                    { label: "", hide: false },
+                  ].map((h) => (
+                    <th key={h.label} className={h.hide ? "reports-table-mobile-hide" : ""} style={{ padding: "0.75rem 1rem", textAlign: "left", fontSize: "0.7rem", textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--muted)", fontWeight: 600 }}>
+                      {h.label}
                     </th>
                   ))}
                 </tr>
@@ -305,7 +313,7 @@ export default function LandlordReports({ selectedMonth }: { selectedMonth: stri
                           <span style={{ fontWeight: 600 }}>{prop.name}</span>
                           {prop.location && <span style={{ display: "block", fontSize: "0.7rem", color: "var(--muted)" }}>{prop.location}</span>}
                         </td>
-                        <td style={{ padding: "0.85rem 1rem" }}>
+                        <td className="reports-table-mobile-hide" style={{ padding: "0.85rem 1rem" }}>
                           <span style={{ fontWeight: 600 }}>{prop.tenantsPaid}</span>
                           <span style={{ color: "var(--muted)" }}> / {prop.totalTenants}</span>
                         </td>
@@ -314,7 +322,7 @@ export default function LandlordReports({ selectedMonth }: { selectedMonth: stri
                             KES {prop.collected.toLocaleString()}
                           </span>
                         </td>
-                        <td style={{ padding: "0.85rem 1rem" }}>
+                        <td className="reports-table-mobile-hide" style={{ padding: "0.85rem 1rem" }}>
                           <span style={{ color: "var(--muted)" }}>KES {prop.expected.toLocaleString()}</span>
                         </td>
                         <td style={{ padding: "0.85rem 1rem" }}>
@@ -322,7 +330,7 @@ export default function LandlordReports({ selectedMonth }: { selectedMonth: stri
                             KES {Math.max(0, prop.expected - prop.collected).toLocaleString()}
                           </span>
                         </td>
-                        <td style={{ padding: "0.85rem 1rem" }}>
+                        <td className="reports-table-mobile-hide" style={{ padding: "0.85rem 1rem" }}>
                           <div className="flex items-center" style={{ gap: "0.5rem" }}>
                             <div style={{ flex: 1, background: "var(--warm)", borderRadius: "4px", height: "6px", overflow: "hidden", minWidth: "60px" }}>
                               <div style={{
@@ -372,9 +380,17 @@ export default function LandlordReports({ selectedMonth }: { selectedMonth: stri
                               <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.8rem" }}>
                                 <thead>
                                   <tr style={{ borderBottom: "1px solid rgba(200,150,62,0.15)" }}>
-                                    {["#", "Tenant", "Unit", "Rent (KES)", "Status", "Payment Date", "Channel"].map((h) => (
-                                      <th key={h} style={{ padding: "0.6rem 1rem", textAlign: "left", fontSize: "0.65rem", textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--muted)", fontWeight: 600 }}>
-                                        {h}
+                                    {[
+                                      { label: "#", hide: true },
+                                      { label: "Tenant", hide: false },
+                                      { label: "Unit", hide: true },
+                                      { label: "Rent (KES)", hide: false },
+                                      { label: "Status", hide: false },
+                                      { label: "Payment Date", hide: true },
+                                      { label: "Channel", hide: true },
+                                    ].map((h) => (
+                                      <th key={h.label} className={h.hide ? "reports-table-mobile-hide" : ""} style={{ padding: "0.6rem 1rem", textAlign: "left", fontSize: "0.65rem", textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--muted)", fontWeight: 600 }}>
+                                        {h.label}
                                       </th>
                                     ))}
                                   </tr>
@@ -384,9 +400,9 @@ export default function LandlordReports({ selectedMonth }: { selectedMonth: stri
                                     const isExternal = t.notes && /kcb/i.test(t.notes);
                                     return (
                                       <tr key={t.name + ti} style={{ borderBottom: ti < propertyTenants.length - 1 ? "1px solid rgba(200,150,62,0.1)" : "none" }}>
-                                        <td style={{ padding: "0.6rem 1rem", color: "var(--muted)" }}>{ti + 1}</td>
+                                        <td className="reports-table-mobile-hide" style={{ padding: "0.6rem 1rem", color: "var(--muted)" }}>{ti + 1}</td>
                                         <td style={{ padding: "0.6rem 1rem", fontWeight: 500 }}>{t.name}</td>
-                                        <td style={{ padding: "0.6rem 1rem", color: "var(--muted)" }}>{t.unit || "—"}</td>
+                                        <td className="reports-table-mobile-hide" style={{ padding: "0.6rem 1rem", color: "var(--muted)" }}>{t.unit || "—"}</td>
                                         <td style={{ padding: "0.6rem 1rem" }}>KES {t.amount.toLocaleString()}</td>
                                         <td style={{ padding: "0.6rem 1rem" }}>
                                           <span className="status-pill" style={{
@@ -396,8 +412,8 @@ export default function LandlordReports({ selectedMonth }: { selectedMonth: stri
                                             {t.status.charAt(0).toUpperCase() + t.status.slice(1)}
                                           </span>
                                         </td>
-                                        <td style={{ padding: "0.6rem 1rem", fontSize: "0.75rem", color: "var(--muted)" }}>{t.date}</td>
-                                        <td style={{ padding: "0.6rem 1rem" }}>
+                                        <td className="reports-table-mobile-hide" style={{ padding: "0.6rem 1rem", fontSize: "0.75rem", color: "var(--muted)" }}>{t.date}</td>
+                                        <td className="reports-table-mobile-hide" style={{ padding: "0.6rem 1rem" }}>
                                           {isExternal ? (
                                             <span style={{ display: "inline-block", padding: "0.15rem 0.5rem", fontSize: "0.65rem", fontWeight: 600, borderRadius: "3px", background: "#fff3e0", color: "#e65100", border: "1px solid #ffcc80" }}>
                                               KCB
