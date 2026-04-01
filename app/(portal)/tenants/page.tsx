@@ -1,3 +1,5 @@
+export const revalidate = 60;
+
 import { createClient } from "@/lib/supabase/server";
 import { getLandlord, getTenantsPaginated } from "@/lib/queries";
 import TenantTable from "@/components/tenants/TenantTable";

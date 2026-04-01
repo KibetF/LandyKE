@@ -1,3 +1,5 @@
+export const revalidate = 30;
+
 import { createClient } from "@/lib/supabase/server";
 import { getLandlord, getProperties, getActiveTenants, getPaymentsPaginated } from "@/lib/queries";
 import PaymentsView from "@/components/payments/PaymentsView";

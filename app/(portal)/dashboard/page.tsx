@@ -1,3 +1,5 @@
+export const revalidate = 60; // Cache dashboard data for 60 seconds
+
 import { createClient } from "@/lib/supabase/server";
 import {
   getLandlord,
