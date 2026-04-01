@@ -244,6 +244,7 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
   const [propertyForm, setPropertyForm] = useState({ name: "", location: "", total_units: "", collection_start_month: "" });
   const [tenantForm, setTenantForm] = useState({ property_id: "", full_name: "", email: "", phone: "", rent_amount: "", unit_number: "", unit_type: "" });
   const [paymentPropertyFilter, setPaymentPropertyFilter] = useState("");
+  const [paymentMonthFilter, setPaymentMonthFilter] = useState(new Date().toISOString().slice(0, 7));
   const [paymentForm, setPaymentForm] = useState({ tenant_id: "", amount: "", paid_date: "", due_date: "", method: "M-Pesa", notes: "", status: "paid" });
 
   // Edit modals
@@ -1380,6 +1381,7 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
                         <option value="paid">Paid</option>
                         <option value="pending">Pending</option>
                         <option value="overdue">Overdue</option>
+                        <option value="vacated_unpaid">Vacated - Unpaid</option>
                       </select>
                     </div>
                   </div>
@@ -1408,24 +1410,44 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
           </div>
 
           <div style={cardStyle}>
-            <div className="flex items-center justify-between" style={{ padding: "1.2rem 1.5rem", borderBottom: "1px solid var(--warm)" }}>
-              <div className="flex items-center" style={{ gap: "0.5rem" }}>
-                <CreditCard size={18} style={{ color: "var(--gold)" }} />
-                <h3 className="font-serif" style={{ fontSize: "1.1rem", fontWeight: 600 }}>Payments</h3>
+            <div style={{ padding: "1.2rem 1.5rem", borderBottom: "1px solid var(--warm)" }}>
+              <div className="flex items-center justify-between" style={{ marginBottom: "0.75rem" }}>
+                <div className="flex items-center" style={{ gap: "0.5rem" }}>
+                  <CreditCard size={18} style={{ color: "var(--gold)" }} />
+                  <h3 className="font-serif" style={{ fontSize: "1.1rem", fontWeight: 600 }}>Payments</h3>
+                </div>
+                <span style={{ fontSize: "0.7rem", color: "var(--muted)", background: "var(--cream)", padding: "0.25rem 0.6rem", borderRadius: "20px" }}>
+                  {payments.filter((p) => {
+                    const d = p.paid_date || p.due_date;
+                    return d && d.slice(0, 7) === paymentMonthFilter;
+                  }).length} of {payments.length}
+                </span>
               </div>
-              <span style={{ fontSize: "0.7rem", color: "var(--muted)", background: "var(--cream)", padding: "0.25rem 0.6rem", borderRadius: "20px" }}>
-                {payments.length} total
-              </span>
+              <select
+                value={paymentMonthFilter}
+                onChange={(e) => setPaymentMonthFilter(e.target.value)}
+                style={{ ...inputStyle, fontSize: "0.8rem" }}
+              >
+                {getAvailableMonths().map((m) => (
+                  <option key={m.value} value={m.value}>{m.label}</option>
+                ))}
+              </select>
             </div>
             <div>
-              {payments.length === 0 ? (
+              {payments.filter((p) => {
+                const d = p.paid_date || p.due_date;
+                return d && d.slice(0, 7) === paymentMonthFilter;
+              }).length === 0 ? (
                 <div className="flex flex-col items-center justify-center" style={{ padding: "2rem", color: "var(--muted)" }}>
                   <CreditCard size={28} style={{ marginBottom: "0.5rem", opacity: 0.4 }} />
                   <span style={{ fontSize: "0.85rem" }}>No payments yet</span>
                 </div>
               ) : (
-                payments.map((p, i) => (
-                  <div key={p.id} className="row-hover" style={{ padding: "1rem 1.5rem", borderBottom: i < payments.length - 1 ? "1px solid var(--warm)" : "none" }}>
+                payments.filter((p) => {
+                  const d = p.paid_date || p.due_date;
+                  return d && d.slice(0, 7) === paymentMonthFilter;
+                }).map((p, i, filtered) => (
+                  <div key={p.id} className="row-hover" style={{ padding: "1rem 1.5rem", borderBottom: i < filtered.length - 1 ? "1px solid var(--warm)" : "none" }}>
                     <div className="flex justify-between items-center">
                       <div>
                         <h4 style={{ fontSize: "0.85rem", fontWeight: 500, marginBottom: "0.15rem" }}>
@@ -1437,7 +1459,7 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
                       </div>
                       <div className="flex items-center" style={{ gap: "0.5rem" }}>
                         <div className="text-right">
-                          <span className="font-serif" style={{ fontSize: "0.9rem", fontWeight: 600, color: p.status === "paid" ? "var(--green)" : p.status === "overdue" ? "var(--rust)" : "var(--ink)" }}>
+                          <span className="font-serif" style={{ fontSize: "0.9rem", fontWeight: 600, color: p.status === "paid" ? "var(--green)" : p.status === "overdue" ? "var(--rust)" : p.status === "vacated_unpaid" ? "#6b5e5e" : "var(--ink)" }}>
                             KES {Number(p.amount).toLocaleString()}
                           </span>
                           <span
@@ -1446,11 +1468,11 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
                               fontSize: "0.55rem",
                               marginTop: "0.2rem",
                               display: "inline-block",
-                              background: p.status === "paid" ? "var(--green-light)" : p.status === "overdue" ? "var(--red-light)" : "var(--amber-light)",
-                              color: p.status === "paid" ? "var(--green)" : p.status === "overdue" ? "var(--red-soft)" : "var(--gold)",
+                              background: p.status === "paid" ? "var(--green-light)" : p.status === "overdue" ? "var(--red-light)" : p.status === "vacated_unpaid" ? "#f0eded" : "var(--amber-light)",
+                              color: p.status === "paid" ? "var(--green)" : p.status === "overdue" ? "var(--red-soft)" : p.status === "vacated_unpaid" ? "#6b5e5e" : "var(--gold)",
                             }}
                           >
-                            {p.status}
+                            {p.status === "vacated_unpaid" ? "vacated - unpaid" : p.status}
                           </span>
                         </div>
                         <button onClick={() => openEditPayment(p)} style={actionBtnStyle("var(--gold)")} title="Edit">
@@ -2130,6 +2152,7 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
                     <option value="paid">Paid</option>
                     <option value="pending">Pending</option>
                     <option value="overdue">Overdue</option>
+                    <option value="vacated_unpaid">Vacated - Unpaid</option>
                   </select>
                 </div>
               </div>
