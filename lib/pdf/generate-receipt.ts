@@ -286,11 +286,14 @@ function buildReceipt(data: ReceiptData): jsPDF {
   doc.setTextColor(...COLORS.muted);
   doc.text("Registered Property Managers", pageWidth / 2, footerY + 14, { align: "center" });
 
-  // Phone number (centered, with small bullet separating icon text)
-  doc.setFont("helvetica", "bold");
+  // Phone number
+  doc.setFont("helvetica", "normal");
   doc.setFontSize(7);
+  doc.setTextColor(...COLORS.muted);
+  doc.text("Tel:", pageWidth / 2 - 18, footerY + 21);
+  doc.setFont("helvetica", "bold");
   doc.setTextColor(...COLORS.ink);
-  doc.text("✆  +254 722 338 510", pageWidth / 2, footerY + 21, { align: "center" });
+  doc.text("+254 722 338 510", pageWidth / 2 - 10, footerY + 21);
 
   // Generation date (very small, bottom-right)
   const genDate = new Date().toLocaleDateString("en-KE", { day: "numeric", month: "short", year: "numeric" });
