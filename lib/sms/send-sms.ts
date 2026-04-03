@@ -66,6 +66,40 @@ export async function sendTenantReceiptSMS(
 }
 
 /**
+ * Remove a phone number from the Africa's Talking blacklist/opt-out list.
+ */
+export async function removeFromBlacklist(
+  phone: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const at = getAT();
+    const normalized = normalizePhone(phone);
+    console.log("[SMS] Removing from blacklist:", normalized);
+    const response = await at.SMS.deleteSubscription({ phoneNumber: normalized, shortCode: process.env.AT_SENDER_ID || "0" });
+    console.log("[SMS] Blacklist removal response:", JSON.stringify(response));
+    return { success: true };
+  } catch (err) {
+    console.error("[SMS] Blacklist removal error:", err);
+    return { success: false, error: err instanceof Error ? err.message : String(err) };
+  }
+}
+
+/**
+ * Fetch all numbers currently on the blacklist/opt-out list.
+ */
+export async function fetchBlacklist(): Promise<{ success: boolean; numbers?: string[]; error?: string }> {
+  try {
+    const at = getAT();
+    const response = await at.SMS.fetchSubscriptions({ shortCode: process.env.AT_SENDER_ID || "0", keyword: "", lastReceivedId: 0 });
+    console.log("[SMS] Blacklist fetch response:", JSON.stringify(response));
+    return { success: true, numbers: response?.responses?.map((r: { phoneNumber: string }) => r.phoneNumber) || [] };
+  } catch (err) {
+    console.error("[SMS] Blacklist fetch error:", err);
+    return { success: false, error: err instanceof Error ? err.message : String(err) };
+  }
+}
+
+/**
  * Send a daily payment summary SMS to a landlord.
  * Only call this when payments.length > 0.
  * Multi-part SMS (>160 chars) is handled transparently by Africa's Talking.
