@@ -37,9 +37,30 @@ export async function sendTenantReceiptSMS(
 
   try {
     const at = getAT();
-    await at.SMS.send({ to: [normalizePhone(phone)], message: msg, from: process.env.AT_SENDER_ID || undefined });
+    const to = normalizePhone(phone);
+    console.log("[SMS] Sending receipt SMS to:", to, "| username:", process.env.AT_USERNAME);
+    const response = await at.SMS.send({ to: [to], message: msg, from: process.env.AT_SENDER_ID || undefined });
+    console.log("[SMS] AT response:", JSON.stringify(response));
+
+    // Check individual recipient status
+    const recipients = response?.SMSMessageData?.Recipients;
+    if (recipients && recipients.length > 0) {
+      const r = recipients[0];
+      if (r.statusCode === 101 || r.status === "Success") {
+        return { success: true };
+      }
+      return { success: false, error: `AT status: ${r.status} (code ${r.statusCode}) - ${r.number}` };
+    }
+
+    // If no recipients in response, check for error message
+    const atMessage = response?.SMSMessageData?.Message;
+    if (atMessage && atMessage.toLowerCase().includes("error")) {
+      return { success: false, error: `AT error: ${atMessage}` };
+    }
+
     return { success: true };
   } catch (err) {
+    console.error("[SMS] Error sending SMS:", err);
     return { success: false, error: err instanceof Error ? err.message : String(err) };
   }
 }
@@ -79,9 +100,28 @@ export async function sendDailySummary(
 
   try {
     const at = getAT();
-    await at.SMS.send({ to: [normalizePhone(landlordPhone)], message: msg, from: process.env.AT_SENDER_ID || undefined });
+    const to = normalizePhone(landlordPhone);
+    console.log("[SMS] Sending daily summary to:", to, "| username:", process.env.AT_USERNAME);
+    const response = await at.SMS.send({ to: [to], message: msg, from: process.env.AT_SENDER_ID || undefined });
+    console.log("[SMS] AT response:", JSON.stringify(response));
+
+    const recipients = response?.SMSMessageData?.Recipients;
+    if (recipients && recipients.length > 0) {
+      const r = recipients[0];
+      if (r.statusCode === 101 || r.status === "Success") {
+        return { success: true };
+      }
+      return { success: false, error: `AT status: ${r.status} (code ${r.statusCode}) - ${r.number}` };
+    }
+
+    const atMessage = response?.SMSMessageData?.Message;
+    if (atMessage && atMessage.toLowerCase().includes("error")) {
+      return { success: false, error: `AT error: ${atMessage}` };
+    }
+
     return { success: true };
   } catch (err) {
+    console.error("[SMS] Error sending SMS:", err);
     return { success: false, error: err instanceof Error ? err.message : String(err) };
   }
 }
