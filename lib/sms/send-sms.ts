@@ -37,7 +37,7 @@ export async function sendTenantReceiptSMS(
 
   try {
     const at = getAT();
-    await at.SMS.send({ to: [normalizePhone(phone)], message: msg, from: "LandyKE" });
+    await at.SMS.send({ to: [normalizePhone(phone)], message: msg, from: process.env.AT_SENDER_ID || undefined });
     return { success: true };
   } catch (err) {
     return { success: false, error: err instanceof Error ? err.message : String(err) };
@@ -79,7 +79,7 @@ export async function sendDailySummary(
 
   try {
     const at = getAT();
-    await at.SMS.send({ to: [normalizePhone(landlordPhone)], message: msg, from: "LandyKE" });
+    await at.SMS.send({ to: [normalizePhone(landlordPhone)], message: msg, from: process.env.AT_SENDER_ID || undefined });
     return { success: true };
   } catch (err) {
     return { success: false, error: err instanceof Error ? err.message : String(err) };
