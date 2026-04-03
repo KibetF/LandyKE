@@ -53,23 +53,23 @@ function buildReceipt(data: ReceiptData): jsPDF {
   const { method, cleanNotes } = extractMethodAndNotes(data.paymentMethod);
   const period = getPeriodCovered(data.dueDate, data.paidDate);
 
-  // ── DARK HEADER BAND ─────────────────────────────────────────────
-  doc.setFillColor(...COLORS.ink);
-  doc.rect(0, 0, pageWidth, 58, "F");
+  // ── CREAM HEADER BAND ────────────────────────────────────────────
+  doc.setFillColor(...COLORS.cream);
+  doc.rect(0, 0, pageWidth, 55, "F");
 
-  // LandyKE logo (left, cream)
+  // LandyKE logo (left, ink)
   doc.setFont("times", "italic");
   doc.setFontSize(24);
-  doc.setTextColor(...COLORS.cream);
+  doc.setTextColor(...COLORS.ink);
   doc.text("LandyKE", marginX, 20);
 
-  // Tagline (left, muted gold)
+  // Tagline (left, muted)
   doc.setFont("helvetica", "normal");
   doc.setFontSize(6.5);
-  doc.setTextColor(...COLORS.goldLight);
+  doc.setTextColor(...COLORS.muted);
   doc.text("Property Management, Simplified", marginX, 27);
 
-  // Document type label (right)
+  // Document type label (right, muted)
   doc.setFont("helvetica", "normal");
   doc.setFontSize(6);
   doc.setTextColor(...COLORS.muted);
@@ -81,8 +81,8 @@ function buildReceipt(data: ReceiptData): jsPDF {
   doc.setTextColor(...COLORS.gold);
   doc.text("Payment Receipt", pageWidth - marginX, 23, { align: "right" });
 
-  // Dashed separator inside header
-  doc.setDrawColor(...COLORS.muted);
+  // Dashed separator
+  doc.setDrawColor(...COLORS.warm);
   doc.setLineWidth(0.2);
   const dashW = 3, gapW = 2;
   let dx = marginX;
@@ -100,79 +100,72 @@ function buildReceipt(data: ReceiptData): jsPDF {
 
   doc.setFont("helvetica", "bold");
   doc.setFontSize(8.5);
-  doc.setTextColor(...COLORS.cream);
+  doc.setTextColor(...COLORS.ink);
   doc.text(data.receiptNumber, marginX, 47);
   doc.text(formatDate(data.paidDate), pageWidth / 2 + 5, 47);
 
-  // PROPERTY + PERIOD
+  // PROPERTY + PERIOD labels
   doc.setFont("helvetica", "normal");
   doc.setFontSize(6);
   doc.setTextColor(...COLORS.muted);
-  doc.text("PROPERTY", marginX, 54);
-  doc.text("PERIOD", pageWidth / 2 + 5, 54);
+  doc.text("PROPERTY", marginX, 52);
+  doc.text("PERIOD", pageWidth / 2 + 5, 52);
 
-  // We'll render property name and period just below the band
-  // (they overlap slightly into the next section so we skip them inside the dark band)
+  // Property name + period values (ink, just below labels — inside cream band)
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(8);
+  doc.setTextColor(...COLORS.ink);
+  doc.text(data.propertyName, marginX, 58);
+  doc.text(period, pageWidth / 2 + 5, 58);
+
+  // Gold divider below header
+  doc.setDrawColor(...COLORS.gold);
+  doc.setLineWidth(1);
+  doc.line(0, 62, pageWidth, 62);
 
   // ── GREEN STATUS BAND ─────────────────────────────────────────────
   doc.setFillColor(...COLORS.green);
-  doc.rect(0, 58, pageWidth, 26, "F");
+  doc.rect(0, 62, pageWidth, 26, "F");
 
-  // Property name (bottom of dark band / top of green — rendered over green)
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(8);
-  doc.setTextColor(...COLORS.cream);
-  // Actually render these inside the dark band at y=57 — adjust
-  // Let's put PROPERTY value at y=57 inside dark band
-  // Re-render cleanly:
-  doc.setFillColor(...COLORS.ink);
-  doc.rect(0, 52, pageWidth, 6, "F"); // small strip to hold text
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(8);
-  doc.setTextColor(...COLORS.cream);
-  doc.text(data.propertyName, marginX, 57);
-  doc.text(period, pageWidth / 2 + 5, 57);
-
-  // Now green band content
   // Checkmark circle
   const ckCX = marginX + 8;
-  const ckCY = 71;
+  const ckCY = 75;
   drawCheckmark(doc, ckCX, ckCY, 5.5);
 
   // STATUS label
   const textX = marginX + 20;
   doc.setFont("helvetica", "normal");
   doc.setFontSize(6.5);
-  doc.setTextColor(232, 244, 238); // greenLight-ish on green
-  doc.text("STATUS", textX, 65);
+  doc.setTextColor(232, 244, 238);
+  doc.text("STATUS", textX, 69);
 
   // Payment Received
   doc.setFont("helvetica", "bold");
   doc.setFontSize(14);
   doc.setTextColor(...COLORS.cream);
-  doc.text("Payment Received", textX, 73);
+  doc.text("Payment Received", textX, 77);
 
   // Tenant · Unit
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
   doc.setTextColor(232, 244, 238);
   const unitStr = data.unitNumber ? ` · Unit ${data.unitNumber}` : "";
-  doc.text(`${data.tenantName}${unitStr}`, textX, 80);
+  doc.text(`${data.tenantName}${unitStr}`, textX, 84);
 
   // ── AMOUNT SECTION (greenLight background) ────────────────────────
   doc.setFillColor(...COLORS.greenLight);
-  doc.rect(0, 84, pageWidth, 38, "F");
+  doc.rect(0, 88, pageWidth, 38, "F");
 
   doc.setFont("helvetica", "normal");
   doc.setFontSize(7);
   doc.setTextColor(...COLORS.sage);
-  doc.text("AMOUNT PAID", pageWidth / 2, 94, { align: "center" });
+  doc.text("AMOUNT PAID", pageWidth / 2, 98, { align: "center" });
 
   // Underline label
   const lblW = doc.getTextWidth("AMOUNT PAID");
   doc.setDrawColor(...COLORS.sage);
   doc.setLineWidth(0.2);
-  doc.line(pageWidth / 2 - lblW / 2, 95.5, pageWidth / 2 + lblW / 2, 95.5);
+  doc.line(pageWidth / 2 - lblW / 2, 99.5, pageWidth / 2 + lblW / 2, 99.5);
 
   // KES amount — split "KES" smaller and number larger
   doc.setFont("times", "bold");
@@ -181,24 +174,22 @@ function buildReceipt(data: ReceiptData): jsPDF {
   const kesLabel = "KES ";
   const amountStr = data.amount.toLocaleString();
   const kesW = doc.getTextWidth(kesLabel);
-  doc.setFontSize(16);
-  const totalW16 = doc.getTextWidth(kesLabel);
   doc.setFontSize(36);
   const numW = doc.getTextWidth(amountStr);
-  // center the combined string
-  const combinedX = pageWidth / 2 - (totalW16 + numW) / 2;
   doc.setFontSize(16);
-  doc.text(kesLabel, combinedX, 111);
+  const totalW16 = doc.getTextWidth(kesLabel);
+  const combinedX = pageWidth / 2 - (totalW16 + numW) / 2;
+  doc.text(kesLabel, combinedX, 115);
   doc.setFontSize(36);
-  doc.text(amountStr, combinedX + kesW, 111);
+  doc.text(amountStr, combinedX + kesW, 115);
 
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
   doc.setTextColor(...COLORS.sage);
-  doc.text(period, pageWidth / 2, 118, { align: "center" });
+  doc.text(period, pageWidth / 2, 122, { align: "center" });
 
   // ── TRANSACTION DETAILS ───────────────────────────────────────────
-  let y = 132;
+  let y = 136;
 
   // Section heading
   doc.setFont("helvetica", "bold");
@@ -272,35 +263,41 @@ function buildReceipt(data: ReceiptData): jsPDF {
   doc.text("PAID", pageWidth / 2, stampY + stampH / 2 + 4.5, { align: "center" });
 
   // ── FOOTER ────────────────────────────────────────────────────────
-  // Dashed top border
-  doc.setDrawColor(...COLORS.gold);
+  const footerY = pageHeight - 32;
+
+  // Dashed top border (warm color, subtle)
+  doc.setDrawColor(...COLORS.warm);
   doc.setLineWidth(0.3);
   let fx = marginX;
   while (fx < pageWidth - marginX) {
-    doc.line(fx, pageHeight - 22, Math.min(fx + 3, pageWidth - marginX), pageHeight - 22);
+    doc.line(fx, footerY, Math.min(fx + 3, pageWidth - marginX), footerY);
     fx += 5;
   }
 
-  // Footer text
+  // "LandyKE · Eldoret, Kenya"
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(7);
-  doc.setTextColor(...COLORS.muted);
+  doc.setFontSize(7.5);
+  doc.setTextColor(...COLORS.ink);
+  doc.text("LandyKE · Eldoret, Kenya", pageWidth / 2, footerY + 8, { align: "center" });
 
-  const genDate = new Date().toLocaleDateString("en-KE", {
-    day: "numeric", month: "long", year: "numeric",
-  });
-  doc.text(`Generated on ${genDate}`, marginX, pageHeight - 14);
-  doc.text(`Page 1 of 1`, pageWidth - marginX, pageHeight - 14, { align: "right" });
-
-  doc.setFont("times", "italic");
-  doc.setFontSize(8);
-  doc.setTextColor(...COLORS.gold);
-  doc.text("LandyKE", pageWidth / 2, pageHeight - 14, { align: "center" });
-
+  // "landyke.com · Registered Property Managers"
   doc.setFont("helvetica", "normal");
   doc.setFontSize(6.5);
   doc.setTextColor(...COLORS.muted);
-  doc.text("Property Management, Simplified", pageWidth / 2, pageHeight - 9, { align: "center" });
+  doc.text("Registered Property Managers", pageWidth / 2, footerY + 14, { align: "center" });
+
+  // Phone number (centered, with small bullet separating icon text)
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(7);
+  doc.setTextColor(...COLORS.ink);
+  doc.text("✆  +254 722 338 510", pageWidth / 2, footerY + 21, { align: "center" });
+
+  // Generation date (very small, bottom-right)
+  const genDate = new Date().toLocaleDateString("en-KE", { day: "numeric", month: "short", year: "numeric" });
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(6);
+  doc.setTextColor(...COLORS.muted);
+  doc.text(`Generated ${genDate}`, pageWidth - marginX, footerY + 21, { align: "right" });
 
   return doc;
 }
