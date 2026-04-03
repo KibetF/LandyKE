@@ -1,5 +1,5 @@
 import jsPDF from "jspdf";
-import { addHeader, addFooter, COLORS } from "./pdf-theme";
+import { addFooter, COLORS } from "./pdf-theme";
 
 export interface ReceiptData {
   receiptNumber: string;
@@ -40,95 +40,173 @@ function buildReceipt(data: ReceiptData): jsPDF {
   const { method, cleanNotes } = extractMethodAndNotes(data.paymentMethod);
   const period = getPeriodCovered(data.dueDate, data.paidDate);
 
-  // Header
-  let y = addHeader(doc, "Payment Receipt", data.receiptNumber);
+  // ── HEADER BAND (cream background) ──────────────────────────────
+  doc.setFillColor(...COLORS.cream);
+  doc.rect(0, 0, pageWidth, 48, "F");
 
-  // Tenant Details Section
-  doc.setFont("times", "bold");
-  doc.setFontSize(10);
+  // LandyKE logo (left)
+  doc.setFont("times", "italic");
+  doc.setFontSize(26);
   doc.setTextColor(...COLORS.ink);
-  doc.text("Tenant Details", 20, y);
-  y += 7;
+  doc.text("LandyKE", 20, 22);
 
-  const labelX = 20;
-  const valueX = 60;
+  // Tagline
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(7);
+  doc.setTextColor(...COLORS.muted);
+  doc.text("Property Management, Simplified", 20, 29);
 
-  const tenantFields: [string, string][] = [
+  // Receipt number (top-right)
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(6);
+  doc.setTextColor(...COLORS.gold);
+  doc.text("RECEIPT NO.", pageWidth - 20, 14, { align: "right" });
+  doc.setFontSize(8);
+  doc.setTextColor(...COLORS.muted);
+  doc.text(data.receiptNumber, pageWidth - 20, 20, { align: "right" });
+
+  // "PAYMENT RECEIPT" centered title
+  doc.setFont("times", "bold");
+  doc.setFontSize(20);
+  doc.setTextColor(...COLORS.ink);
+  doc.text("PAYMENT RECEIPT", pageWidth / 2, 40, { align: "center" });
+
+  // Gold divider
+  doc.setDrawColor(...COLORS.gold);
+  doc.setLineWidth(1.5);
+  doc.line(20, 47, pageWidth - 20, 47);
+
+  // ── AMOUNT HERO BAND (greenLight background) ─────────────────────
+  doc.setFillColor(...COLORS.greenLight);
+  doc.rect(0, 50, pageWidth, 36, "F");
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(7);
+  doc.setTextColor(...COLORS.sage);
+  const amountLabel = "AMOUNT PAID";
+  doc.text(amountLabel, pageWidth / 2, 59, { align: "center" });
+
+  // Thin underline under label
+  const labelW = doc.getTextWidth(amountLabel);
+  doc.setDrawColor(...COLORS.sage);
+  doc.setLineWidth(0.2);
+  doc.line(pageWidth / 2 - labelW / 2, 60.5, pageWidth / 2 + labelW / 2, 60.5);
+
+  doc.setFont("times", "bold");
+  doc.setFontSize(34);
+  doc.setTextColor(...COLORS.green);
+  doc.text(`KES ${data.amount.toLocaleString()}`, pageWidth / 2, 74, { align: "center" });
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
+  doc.setTextColor(...COLORS.sage);
+  doc.text(period, pageWidth / 2, 82, { align: "center" });
+
+  // ── GOLD SEPARATOR ───────────────────────────────────────────────
+  doc.setDrawColor(...COLORS.gold);
+  doc.setLineWidth(0.5);
+  doc.line(20, 92, pageWidth - 20, 92);
+
+  // ── TWO-COLUMN DETAILS GRID ──────────────────────────────────────
+  const col1X = 20;
+  const col2X = pageWidth / 2 + 10;
+  let y = 102;
+
+  // Column section headings
+  doc.setFont("times", "bold");
+  doc.setFontSize(9);
+  doc.setTextColor(...COLORS.ink);
+  doc.text("TENANT DETAILS", col1X, y);
+  doc.text("PAYMENT DETAILS", col2X, y);
+
+  // Gold underlines on headings
+  doc.setDrawColor(...COLORS.gold);
+  doc.setLineWidth(0.4);
+  doc.line(col1X, y + 1.5, col1X + doc.getTextWidth("TENANT DETAILS"), y + 1.5);
+  doc.line(col2X, y + 1.5, col2X + doc.getTextWidth("PAYMENT DETAILS"), y + 1.5);
+
+  y += 9;
+
+  const rowH = 8;
+
+  // Left column — tenant details
+  const tenantRows: [string, string][] = [
     ["Name", data.tenantName],
     ["Property", data.propertyName],
   ];
-  if (data.unitNumber) tenantFields.push(["Unit", data.unitNumber]);
-  if (data.propertyLocation) tenantFields.push(["Location", data.propertyLocation]);
+  if (data.unitNumber) tenantRows.push(["Unit", data.unitNumber]);
+  if (data.propertyLocation) tenantRows.push(["Location", data.propertyLocation]);
 
-  for (const [label, value] of tenantFields) {
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(9);
-    doc.setTextColor(...COLORS.muted);
-    doc.text(label, labelX, y);
-    doc.setTextColor(...COLORS.ink);
-    doc.text(value, valueX, y);
-    y += 6;
-  }
-
-  y += 4;
-
-  // Divider
-  doc.setDrawColor(...COLORS.warm);
-  doc.setLineWidth(0.3);
-  doc.line(20, y, pageWidth - 20, y);
-  y += 8;
-
-  // Payment Details Section
-  doc.setFont("times", "bold");
-  doc.setFontSize(10);
-  doc.setTextColor(...COLORS.ink);
-  doc.text("Payment Details", 20, y);
-  y += 10;
-
-  // Amount (large, green)
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(9);
-  doc.setTextColor(...COLORS.muted);
-  doc.text("Amount", labelX, y);
-  doc.setFont("times", "bold");
-  doc.setFontSize(18);
-  doc.setTextColor(...COLORS.green);
-  doc.text(`KES ${data.amount.toLocaleString()}`, valueX, y);
-  y += 10;
-
-  // Other payment fields
-  const paymentFields: [string, string][] = [
-    ["Payment Date", formatDate(data.paidDate)],
-    ["Period Covered", period],
-    ["Payment Method", method],
+  // Right column — payment details
+  const paymentRows: [string, string][] = [
+    ["Date", formatDate(data.paidDate)],
+    ["Period", period],
+    ["Method", method],
   ];
-  if (cleanNotes) paymentFields.push(["Notes", cleanNotes]);
+  if (cleanNotes) paymentRows.push(["Notes", cleanNotes]);
 
-  for (const [label, value] of paymentFields) {
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(9);
-    doc.setTextColor(...COLORS.muted);
-    doc.text(label, labelX, y);
-    doc.setTextColor(...COLORS.ink);
-    doc.text(value, valueX, y);
-    y += 6;
+  const maxRows = Math.max(tenantRows.length, paymentRows.length);
+  for (let i = 0; i < maxRows; i++) {
+    const rowY = y + i * rowH;
+
+    // Left row
+    if (tenantRows[i]) {
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(7.5);
+      doc.setTextColor(...COLORS.muted);
+      doc.text(tenantRows[i][0], col1X, rowY);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(8.5);
+      doc.setTextColor(...COLORS.ink);
+      const maxW = pageWidth / 2 - col1X - 5;
+      const value = doc.splitTextToSize(tenantRows[i][1], maxW)[0];
+      doc.text(value, col1X, rowY + 4.5);
+    }
+
+    // Right row
+    if (paymentRows[i]) {
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(7.5);
+      doc.setTextColor(...COLORS.muted);
+      doc.text(paymentRows[i][0], col2X, rowY);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(8.5);
+      doc.setTextColor(...COLORS.ink);
+      const maxW = pageWidth - col2X - 20;
+      const value = doc.splitTextToSize(paymentRows[i][1], maxW)[0];
+      doc.text(value, col2X, rowY + 4.5);
+    }
   }
 
-  y += 8;
+  // ── PAID STAMP ───────────────────────────────────────────────────
+  const stampY = y + maxRows * rowH + 12;
+  const stampW = 56;
+  const stampH = 20;
+  const stampX = (pageWidth - stampW) / 2;
 
-  // Confirmation box
-  const boxW = pageWidth - 40;
-  const boxH = 18;
-  doc.setFillColor(...COLORS.greenLight);
-  doc.roundedRect(20, y, boxW, boxH, 3, 3, "F");
+  doc.setDrawColor(...COLORS.green);
+  doc.setLineWidth(1.5);
+  doc.roundedRect(stampX, stampY, stampW, stampH, 3, 3, "S");
 
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(9);
+  // Inner decorative lines
+  doc.setLineWidth(0.3);
+  doc.line(stampX + 5, stampY + 4.5, stampX + stampW - 5, stampY + 4.5);
+  doc.line(stampX + 5, stampY + stampH - 4.5, stampX + stampW - 5, stampY + stampH - 4.5);
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(22);
   doc.setTextColor(...COLORS.green);
-  const confirmText = `This receipt confirms payment of KES ${data.amount.toLocaleString()} for ${period} rent.`;
-  doc.text(confirmText, pageWidth / 2, y + boxH / 2 + 1, { align: "center" });
+  doc.text("PAID", pageWidth / 2, stampY + stampH / 2 + 4, { align: "center" });
 
-  // Footer
+  // ── CONFIRMATION TEXT ────────────────────────────────────────────
+  const confirmY = stampY + stampH + 14;
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
+  doc.setTextColor(...COLORS.muted);
+  const confirmText = `This receipt confirms payment of KES ${data.amount.toLocaleString()} for ${period} rent at ${data.propertyName}.`;
+  doc.text(confirmText, pageWidth / 2, confirmY, { align: "center", maxWidth: pageWidth - 60 });
+
+  // ── FOOTER ───────────────────────────────────────────────────────
   addFooter(doc, 1, 1);
 
   return doc;

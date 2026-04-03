@@ -255,6 +255,9 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
   const [editingPayment, setEditingPayment] = useState<Payment | null>(null);
   const [receiptPayment, setReceiptPayment] = useState<Payment | null>(null);
   const [receiptPreviewUrl, setReceiptPreviewUrl] = useState<string | null>(null);
+  const [smsSending, setSmsSending] = useState(false);
+  const [smsStatus, setSmsStatus] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [dailySummarySending, setDailySummarySending] = useState(false);
 
   // Edit form states
   const [editPropertyForm, setEditPropertyForm] = useState({ name: "", location: "", total_units: "", collection_start_month: "" });
@@ -752,6 +755,52 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
     if (receiptPreviewUrl) URL.revokeObjectURL(receiptPreviewUrl);
     setReceiptPayment(null);
     setReceiptPreviewUrl(null);
+    setSmsStatus(null);
+  }
+
+  async function sendReceiptSMS() {
+    if (!receiptPayment) return;
+    setSmsSending(true);
+    setSmsStatus(null);
+    try {
+      const res = await fetch("/api/admin/sms", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type: "receipt", paymentId: receiptPayment.id }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setSmsStatus({ type: "success", text: data.message || "SMS sent successfully" });
+      } else {
+        setSmsStatus({ type: "error", text: data.error || "Failed to send SMS" });
+      }
+    } catch {
+      setSmsStatus({ type: "error", text: "Network error — could not send SMS" });
+    } finally {
+      setSmsSending(false);
+    }
+  }
+
+  async function sendDailySummaryToLandlord() {
+    if (!selectedLandlord) return;
+    setDailySummarySending(true);
+    try {
+      const res = await fetch("/api/admin/sms", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type: "daily-summary", landlordId: selectedLandlord.id }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setMessage({ type: "success", text: `Daily summary sent — ${data.count} payment${data.count !== 1 ? "s" : ""}` });
+      } else {
+        setMessage({ type: "error", text: data.error || "Failed to send daily summary" });
+      }
+    } catch {
+      setMessage({ type: "error", text: "Network error — could not send daily summary" });
+    } finally {
+      setDailySummarySending(false);
+    }
   }
 
   function downloadReceipt() {
@@ -1470,12 +1519,24 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
                   <CreditCard size={18} style={{ color: "var(--gold)" }} />
                   <h3 className="font-serif" style={{ fontSize: "1.1rem", fontWeight: 600 }}>Payments</h3>
                 </div>
-                <span style={{ fontSize: "0.7rem", color: "var(--muted)", background: "var(--cream)", padding: "0.25rem 0.6rem", borderRadius: "20px" }}>
-                  {payments.filter((p) => {
-                    const d = p.paid_date || p.due_date;
-                    return d && d.slice(0, 7) === paymentMonthFilter;
-                  }).length} of {payments.length}
-                </span>
+                <div className="flex items-center" style={{ gap: "0.5rem" }}>
+                  <span style={{ fontSize: "0.7rem", color: "var(--muted)", background: "var(--cream)", padding: "0.25rem 0.6rem", borderRadius: "20px" }}>
+                    {payments.filter((p) => {
+                      const d = p.paid_date || p.due_date;
+                      return d && d.slice(0, 7) === paymentMonthFilter;
+                    }).length} of {payments.length}
+                  </span>
+                  <button
+                    onClick={sendDailySummaryToLandlord}
+                    disabled={dailySummarySending}
+                    className="flex items-center"
+                    title="Send today's payment summary via SMS to landlord"
+                    style={{ gap: "0.3rem", background: "var(--ink)", color: "var(--cream)", border: "none", padding: "0.35rem 0.7rem", fontSize: "0.7rem", borderRadius: "4px", cursor: "pointer", opacity: dailySummarySending ? 0.7 : 1, fontFamily: "var(--font-sans), sans-serif" }}
+                  >
+                    <Send size={11} />
+                    {dailySummarySending ? "Sending..." : "Daily Summary SMS"}
+                  </button>
+                </div>
               </div>
               <select
                 value={paymentMonthFilter}
@@ -1564,6 +1625,18 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
               src={receiptPreviewUrl}
               style={{ width: "100%", height: "500px", border: "1px solid var(--warm)", borderRadius: "4px" }}
             />
+            {smsStatus && (
+              <div style={{
+                marginTop: "0.75rem",
+                padding: "0.5rem 0.75rem",
+                borderRadius: "4px",
+                fontSize: "0.8rem",
+                background: smsStatus.type === "success" ? "var(--green-light)" : "var(--red-light)",
+                color: smsStatus.type === "success" ? "var(--green)" : "var(--red-soft)",
+              }}>
+                {smsStatus.text}
+              </div>
+            )}
             <div className="flex" style={{ gap: "0.75rem", marginTop: "1rem" }}>
               <button
                 onClick={downloadReceipt}
@@ -1578,6 +1651,14 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
                 style={{ ...btnStyle, flex: 1, justifyContent: "center", gap: "0.4rem", background: "#25D366", color: "#fff" }}
               >
                 <Send size={14} /> WhatsApp
+              </button>
+              <button
+                onClick={sendReceiptSMS}
+                disabled={smsSending}
+                className="flex items-center"
+                style={{ ...btnStyle, flex: 1, justifyContent: "center", gap: "0.4rem", background: "var(--gold)", color: "#fff", opacity: smsSending ? 0.7 : 1 }}
+              >
+                <Send size={14} /> {smsSending ? "Sending..." : "Send SMS"}
               </button>
             </div>
           </div>
