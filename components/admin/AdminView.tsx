@@ -257,7 +257,6 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
   const [receiptPreviewUrl, setReceiptPreviewUrl] = useState<string | null>(null);
   const [smsSending, setSmsSending] = useState(false);
   const [smsStatus, setSmsStatus] = useState<{ type: "success" | "error"; text: string } | null>(null);
-  const [dailySummarySending, setDailySummarySending] = useState(false);
 
   // Edit form states
   const [editPropertyForm, setEditPropertyForm] = useState({ name: "", location: "", total_units: "", collection_start_month: "" });
@@ -781,26 +780,38 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
     }
   }
 
-  async function sendDailySummaryToLandlord() {
+  function sendDailySummaryToLandlord() {
     if (!selectedLandlord) return;
-    setDailySummarySending(true);
-    try {
-      const res = await fetch("/api/admin/sms", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type: "daily-summary", landlordId: selectedLandlord.id }),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setMessage({ type: "success", text: `Daily summary sent — ${data.count} payment${data.count !== 1 ? "s" : ""}` });
-      } else {
-        setMessage({ type: "error", text: data.error || "Failed to send daily summary" });
-      }
-    } catch {
-      setMessage({ type: "error", text: "Network error — could not send daily summary" });
-    } finally {
-      setDailySummarySending(false);
+
+    const today = new Date().toISOString().slice(0, 10);
+    const todayPayments = payments.filter((p) => p.status === "paid" && p.paid_date === today);
+
+    if (todayPayments.length === 0) {
+      setMessage({ type: "error", text: "No payments recorded today — nothing to send" });
+      return;
     }
+
+    const firstName = selectedLandlord.full_name.split(" ")[0];
+    const dateStr = new Date().toLocaleDateString("en-KE", { day: "numeric", month: "long", year: "numeric" });
+    const total = todayPayments.reduce((sum, p) => sum + Number(p.amount), 0);
+
+    let msg = `*LandyKE Daily Summary — ${dateStr}*\n\n`;
+    msg += `Hi ${firstName}, here are today's payments:\n\n`;
+    todayPayments.forEach((p) => {
+      const name = p.tenants?.full_name || "Unknown";
+      const unit = p.tenants?.unit_number ? ` (Unit ${p.tenants.unit_number})` : "";
+      const prop = p.tenants?.properties?.name ? ` · ${p.tenants.properties.name}` : "";
+      msg += `✅ ${name}${unit}${prop} — *KES ${Number(p.amount).toLocaleString()}*\n`;
+    });
+    msg += `\n*Total: KES ${total.toLocaleString()}*\n`;
+    msg += `${todayPayments.length} payment${todayPayments.length !== 1 ? "s" : ""} received today.\n\n— LandyKE`;
+
+    const phone = selectedLandlord.phone?.replace(/\D/g, "");
+    const url = phone
+      ? `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`
+      : `https://wa.me/?text=${encodeURIComponent(msg)}`;
+
+    window.open(url, "_blank");
   }
 
   function downloadReceipt() {
@@ -1528,13 +1539,12 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
                   </span>
                   <button
                     onClick={sendDailySummaryToLandlord}
-                    disabled={dailySummarySending}
                     className="flex items-center"
-                    title="Send today's payment summary via SMS to landlord"
-                    style={{ gap: "0.3rem", background: "var(--ink)", color: "var(--cream)", border: "none", padding: "0.35rem 0.7rem", fontSize: "0.7rem", borderRadius: "4px", cursor: "pointer", opacity: dailySummarySending ? 0.7 : 1, fontFamily: "var(--font-sans), sans-serif" }}
+                    title="Send today's payment summary via WhatsApp to landlord"
+                    style={{ gap: "0.3rem", background: "#25D366", color: "#fff", border: "none", padding: "0.35rem 0.7rem", fontSize: "0.7rem", borderRadius: "4px", cursor: "pointer", fontFamily: "var(--font-sans), sans-serif" }}
                   >
                     <Send size={11} />
-                    {dailySummarySending ? "Sending..." : "Daily Summary SMS"}
+                    Daily Summary
                   </button>
                 </div>
               </div>
