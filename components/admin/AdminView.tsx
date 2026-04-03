@@ -257,6 +257,8 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
   const [receiptPreviewUrl, setReceiptPreviewUrl] = useState<string | null>(null);
   const [smsSending, setSmsSending] = useState(false);
   const [smsStatus, setSmsStatus] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [blacklistRemoving, setBlacklistRemoving] = useState(false);
+  const [blacklistStatus, setBlacklistStatus] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   // Edit form states
   const [editPropertyForm, setEditPropertyForm] = useState({ name: "", location: "", total_units: "", collection_start_month: "" });
@@ -770,6 +772,29 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
       const data = await res.json();
       if (res.ok) {
         setSmsStatus({ type: "success", text: data.message || "SMS sent successfully" });
+      } else if (data.error && data.error.includes("UserInBlacklist")) {
+        // Auto-remove from blacklist and retry
+        const phone = data.error.split(" - ")[1];
+        setSmsStatus({ type: "error", text: `Removing ${phone || "number"} from blacklist and retrying...` });
+        if (phone) {
+          await fetch("/api/admin/sms", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ type: "remove-blacklist", phone }),
+          });
+          // Retry sending
+          const retry = await fetch("/api/admin/sms", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ type: "receipt", paymentId: receiptPayment.id }),
+          });
+          const retryData = await retry.json();
+          if (retry.ok) {
+            setSmsStatus({ type: "success", text: retryData.message || "SMS sent after unblocking number" });
+          } else {
+            setSmsStatus({ type: "error", text: retryData.error || "Still failed after unblocking" });
+          }
+        }
       } else {
         setSmsStatus({ type: "error", text: data.error || "Failed to send SMS" });
       }
@@ -777,6 +802,28 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
       setSmsStatus({ type: "error", text: "Network error — could not send SMS" });
     } finally {
       setSmsSending(false);
+    }
+  }
+
+  async function removeAllFromBlacklist() {
+    setBlacklistRemoving(true);
+    setBlacklistStatus(null);
+    try {
+      const res = await fetch("/api/admin/sms", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type: "remove-blacklist-all" }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setBlacklistStatus({ type: "success", text: `Done — ${data.removed}/${data.total} numbers unblocked` });
+      } else {
+        setBlacklistStatus({ type: "error", text: data.error || "Failed to remove from blacklist" });
+      }
+    } catch {
+      setBlacklistStatus({ type: "error", text: "Network error" });
+    } finally {
+      setBlacklistRemoving(false);
     }
   }
 
@@ -1098,6 +1145,45 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
                 )}
               </div>
             ))}
+
+            {/* SMS Tools */}
+            <div style={{ ...cardStyle, marginTop: "1.5rem", padding: "1.2rem 1.5rem" }}>
+              <h3 className="font-serif" style={{ fontSize: "1.1rem", fontWeight: 600, marginBottom: "0.75rem" }}>
+                SMS Tools
+              </h3>
+              <p style={{ fontSize: "0.8rem", color: "var(--muted)", marginBottom: "0.75rem" }}>
+                If tenants are not receiving SMS (UserInBlacklist error), use this to unblock all tenant phone numbers on Africa&apos;s Talking.
+              </p>
+              <button
+                onClick={removeAllFromBlacklist}
+                disabled={blacklistRemoving}
+                className="flex items-center"
+                style={{
+                  padding: "0.5rem 1rem",
+                  background: blacklistRemoving ? "var(--muted)" : "var(--ink)",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: "4px",
+                  fontSize: "0.8rem",
+                  cursor: blacklistRemoving ? "not-allowed" : "pointer",
+                  gap: "0.4rem",
+                }}
+              >
+                {blacklistRemoving ? "Removing..." : "Unblock All Tenant Numbers"}
+              </button>
+              {blacklistStatus && (
+                <div style={{
+                  marginTop: "0.5rem",
+                  padding: "0.5rem 0.75rem",
+                  borderRadius: "4px",
+                  fontSize: "0.8rem",
+                  background: blacklistStatus.type === "success" ? "var(--green-light)" : "var(--red-light)",
+                  color: blacklistStatus.type === "success" ? "var(--green)" : "var(--red-soft)",
+                }}>
+                  {blacklistStatus.text}
+                </div>
+              )}
+            </div>
           </>
         ) : null
       )}
