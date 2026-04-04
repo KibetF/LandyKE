@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { generateReceiptNumber } from "@/lib/pdf/generate-receipt";
-import { sendTenantReceiptSMS, sendDailySummary, removeFromBlacklist } from "@/lib/sms/send-sms";
+import { sendTenantReceiptSMS, sendDailySummary } from "@/lib/sms/send-sms";
 
 async function verifyAdmin() {
   const supabase = await createClient();
@@ -18,7 +18,12 @@ export async function POST(request: NextRequest) {
   if (!user) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const body = await request.json();
-  const { type, paymentId, landlordId } = body;
+  const { type, paymentId, landlordId, channel = "whatsapp" } = body as {
+    type: string;
+    paymentId?: string;
+    landlordId?: string;
+    channel?: "whatsapp" | "sms";
+  };
 
   const adminClient = createAdminClient();
 
@@ -56,11 +61,13 @@ export async function POST(request: NextRequest) {
       Number(payment.amount),
       tenant.properties?.name || "your property",
       tenant.unit_number,
-      receiptNumber
+      receiptNumber,
+      channel
     );
 
     if (!result.success) return NextResponse.json({ error: result.error }, { status: 500 });
-    return NextResponse.json({ success: true, message: `SMS sent to ${tenant.phone}` });
+    const label = channel === "whatsapp" ? "WhatsApp" : "SMS";
+    return NextResponse.json({ success: true, message: `${label} sent to ${tenant.phone}` });
   }
 
   // ── DAILY SUMMARY ─────────────────────────────────────────────────
@@ -103,51 +110,11 @@ export async function POST(request: NextRequest) {
       };
     });
 
-    const result = await sendDailySummary(landlord.phone, landlord.full_name, summaryPayments);
+    const result = await sendDailySummary(landlord.phone, landlord.full_name, summaryPayments, channel);
 
     if (!result.success) return NextResponse.json({ error: result.error }, { status: 500 });
     return NextResponse.json({ success: true, count: payments.length });
   }
 
-  // ── REMOVE FROM BLACKLIST ──────────────────────────────────────────
-  if (type === "remove-blacklist") {
-    const { phone } = body;
-    if (!phone) return NextResponse.json({ error: "phone required" }, { status: 400 });
-    const result = await removeFromBlacklist(phone);
-    if (!result.success) return NextResponse.json({ error: result.error }, { status: 500 });
-    return NextResponse.json({ success: true, message: `Removed ${phone} from blacklist` });
-  }
-
-  // ── BULK REMOVE FROM BLACKLIST ────────────────────────────────────
-  if (type === "remove-blacklist-all") {
-    const { data: tenants } = await adminClient
-      .schema("landyke")
-      .from("tenants")
-      .select("phone")
-      .not("phone", "is", null);
-
-    if (!tenants || tenants.length === 0) {
-      return NextResponse.json({ error: "No tenants with phone numbers found" }, { status: 400 });
-    }
-
-    const results = await Promise.all(
-      tenants
-        .filter((t) => t.phone)
-        .map(async (t) => {
-          const r = await removeFromBlacklist(t.phone!);
-          return { phone: t.phone, ...r };
-        })
-    );
-
-    const failed = results.filter((r) => !r.success);
-    return NextResponse.json({
-      success: true,
-      total: results.length,
-      removed: results.length - failed.length,
-      failed: failed.length,
-      failures: failed,
-    });
-  }
-
-  return NextResponse.json({ error: "Invalid type. Use 'receipt', 'daily-summary', 'remove-blacklist', or 'remove-blacklist-all'" }, { status: 400 });
+  return NextResponse.json({ error: "Invalid type. Use 'receipt' or 'daily-summary'" }, { status: 400 });
 }

@@ -257,8 +257,6 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
   const [receiptPreviewUrl, setReceiptPreviewUrl] = useState<string | null>(null);
   const [smsSending, setSmsSending] = useState(false);
   const [smsStatus, setSmsStatus] = useState<{ type: "success" | "error"; text: string } | null>(null);
-  const [blacklistRemoving, setBlacklistRemoving] = useState(false);
-  const [blacklistStatus, setBlacklistStatus] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   // Edit form states
   const [editPropertyForm, setEditPropertyForm] = useState({ name: "", location: "", total_units: "", collection_start_month: "" });
@@ -767,34 +765,11 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
       const res = await fetch("/api/admin/sms", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type: "receipt", paymentId: receiptPayment.id }),
+        body: JSON.stringify({ type: "receipt", paymentId: receiptPayment.id, channel: "sms" }),
       });
       const data = await res.json();
       if (res.ok) {
         setSmsStatus({ type: "success", text: data.message || "SMS sent successfully" });
-      } else if (data.error && data.error.includes("UserInBlacklist")) {
-        // Auto-remove from blacklist and retry
-        const phone = data.error.split(" - ")[1];
-        setSmsStatus({ type: "error", text: `Removing ${phone || "number"} from blacklist and retrying...` });
-        if (phone) {
-          await fetch("/api/admin/sms", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ type: "remove-blacklist", phone }),
-          });
-          // Retry sending
-          const retry = await fetch("/api/admin/sms", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ type: "receipt", paymentId: receiptPayment.id }),
-          });
-          const retryData = await retry.json();
-          if (retry.ok) {
-            setSmsStatus({ type: "success", text: retryData.message || "SMS sent after unblocking number" });
-          } else {
-            setSmsStatus({ type: "error", text: retryData.error || "Still failed after unblocking" });
-          }
-        }
       } else {
         setSmsStatus({ type: "error", text: data.error || "Failed to send SMS" });
       }
@@ -802,28 +777,6 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
       setSmsStatus({ type: "error", text: "Network error — could not send SMS" });
     } finally {
       setSmsSending(false);
-    }
-  }
-
-  async function removeAllFromBlacklist() {
-    setBlacklistRemoving(true);
-    setBlacklistStatus(null);
-    try {
-      const res = await fetch("/api/admin/sms", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type: "remove-blacklist-all" }),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setBlacklistStatus({ type: "success", text: `Done — ${data.removed}/${data.total} numbers unblocked` });
-      } else {
-        setBlacklistStatus({ type: "error", text: data.error || "Failed to remove from blacklist" });
-      }
-    } catch {
-      setBlacklistStatus({ type: "error", text: "Network error" });
-    } finally {
-      setBlacklistRemoving(false);
     }
   }
 
@@ -867,15 +820,27 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
     generateReceipt(data);
   }
 
-  function shareViaWhatsApp() {
+  async function sendViaWhatsApp() {
     if (!receiptPayment) return;
-    const phone = receiptPayment.tenants?.phone;
-    const amount = Number(receiptPayment.amount).toLocaleString();
-    const text = `Hi ${receiptPayment.tenants?.full_name}, your rent receipt for KES ${amount} has been generated. Please find it attached.`;
-    const url = phone
-      ? `https://wa.me/${phone.replace(/\D/g, "")}?text=${encodeURIComponent(text)}`
-      : `https://wa.me/?text=${encodeURIComponent(text)}`;
-    window.open(url, "_blank");
+    setSmsSending(true);
+    setSmsStatus(null);
+    try {
+      const res = await fetch("/api/admin/sms", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type: "receipt", paymentId: receiptPayment.id, channel: "whatsapp" }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setSmsStatus({ type: "success", text: data.message || "WhatsApp sent successfully" });
+      } else {
+        setSmsStatus({ type: "error", text: data.error || "Failed to send WhatsApp" });
+      }
+    } catch {
+      setSmsStatus({ type: "error", text: "Network error — could not send WhatsApp" });
+    } finally {
+      setSmsSending(false);
+    }
   }
 
   function openEditPayment(p: Payment) {
@@ -1146,44 +1111,6 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
               </div>
             ))}
 
-            {/* SMS Tools */}
-            <div style={{ ...cardStyle, marginTop: "1.5rem", padding: "1.2rem 1.5rem" }}>
-              <h3 className="font-serif" style={{ fontSize: "1.1rem", fontWeight: 600, marginBottom: "0.75rem" }}>
-                SMS Tools
-              </h3>
-              <p style={{ fontSize: "0.8rem", color: "var(--muted)", marginBottom: "0.75rem" }}>
-                If tenants are not receiving SMS (UserInBlacklist error), use this to unblock all tenant phone numbers on Africa&apos;s Talking.
-              </p>
-              <button
-                onClick={removeAllFromBlacklist}
-                disabled={blacklistRemoving}
-                className="flex items-center"
-                style={{
-                  padding: "0.5rem 1rem",
-                  background: blacklistRemoving ? "var(--muted)" : "var(--ink)",
-                  color: "#fff",
-                  border: "none",
-                  borderRadius: "4px",
-                  fontSize: "0.8rem",
-                  cursor: blacklistRemoving ? "not-allowed" : "pointer",
-                  gap: "0.4rem",
-                }}
-              >
-                {blacklistRemoving ? "Removing..." : "Unblock All Tenant Numbers"}
-              </button>
-              {blacklistStatus && (
-                <div style={{
-                  marginTop: "0.5rem",
-                  padding: "0.5rem 0.75rem",
-                  borderRadius: "4px",
-                  fontSize: "0.8rem",
-                  background: blacklistStatus.type === "success" ? "var(--green-light)" : "var(--red-light)",
-                  color: blacklistStatus.type === "success" ? "var(--green)" : "var(--red-soft)",
-                }}>
-                  {blacklistStatus.text}
-                </div>
-              )}
-            </div>
           </>
         ) : null
       )}
@@ -1742,11 +1669,12 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
                 <Download size={14} /> Download PDF
               </button>
               <button
-                onClick={shareViaWhatsApp}
+                onClick={sendViaWhatsApp}
+                disabled={smsSending}
                 className="flex items-center"
-                style={{ ...btnStyle, flex: 1, justifyContent: "center", gap: "0.4rem", background: "#25D366", color: "#fff" }}
+                style={{ ...btnStyle, flex: 1, justifyContent: "center", gap: "0.4rem", background: "#25D366", color: "#fff", opacity: smsSending ? 0.7 : 1 }}
               >
-                <Send size={14} /> WhatsApp
+                <Send size={14} /> {smsSending ? "Sending..." : "WhatsApp"}
               </button>
               <button
                 onClick={sendReceiptSMS}
@@ -1754,7 +1682,7 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
                 className="flex items-center"
                 style={{ ...btnStyle, flex: 1, justifyContent: "center", gap: "0.4rem", background: "var(--gold)", color: "#fff", opacity: smsSending ? 0.7 : 1 }}
               >
-                <Send size={14} /> {smsSending ? "Sending..." : "Send SMS"}
+                <Send size={14} /> {smsSending ? "Sending..." : "SMS"}
               </button>
             </div>
           </div>

@@ -1,13 +1,3 @@
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const AfricasTalking = require("africastalking");
-
-function getAT() {
-  const apiKey = process.env.AT_API_KEY;
-  const username = process.env.AT_USERNAME;
-  if (!apiKey || !username) throw new Error("Africa's Talking not configured (AT_API_KEY, AT_USERNAME)");
-  return AfricasTalking({ apiKey, username });
-}
-
 /** Normalize Kenyan numbers to E.164 (+2547xxxxxxxx) */
 function normalizePhone(phone: string): string {
   const d = phone.replace(/\D/g, "");
@@ -18,8 +8,8 @@ function normalizePhone(phone: string): string {
 }
 
 /**
- * Send a payment receipt SMS to a tenant.
- * Message stays under 160 chars for standard Safaricom delivery.
+ * Send a payment receipt message to a tenant.
+ * TODO: Re-enable once Twilio/WhatsApp verification is complete.
  */
 export async function sendTenantReceiptSMS(
   tenantName: string,
@@ -27,82 +17,20 @@ export async function sendTenantReceiptSMS(
   amount: number,
   propertyName: string,
   unitNumber: string | null,
-  receiptNumber: string
+  receiptNumber: string,
+  _channel: "whatsapp" | "sms" = "whatsapp"
 ): Promise<{ success: boolean; error?: string }> {
   if (!phone) return { success: false, error: "Tenant has no phone number" };
 
-  const firstName = tenantName.split(" ")[0];
-  const unit = unitNumber ? ` unit ${unitNumber}` : "";
-  const msg = `Hi ${firstName}, rent of KES ${amount.toLocaleString()} for ${propertyName}${unit} received. Receipt: ${receiptNumber}. -LandyKE`;
+  const to = normalizePhone(phone);
+  console.log(`[MSG] Would send receipt to ${to} for ${receiptNumber} (messaging disabled pending provider setup)`);
 
-  try {
-    const at = getAT();
-    const to = normalizePhone(phone);
-    console.log("[SMS] Sending receipt SMS to:", to, "| username:", process.env.AT_USERNAME);
-    const response = await at.SMS.send({ to: [to], message: msg, from: process.env.AT_SENDER_ID || undefined });
-    console.log("[SMS] AT response:", JSON.stringify(response));
-
-    // Check individual recipient status
-    const recipients = response?.SMSMessageData?.Recipients;
-    if (recipients && recipients.length > 0) {
-      const r = recipients[0];
-      if (r.statusCode === 101 || r.status === "Success") {
-        return { success: true };
-      }
-      return { success: false, error: `AT status: ${r.status} (code ${r.statusCode}) - ${r.number}` };
-    }
-
-    // If no recipients in response, check for error message
-    const atMessage = response?.SMSMessageData?.Message;
-    if (atMessage && atMessage.toLowerCase().includes("error")) {
-      return { success: false, error: `AT error: ${atMessage}` };
-    }
-
-    return { success: true };
-  } catch (err) {
-    console.error("[SMS] Error sending SMS:", err);
-    return { success: false, error: err instanceof Error ? err.message : String(err) };
-  }
+  return { success: false, error: "Messaging temporarily disabled — provider setup in progress" };
 }
 
 /**
- * Remove a phone number from the Africa's Talking blacklist/opt-out list.
- */
-export async function removeFromBlacklist(
-  phone: string
-): Promise<{ success: boolean; error?: string }> {
-  try {
-    const at = getAT();
-    const normalized = normalizePhone(phone);
-    console.log("[SMS] Removing from blacklist:", normalized);
-    const response = await at.SMS.deleteSubscription({ phoneNumber: normalized, shortCode: process.env.AT_SENDER_ID || "0" });
-    console.log("[SMS] Blacklist removal response:", JSON.stringify(response));
-    return { success: true };
-  } catch (err) {
-    console.error("[SMS] Blacklist removal error:", err);
-    return { success: false, error: err instanceof Error ? err.message : String(err) };
-  }
-}
-
-/**
- * Fetch all numbers currently on the blacklist/opt-out list.
- */
-export async function fetchBlacklist(): Promise<{ success: boolean; numbers?: string[]; error?: string }> {
-  try {
-    const at = getAT();
-    const response = await at.SMS.fetchSubscriptions({ shortCode: process.env.AT_SENDER_ID || "0", keyword: "", lastReceivedId: 0 });
-    console.log("[SMS] Blacklist fetch response:", JSON.stringify(response));
-    return { success: true, numbers: response?.responses?.map((r: { phoneNumber: string }) => r.phoneNumber) || [] };
-  } catch (err) {
-    console.error("[SMS] Blacklist fetch error:", err);
-    return { success: false, error: err instanceof Error ? err.message : String(err) };
-  }
-}
-
-/**
- * Send a daily payment summary SMS to a landlord.
- * Only call this when payments.length > 0.
- * Multi-part SMS (>160 chars) is handled transparently by Africa's Talking.
+ * Send a daily payment summary to a landlord.
+ * TODO: Re-enable once Twilio/WhatsApp verification is complete.
  */
 export async function sendDailySummary(
   landlordPhone: string,
@@ -112,50 +40,13 @@ export async function sendDailySummary(
     amount: number;
     propertyName: string;
     unitNumber: string | null;
-  }>
+  }>,
+  _channel: "whatsapp" | "sms" = "whatsapp"
 ): Promise<{ success: boolean; error?: string }> {
   if (!payments.length) return { success: false, error: "No payments today" };
 
-  const firstName = landlordName.split(" ")[0];
-  const total = payments.reduce((sum, p) => sum + p.amount, 0);
-  const today = new Date().toLocaleDateString("en-KE", { day: "numeric", month: "short", year: "numeric" });
+  const to = normalizePhone(landlordPhone);
+  console.log(`[MSG] Would send daily summary to ${to} for ${landlordName} (messaging disabled pending provider setup)`);
 
-  const lines = payments.map((p) => {
-    const unit = p.unitNumber ? ` U${p.unitNumber}` : "";
-    return `${p.tenantName}${unit}: KES ${p.amount.toLocaleString()}`;
-  });
-
-  const msg = [
-    `LandyKE Daily Summary - ${today}`,
-    `Hi ${firstName}, ${payments.length} payment(s) received today.`,
-    ...lines,
-    `Total: KES ${total.toLocaleString()}`,
-  ].join("\n");
-
-  try {
-    const at = getAT();
-    const to = normalizePhone(landlordPhone);
-    console.log("[SMS] Sending daily summary to:", to, "| username:", process.env.AT_USERNAME);
-    const response = await at.SMS.send({ to: [to], message: msg, from: process.env.AT_SENDER_ID || undefined });
-    console.log("[SMS] AT response:", JSON.stringify(response));
-
-    const recipients = response?.SMSMessageData?.Recipients;
-    if (recipients && recipients.length > 0) {
-      const r = recipients[0];
-      if (r.statusCode === 101 || r.status === "Success") {
-        return { success: true };
-      }
-      return { success: false, error: `AT status: ${r.status} (code ${r.statusCode}) - ${r.number}` };
-    }
-
-    const atMessage = response?.SMSMessageData?.Message;
-    if (atMessage && atMessage.toLowerCase().includes("error")) {
-      return { success: false, error: `AT error: ${atMessage}` };
-    }
-
-    return { success: true };
-  } catch (err) {
-    console.error("[SMS] Error sending SMS:", err);
-    return { success: false, error: err instanceof Error ? err.message : String(err) };
-  }
+  return { success: false, error: "Messaging temporarily disabled — provider setup in progress" };
 }
