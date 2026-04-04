@@ -965,6 +965,65 @@ body {
   }
 }
 
+/* Admin tabs — horizontal scroll on mobile */
+.admin-tabs {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.admin-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+/* Receipt modal responsive */
+@media (max-width: 768px) {
+  .receipt-modal {
+    max-width: 100% !important;
+    margin: 0.5rem !important;
+    padding: 1rem !important;
+    max-height: 95vh !important;
+  }
+  .receipt-modal iframe {
+    height: 300px !important;
+  }
+  .receipt-actions {
+    flex-direction: column !important;
+  }
+  .receipt-actions button {
+    flex: unset !important;
+    width: 100% !important;
+    min-height: 48px !important;
+    font-size: 0.9rem !important;
+  }
+  .admin-tabs button {
+    padding: 0.6rem 0.8rem !important;
+    font-size: 0.75rem !important;
+    white-space: nowrap;
+  }
+  .action-btn {
+    padding: 0.6rem !important;
+    min-width: 40px;
+    min-height: 40px;
+    justify-content: center;
+  }
+  .statement-grid {
+    grid-template-columns: 1fr 1fr 80px !important;
+  }
+  .statement-grid > :nth-child(1),
+  .statement-grid > :nth-child(4) {
+    display: none !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .admin-tab-label {
+    display: none !important;
+  }
+  .admin-tabs button {
+    padding: 0.6rem !important;
+  }
+}
+
 /* Trust section quote mark */
 .trust-section-bg::before {
   content: '\201C';

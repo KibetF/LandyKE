@@ -867,11 +867,12 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
     background: "none",
     border: "none",
     cursor: "pointer",
-    padding: "0.3rem",
+    padding: "0.5rem",
     borderRadius: "4px",
     color,
     display: "flex",
     alignItems: "center",
+    justifyContent: "center",
   });
 
   return (
@@ -887,7 +888,7 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
       </div>
 
       {/* Tabs */}
-      <div className="flex" style={{ gap: "0.25rem", marginBottom: "1.5rem", borderBottom: "1px solid var(--warm)", paddingBottom: "0" }}>
+      <div className="admin-tabs flex" style={{ gap: "0.25rem", marginBottom: "1.5rem", borderBottom: "1px solid var(--warm)", paddingBottom: "0" }}>
         {tabs.map((t) => {
           const Icon = t.icon;
           const isActive = tab === t.key;
@@ -908,10 +909,11 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
                 fontWeight: isActive ? 600 : 400,
                 cursor: "pointer",
                 marginBottom: "-1px",
+                whiteSpace: "nowrap",
               }}
             >
               <Icon size={15} />
-              {t.label}
+              <span className="admin-tab-label">{t.label}</span>
             </button>
           );
         })}
@@ -1278,10 +1280,10 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
                       </div>
                       <div className="flex items-center" style={{ gap: "0.5rem" }}>
                         <span className="font-serif" style={{ fontSize: "0.9rem", fontWeight: 600 }}>{p.total_units} units</span>
-                        <button onClick={() => openEditProperty(p)} style={actionBtnStyle("var(--gold)")} title="Edit">
+                        <button onClick={() => openEditProperty(p)} className="action-btn" style={actionBtnStyle("var(--gold)")} title="Edit">
                           <Pencil size={14} />
                         </button>
-                        <button onClick={() => deleteProperty(p.id, p.name)} disabled={loading} style={actionBtnStyle("var(--rust)")} title="Delete">
+                        <button onClick={() => deleteProperty(p.id, p.name)} className="action-btn" disabled={loading} style={actionBtnStyle("var(--rust)")} title="Delete">
                           <Trash2 size={14} />
                         </button>
                       </div>
@@ -1412,10 +1414,10 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
                         >
                           {t.status}
                         </span>
-                        <button onClick={() => openEditTenant(t)} style={actionBtnStyle("var(--gold)")} title="Edit">
+                        <button onClick={() => openEditTenant(t)} className="action-btn" style={actionBtnStyle("var(--gold)")} title="Edit">
                           <Pencil size={14} />
                         </button>
-                        <button onClick={() => deleteTenant(t.id, t.full_name)} disabled={loading} style={actionBtnStyle("var(--rust)")} title="Delete">
+                        <button onClick={() => deleteTenant(t.id, t.full_name)} className="action-btn" disabled={loading} style={actionBtnStyle("var(--rust)")} title="Delete">
                           <Trash2 size={14} />
                         </button>
                       </div>
@@ -1614,14 +1616,14 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
                           </span>
                         </div>
                         {p.status === "paid" && (
-                          <button onClick={() => openReceiptPreview(p)} style={actionBtnStyle("var(--green)")} title="Receipt">
+                          <button onClick={() => openReceiptPreview(p)} className="action-btn" style={actionBtnStyle("var(--green)")} title="Receipt">
                             <FileText size={14} />
                           </button>
                         )}
-                        <button onClick={() => openEditPayment(p)} style={actionBtnStyle("var(--gold)")} title="Edit">
+                        <button onClick={() => openEditPayment(p)} className="action-btn" style={actionBtnStyle("var(--gold)")} title="Edit">
                           <Pencil size={14} />
                         </button>
-                        <button onClick={() => deletePayment(p.id)} disabled={loading} style={actionBtnStyle("var(--rust)")} title="Delete">
+                        <button onClick={() => deletePayment(p.id)} className="action-btn" disabled={loading} style={actionBtnStyle("var(--rust)")} title="Delete">
                           <Trash2 size={14} />
                         </button>
                       </div>
@@ -1637,7 +1639,7 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
       {/* === RECEIPT PREVIEW MODAL === */}
       {receiptPayment && receiptPreviewUrl && (
         <div style={modalOverlayStyle} onClick={closeReceiptPreview}>
-          <div style={{ ...modalStyle, maxWidth: "700px" }} onClick={(e) => e.stopPropagation()}>
+          <div className="receipt-modal" style={{ ...modalStyle, maxWidth: "700px" }} onClick={(e) => e.stopPropagation()}>
             <div className="flex justify-between items-center" style={{ marginBottom: "1rem" }}>
               <h3 className="font-serif" style={{ fontSize: "1.1rem", fontWeight: 600 }}>Receipt Preview</h3>
               <button onClick={closeReceiptPreview} style={{ background: "none", border: "none", cursor: "pointer" }}>
@@ -1660,7 +1662,7 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
                 {smsStatus.text}
               </div>
             )}
-            <div className="flex" style={{ gap: "0.75rem", marginTop: "1rem" }}>
+            <div className="receipt-actions flex" style={{ gap: "0.75rem", marginTop: "1rem" }}>
               <button
                 onClick={downloadReceipt}
                 className="flex items-center"

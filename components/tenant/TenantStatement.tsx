@@ -155,7 +155,7 @@ export default function TenantStatement({ tenant, payments }: Props) {
           <div style={{ overflowX: "auto" }}>
             {/* Header */}
             <div
-              className="table-header"
+              className="table-header statement-grid"
               style={{
                 display: "grid",
                 gridTemplateColumns: "40px 1fr 1fr 1fr 80px",
@@ -177,7 +177,7 @@ export default function TenantStatement({ tenant, payments }: Props) {
               return (
                 <div
                   key={p.id}
-                  className="row-hover"
+                  className="row-hover statement-grid"
                   style={{
                     display: "grid",
                     gridTemplateColumns: "40px 1fr 1fr 1fr 80px",

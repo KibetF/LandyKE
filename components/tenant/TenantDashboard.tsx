@@ -90,7 +90,7 @@ export default function TenantDashboard({ tenant, payments, balance }: Props) {
         </div>
 
         <div className="flex items-end" style={{ gap: "1rem", flexWrap: "wrap" }}>
-          <div>
+          <div style={{ minWidth: "200px" }}>
             <p style={{ fontSize: "0.7rem", color: "var(--muted)", marginBottom: "0.25rem" }}>
               {balance.currentMonthStatus === "paid" ? "Rent Paid" : "Amount Due"}
             </p>
