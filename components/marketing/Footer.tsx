@@ -72,7 +72,7 @@ export default function Footer() {
             ].map((item) => (
               <li key={item} style={{ marginBottom: "0.6rem" }}>
                 <Link
-                  href="/#services"
+                  href="/services"
                   className="footer-link no-underline"
                   style={footerLinkStyle}
                 >

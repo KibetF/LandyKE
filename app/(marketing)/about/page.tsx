@@ -559,7 +559,7 @@ export default function AboutPage() {
             Get In Touch
           </a>
           <a
-            href="/#services"
+            href="/services"
             className="no-underline uppercase"
             style={{
               background: "transparent",

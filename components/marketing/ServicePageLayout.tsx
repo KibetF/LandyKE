@@ -33,7 +33,7 @@ export default function ServicePageLayout({
           style={{ paddingBottom: "3rem" }}
         >
           <Link
-            href="/#services"
+            href="/services"
             className="no-underline flex items-center"
             style={{
               fontSize: "0.8rem",
