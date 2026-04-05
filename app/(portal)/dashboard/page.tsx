@@ -139,27 +139,13 @@ export default async function DashboardPage({
   return (
     <>
       {/* Header */}
-      <div
-        className="flex justify-between items-start dashboard-header"
-        style={{ marginBottom: "2.5rem" }}
-      >
+      <div className="mb-10 flex flex-wrap items-start justify-between gap-4 dashboard-header">
         <div>
-          <h1
-            className="font-serif"
-            style={{ fontSize: "2rem", fontWeight: 300, color: "var(--ink)" }}
-          >
+          <h1 className="font-serif text-[2rem] font-light text-ink">
             {greeting},{" "}
-            <span style={{ color: "var(--gold)", fontStyle: "italic" }}>
-              {userName}
-            </span>
+            <span className="italic text-gold">{userName}</span>
           </h1>
-          <p
-            style={{
-              fontSize: "0.8rem",
-              color: "var(--muted)",
-              marginTop: "0.2rem",
-            }}
-          >
+          <p className="mt-0.5 text-[0.8rem] text-muted">
             Here&apos;s your portfolio snapshot for {monthLabel}
           </p>
         </div>
@@ -170,19 +156,13 @@ export default async function DashboardPage({
       <KpiRow data={kpiData} />
 
       {/* Chart + Properties */}
-      <div
-        className="dashboard-grid-2"
-        style={{ marginBottom: "1.5rem" }}
-      >
+      <div className="mb-6 grid grid-cols-1 gap-6 lg:grid-cols-[1.6fr_1fr] dashboard-grid-2">
         <IncomeChart data={incomeData} />
         <PropertyBreakdown properties={properties} />
       </div>
 
       {/* Tenants + Transactions */}
-      <div
-        className="dashboard-grid-2"
-        style={{ marginBottom: "1.5rem" }}
-      >
+      <div className="mb-6 grid grid-cols-1 gap-6 lg:grid-cols-[1.6fr_1fr] dashboard-grid-2">
         <TenantStatusList tenants={tenants} />
         <RecentTransactions transactions={transactions} />
       </div>

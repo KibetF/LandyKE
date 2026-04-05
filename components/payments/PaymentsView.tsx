@@ -6,8 +6,10 @@ import {
   Building2,
   Banknote,
   Download,
+  CreditCard,
 } from "lucide-react";
-import StatusPill from "@/components/ui/StatusPill";
+import StatusBadge from "@/components/ui/StatusBadge";
+import EmptyState from "@/components/ui/EmptyState";
 import Pagination from "@/components/ui/Pagination";
 
 interface PaymentData {
@@ -54,6 +56,8 @@ function formatMonth(key: string) {
   const date = new Date(Number(year), Number(month) - 1);
   return date.toLocaleDateString("en-KE", { month: "long", year: "numeric" });
 }
+
+const selectClasses = "rounded border border-warm bg-white px-5 py-2.5 font-sans text-[0.8rem] text-ink outline-none cursor-pointer transition-colors focus:border-gold/30 focus-visible:ring-2 focus-visible:ring-gold/20";
 
 export default function PaymentsView({
   payments,
@@ -105,67 +109,23 @@ export default function PaymentsView({
   return (
     <>
       {/* Header */}
-      <div style={{ marginBottom: "2rem" }}>
-        <h1
-          className="font-serif"
-          style={{ fontSize: "2rem", fontWeight: 300, color: "var(--ink)" }}
-        >
-          Payments
-        </h1>
-        <p
-          style={{
-            fontSize: "0.8rem",
-            color: "var(--muted)",
-            marginTop: "0.2rem",
-          }}
-        >
+      <div className="mb-8">
+        <h1 className="font-serif text-[2rem] font-light text-ink">Payments</h1>
+        <p className="mt-0.5 text-[0.8rem] text-muted">
           Track rent payments and transactions
         </p>
       </div>
 
       {/* Filters */}
-      <div
-        className="flex items-center"
-        style={{ gap: "0.75rem", marginBottom: "1.5rem", flexWrap: "wrap" }}
-      >
-        <select
-          value={monthFilter}
-          onChange={(e) => setMonthFilter(e.target.value)}
-          style={{
-            background: "var(--white)",
-            border: "1px solid var(--warm)",
-            padding: "0.6rem 1.2rem",
-            fontFamily: "var(--font-sans), sans-serif",
-            fontSize: "0.8rem",
-            color: "var(--ink)",
-            borderRadius: "4px",
-            cursor: "pointer",
-            outline: "none",
-          }}
-        >
+      <div className="mb-6 flex flex-wrap items-center gap-3">
+        <select value={monthFilter} onChange={(e) => setMonthFilter(e.target.value)} className={selectClasses}>
           <option value="all">All Months</option>
           {monthOptions.map((m) => (
-            <option key={m} value={m}>
-              {formatMonth(m)}
-            </option>
+            <option key={m} value={m}>{formatMonth(m)}</option>
           ))}
         </select>
 
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          style={{
-            background: "var(--white)",
-            border: "1px solid var(--warm)",
-            padding: "0.6rem 1.2rem",
-            fontFamily: "var(--font-sans), sans-serif",
-            fontSize: "0.8rem",
-            color: "var(--ink)",
-            borderRadius: "4px",
-            cursor: "pointer",
-            outline: "none",
-          }}
-        >
+        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className={selectClasses}>
           <option value="all">All Status</option>
           <option value="paid">Paid</option>
           <option value="pending">Pending</option>
@@ -174,19 +134,8 @@ export default function PaymentsView({
 
         <button
           onClick={exportCsv}
-          className="flex items-center"
-          style={{
-            marginLeft: "auto",
-            gap: "0.5rem",
-            background: "var(--ink)",
-            color: "var(--cream)",
-            border: "none",
-            padding: "0.6rem 1.2rem",
-            fontSize: "0.8rem",
-            borderRadius: "4px",
-            cursor: "pointer",
-            fontFamily: "var(--font-sans), sans-serif",
-          }}
+          aria-label="Export payments as CSV"
+          className="ml-auto flex items-center gap-2 rounded bg-ink px-5 py-2.5 text-[0.8rem] font-sans text-cream border-none cursor-pointer transition-colors hover:bg-ink/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2"
         >
           <Download size={14} />
           Export CSV
@@ -194,79 +143,76 @@ export default function PaymentsView({
       </div>
 
       {/* KPI cards */}
-      <div className="payments-kpi-grid" style={{ marginBottom: "1.5rem" }}>
-        <div style={{ background: "var(--white)", borderRadius: "8px", border: "1px solid rgba(200,150,62,0.08)", padding: "1rem 1.2rem" }}>
-          <span style={{ fontSize: "0.6rem", textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--green)" }}>Collected</span>
-          <div className="font-serif" style={{ fontSize: "1.3rem", fontWeight: 600, color: "var(--green)" }}>KES {collected.toLocaleString()}</div>
+      <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4 payments-kpi-grid">
+        <div className="card py-4 px-5">
+          <span className="label-upper text-green">Collected</span>
+          <div className="font-serif text-xl font-semibold text-green">KES {collected.toLocaleString()}</div>
         </div>
-        <div style={{ background: "var(--white)", borderRadius: "8px", border: "1px solid rgba(200,150,62,0.08)", padding: "1rem 1.2rem" }}>
-          <span style={{ fontSize: "0.6rem", textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--muted)" }}>Expected</span>
-          <div className="font-serif" style={{ fontSize: "1.3rem", fontWeight: 600 }}>KES {expectedRent.toLocaleString()}</div>
+        <div className="card py-4 px-5">
+          <span className="label-upper">Expected</span>
+          <div className="font-serif text-xl font-semibold">KES {expectedRent.toLocaleString()}</div>
         </div>
-        <div style={{ background: "var(--white)", borderRadius: "8px", border: "1px solid rgba(200,150,62,0.08)", padding: "1rem 1.2rem" }}>
-          <span style={{ fontSize: "0.6rem", textTransform: "uppercase", letterSpacing: "0.08em", color: outstanding > 0 ? "var(--rust)" : "var(--muted)" }}>Outstanding</span>
-          <div className="font-serif" style={{ fontSize: "1.3rem", fontWeight: 600, color: outstanding > 0 ? "var(--rust)" : "var(--ink)" }}>KES {Math.max(0, outstanding).toLocaleString()}</div>
+        <div className="card py-4 px-5">
+          <span className={`label-upper ${outstanding > 0 ? "text-rust" : ""}`}>Outstanding</span>
+          <div className={`font-serif text-xl font-semibold ${outstanding > 0 ? "text-rust" : ""}`}>KES {Math.max(0, outstanding).toLocaleString()}</div>
         </div>
-        <div style={{ background: "var(--white)", borderRadius: "8px", border: "1px solid rgba(200,150,62,0.08)", padding: "1rem 1.2rem" }}>
-          <span style={{ fontSize: "0.6rem", textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--muted)" }}>Payments</span>
-          <div className="font-serif" style={{ fontSize: "1.3rem", fontWeight: 600 }}>{filtered.length}</div>
+        <div className="card py-4 px-5">
+          <span className="label-upper">Payments</span>
+          <div className="font-serif text-xl font-semibold">{filtered.length}</div>
         </div>
       </div>
 
       {/* Payment list */}
-      <div style={{ background: "var(--white)", borderRadius: "8px", border: "1px solid rgba(200,150,62,0.08)", overflow: "hidden" }}>
+      <div className="overflow-hidden rounded-lg border border-gold/8 bg-white">
         {filtered.length === 0 ? (
-          <div style={{ padding: "3rem", textAlign: "center", color: "var(--muted)", fontSize: "0.85rem" }}>
-            No payments found for the selected filters.
-          </div>
+          <EmptyState
+            icon={CreditCard}
+            title="No payments found"
+            description="No payments match the selected filters."
+          />
         ) : (
           <div>
             {filtered.map((payment, i) => {
               const MethodIcon = getMethodIcon(payment.notes);
-              const amountColor =
+              const amountColorClass =
                 payment.status === "paid"
-                  ? "var(--green)"
+                  ? "text-green"
                   : payment.status === "overdue"
-                    ? "var(--red-soft)"
-                    : "var(--ink)";
+                    ? "text-red-soft"
+                    : "text-ink";
 
               const displayDate = payment.paid_date || payment.due_date;
 
               return (
                 <div
                   key={payment.id}
-                  className="payment-row items-center row-hover"
-                  style={{
-                    display: "grid",
-                    gap: "1rem",
-                    padding: "1rem 1.5rem",
-                    borderBottom: i < filtered.length - 1 ? "1px solid var(--warm)" : "none",
-                    transition: "background 0.15s",
-                  }}
+                  className={`payment-row row-hover grid items-center gap-4 px-6 py-4 transition-colors ${
+                    i < filtered.length - 1 ? "border-b border-warm" : ""
+                  }`}
                 >
-                  <div className="flex items-center justify-center" style={{ width: "34px", height: "34px", borderRadius: "50%", background: "var(--warm)" }}>
-                    <MethodIcon size={16} style={{ color: "var(--muted)" }} />
+                  <div className="flex h-[34px] w-[34px] items-center justify-center rounded-full bg-warm">
+                    <MethodIcon size={16} className="text-muted" />
                   </div>
                   <div>
-                    <h4 style={{ fontSize: "0.85rem", fontWeight: 500, marginBottom: "0.15rem" }}>
+                    <h4 className="mb-0.5 text-[0.85rem] font-medium">
                       {payment.tenants?.full_name || "—"}
                     </h4>
-                    <span style={{ fontSize: "0.7rem", color: "var(--muted)" }}>
+                    <span className="text-[0.7rem] text-muted">
                       {payment.tenants?.properties?.name || ""}
                       {payment.notes ? ` · ${payment.notes}` : ""}
                     </span>
                   </div>
                   <div className="text-right">
-                    <span className="font-serif" style={{ fontSize: "1rem", fontWeight: 600, color: amountColor }}>
+                    <span className={`font-serif text-base font-semibold ${amountColorClass}`}>
                       KES {Number(payment.amount).toLocaleString()}
                     </span>
                   </div>
-                  <span style={{ fontSize: "0.72rem", color: "var(--muted)", minWidth: "80px" }}>
+                  <span className="min-w-[80px] text-[0.72rem] text-muted">
                     {displayDate
                       ? new Date(displayDate).toLocaleDateString("en-KE", { day: "numeric", month: "short", year: "numeric" })
                       : "—"}
                   </span>
-                  <StatusPill status={payment.status as "paid" | "pending" | "overdue"} />
+                  <StatusBadge status={payment.status as "paid" | "pending" | "overdue"} />
                 </div>
               );
             })}

@@ -3,7 +3,8 @@
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Wrench, AlertTriangle, CheckCircle, Clock, Plus, X } from "lucide-react";
-import StatusPill from "@/components/ui/StatusPill";
+import StatusBadge from "@/components/ui/StatusBadge";
+import EmptyState from "@/components/ui/EmptyState";
 
 interface MaintenanceRequest {
   id: string;
@@ -27,39 +28,8 @@ interface MaintenanceViewProps {
   landlordId: string;
 }
 
-const selectStyle = {
-  background: "var(--white)",
-  border: "1px solid var(--warm)",
-  padding: "0.6rem 1.2rem",
-  fontFamily: "var(--font-sans), sans-serif",
-  fontSize: "0.8rem",
-  color: "var(--ink)",
-  borderRadius: "4px",
-  cursor: "pointer",
-  outline: "none",
-} as const;
-
-const inputStyle = {
-  width: "100%",
-  padding: "10px 14px",
-  border: "1px solid var(--warm)",
-  borderRadius: "6px",
-  fontSize: "0.85rem",
-  fontFamily: "var(--font-sans), sans-serif",
-  background: "var(--white)",
-  color: "var(--ink)",
-  outline: "none",
-} as const;
-
-const labelStyle = {
-  fontSize: "0.65rem",
-  textTransform: "uppercase" as const,
-  letterSpacing: "0.12em",
-  color: "var(--muted)",
-  marginBottom: "0.4rem",
-  fontWeight: 500,
-  display: "block",
-};
+const selectClasses = "rounded border border-warm bg-white px-5 py-2.5 font-sans text-[0.8rem] text-ink outline-none cursor-pointer transition-colors focus:border-gold/30 focus-visible:ring-2 focus-visible:ring-gold/20";
+const inputClasses = "w-full rounded-md border border-warm bg-white px-3.5 py-2.5 font-sans text-[0.85rem] text-ink outline-none transition-colors focus:border-gold/30 focus-visible:ring-2 focus-visible:ring-gold/20";
 
 export default function MaintenanceView({ requests, properties, tenants, landlordId }: MaintenanceViewProps) {
   const router = useRouter();
@@ -123,31 +93,25 @@ export default function MaintenanceView({ requests, properties, tenants, landlor
     router.refresh();
   }
 
+  const kpis = [
+    { label: "Open Requests", value: openCount, colorClass: "text-rust", Icon: AlertTriangle },
+    { label: "In Progress", value: inProgressCount, colorClass: "text-[#1a5296]", Icon: Clock },
+    { label: "Completed", value: completedCount, colorClass: "text-green", Icon: CheckCircle },
+    { label: "Total Requests", value: requests.length, colorClass: "text-muted", Icon: Wrench },
+  ];
+
   return (
     <>
-      <div className="flex justify-between items-start" style={{ marginBottom: "2rem" }}>
+      <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="font-serif" style={{ fontSize: "2rem", fontWeight: 300, color: "var(--ink)" }}>
-            Maintenance
-          </h1>
-          <p style={{ fontSize: "0.8rem", color: "var(--muted)", marginTop: "0.2rem" }}>
+          <h1 className="font-serif text-[2rem] font-light text-ink">Maintenance</h1>
+          <p className="mt-0.5 text-[0.8rem] text-muted">
             Track and manage maintenance requests
           </p>
         </div>
         <button
           onClick={() => setShowForm(true)}
-          className="flex items-center"
-          style={{
-            gap: "0.4rem",
-            background: "var(--ink)",
-            color: "var(--cream)",
-            border: "none",
-            padding: "0.6rem 1.2rem",
-            fontSize: "0.8rem",
-            borderRadius: "4px",
-            cursor: "pointer",
-            fontFamily: "var(--font-sans), sans-serif",
-          }}
+          className="flex items-center gap-1.5 rounded bg-ink px-5 py-2.5 text-[0.8rem] font-sans text-cream border-none cursor-pointer transition-colors hover:bg-ink/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2"
         >
           <Plus size={14} />
           New Request
@@ -156,26 +120,22 @@ export default function MaintenanceView({ requests, properties, tenants, landlor
 
       {/* New Request Form */}
       {showForm && (
-        <div
-          style={{
-            background: "var(--white)",
-            borderRadius: "8px",
-            border: "1px solid rgba(200,150,62,0.08)",
-            padding: "1.5rem",
-            marginBottom: "1.5rem",
-          }}
-        >
-          <div className="flex justify-between items-center" style={{ marginBottom: "1rem" }}>
-            <h3 className="font-serif" style={{ fontSize: "1.1rem", fontWeight: 600 }}>New Maintenance Request</h3>
-            <button onClick={() => setShowForm(false)} style={{ background: "none", border: "none", cursor: "pointer" }}>
-              <X size={18} style={{ color: "var(--muted)" }} />
+        <div className="card mb-6">
+          <div className="mb-4 flex items-center justify-between">
+            <h3 className="font-serif text-[1.1rem] font-semibold">New Maintenance Request</h3>
+            <button
+              onClick={() => setShowForm(false)}
+              aria-label="Close form"
+              className="border-none bg-transparent cursor-pointer"
+            >
+              <X size={18} className="text-muted" />
             </button>
           </div>
-          <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
-                <label style={labelStyle}>Property *</label>
-                <select value={formPropertyId} onChange={(e) => setFormPropertyId(e.target.value)} style={{ ...inputStyle, cursor: "pointer" }} required>
+                <label className="label-upper mb-1.5 block font-medium">Property *</label>
+                <select value={formPropertyId} onChange={(e) => setFormPropertyId(e.target.value)} className={`${inputClasses} cursor-pointer`} required>
                   <option value="">Select property</option>
                   {properties.map((p) => (
                     <option key={p.id} value={p.id}>{p.name}</option>
@@ -183,8 +143,8 @@ export default function MaintenanceView({ requests, properties, tenants, landlor
                 </select>
               </div>
               <div>
-                <label style={labelStyle}>Tenant (optional)</label>
-                <select value={formTenantId} onChange={(e) => setFormTenantId(e.target.value)} style={{ ...inputStyle, cursor: "pointer" }}>
+                <label className="label-upper mb-1.5 block font-medium">Tenant (optional)</label>
+                <select value={formTenantId} onChange={(e) => setFormTenantId(e.target.value)} className={`${inputClasses} cursor-pointer`}>
                   <option value="">Select tenant</option>
                   {filteredTenants.map((t) => (
                     <option key={t.id} value={t.id}>{t.full_name}</option>
@@ -192,12 +152,12 @@ export default function MaintenanceView({ requests, properties, tenants, landlor
                 </select>
               </div>
               <div>
-                <label style={labelStyle}>Unit Number (optional)</label>
-                <input type="text" value={formUnitNumber} onChange={(e) => setFormUnitNumber(e.target.value)} placeholder="e.g., 3" style={inputStyle} />
+                <label className="label-upper mb-1.5 block font-medium">Unit Number (optional)</label>
+                <input type="text" value={formUnitNumber} onChange={(e) => setFormUnitNumber(e.target.value)} placeholder="e.g., 3" className={inputClasses} />
               </div>
               <div>
-                <label style={labelStyle}>Priority *</label>
-                <select value={formPriority} onChange={(e) => setFormPriority(e.target.value)} style={{ ...inputStyle, cursor: "pointer" }} required>
+                <label className="label-upper mb-1.5 block font-medium">Priority *</label>
+                <select value={formPriority} onChange={(e) => setFormPriority(e.target.value)} className={`${inputClasses} cursor-pointer`} required>
                   <option value="low">Low</option>
                   <option value="medium">Medium</option>
                   <option value="high">High</option>
@@ -206,31 +166,20 @@ export default function MaintenanceView({ requests, properties, tenants, landlor
               </div>
             </div>
             <div>
-              <label style={labelStyle}>Description *</label>
+              <label className="label-upper mb-1.5 block font-medium">Description *</label>
               <textarea
                 value={formDescription}
                 onChange={(e) => setFormDescription(e.target.value)}
                 placeholder="Describe the maintenance issue..."
                 required
                 rows={3}
-                style={{ ...inputStyle, resize: "vertical" }}
+                className={`${inputClasses} resize-y`}
               />
             </div>
             <button
               type="submit"
               disabled={submitting}
-              style={{
-                background: "var(--ink)",
-                color: "var(--cream)",
-                border: "none",
-                padding: "0.7rem 1.5rem",
-                fontSize: "0.8rem",
-                borderRadius: "4px",
-                cursor: "pointer",
-                fontFamily: "var(--font-sans), sans-serif",
-                alignSelf: "flex-start",
-                opacity: submitting ? 0.6 : 1,
-              }}
+              className="self-start rounded bg-ink px-6 py-2.5 text-[0.8rem] font-sans text-cream border-none cursor-pointer transition-colors hover:bg-ink/90 disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2"
             >
               {submitting ? "Submitting..." : "Submit Request"}
             </button>
@@ -239,20 +188,20 @@ export default function MaintenanceView({ requests, properties, tenants, landlor
       )}
 
       {/* Filters */}
-      <div className="flex items-center" style={{ gap: "0.75rem", marginBottom: "1.5rem", flexWrap: "wrap" }}>
-        <select value={propertyFilter} onChange={(e) => setPropertyFilter(e.target.value)} style={selectStyle}>
+      <div className="mb-6 flex flex-wrap items-center gap-3">
+        <select value={propertyFilter} onChange={(e) => setPropertyFilter(e.target.value)} className={selectClasses}>
           <option value="all">All Properties</option>
           {properties.map((p) => (
             <option key={p.id} value={p.id}>{p.name}</option>
           ))}
         </select>
-        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} style={selectStyle}>
+        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className={selectClasses}>
           <option value="all">All Status</option>
           <option value="open">Open</option>
           <option value="in-progress">In Progress</option>
           <option value="completed">Completed</option>
         </select>
-        <select value={priorityFilter} onChange={(e) => setPriorityFilter(e.target.value)} style={selectStyle}>
+        <select value={priorityFilter} onChange={(e) => setPriorityFilter(e.target.value)} className={selectClasses}>
           <option value="all">All Priority</option>
           <option value="low">Low</option>
           <option value="medium">Medium</option>
@@ -262,29 +211,14 @@ export default function MaintenanceView({ requests, properties, tenants, landlor
       </div>
 
       {/* KPI cards */}
-      <div className="maintenance-kpi-grid" style={{ marginBottom: "1.5rem" }}>
-        {[
-          { label: "Open Requests", value: openCount, color: "var(--rust)", Icon: AlertTriangle },
-          { label: "In Progress", value: inProgressCount, color: "#1a5296", Icon: Clock },
-          { label: "Completed", value: completedCount, color: "var(--green)", Icon: CheckCircle },
-          { label: "Total Requests", value: requests.length, color: "var(--muted)", Icon: Wrench },
-        ].map((kpi) => (
-          <div
-            key={kpi.label}
-            style={{
-              background: "var(--white)",
-              borderRadius: "8px",
-              border: "1px solid rgba(200,150,62,0.08)",
-              padding: "1rem 1.2rem",
-            }}
-          >
-            <div className="flex items-center" style={{ gap: "0.5rem", marginBottom: "0.5rem" }}>
-              <kpi.Icon size={14} style={{ color: kpi.color }} />
-              <span style={{ fontSize: "0.6rem", textTransform: "uppercase", letterSpacing: "0.08em", color: kpi.color }}>
-                {kpi.label}
-              </span>
+      <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4 maintenance-kpi-grid">
+        {kpis.map((kpi) => (
+          <div key={kpi.label} className="card py-4 px-5">
+            <div className="mb-2 flex items-center gap-2">
+              <kpi.Icon size={14} className={kpi.colorClass} />
+              <span className={`label-upper ${kpi.colorClass}`}>{kpi.label}</span>
             </div>
-            <div className="font-serif" style={{ fontSize: "1.3rem", fontWeight: 600, color: kpi.color }}>
+            <div className={`font-serif text-xl font-semibold ${kpi.colorClass}`}>
               {kpi.value}
             </div>
           </div>
@@ -292,58 +226,50 @@ export default function MaintenanceView({ requests, properties, tenants, landlor
       </div>
 
       {/* Request list */}
-      <div
-        style={{
-          background: "var(--white)",
-          borderRadius: "8px",
-          border: "1px solid rgba(200,150,62,0.08)",
-          overflow: "hidden",
-        }}
-      >
+      <div className="overflow-hidden rounded-lg border border-gold/8 bg-white">
         {filtered.length === 0 ? (
-          <div style={{ padding: "3rem", textAlign: "center", color: "var(--muted)", fontSize: "0.85rem" }}>
-            No maintenance requests found for the selected filters.
-          </div>
+          <EmptyState
+            icon={Wrench}
+            title="No maintenance requests found"
+            description="No requests match the selected filters."
+          />
         ) : (
           <div>
             {filtered.map((request, i) => (
               <div
                 key={request.id}
-                className="items-center row-hover"
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "auto 1fr auto auto auto",
-                  gap: "1rem",
-                  padding: "1rem 1.5rem",
-                  borderBottom: i < filtered.length - 1 ? "1px solid var(--warm)" : "none",
-                  transition: "background 0.15s",
-                }}
+                className={`row-hover grid grid-cols-[auto_1fr_auto_auto_auto] items-center gap-4 px-6 py-4 transition-colors ${
+                  i < filtered.length - 1 ? "border-b border-warm" : ""
+                }`}
               >
                 <div
-                  className="flex items-center justify-center"
-                  style={{
-                    width: "34px",
-                    height: "34px",
-                    borderRadius: "50%",
-                    background: request.priority === "urgent" ? "var(--red-light)" : request.priority === "high" ? "#fde8e8" : "var(--warm)",
-                  }}
+                  className={`flex h-[34px] w-[34px] items-center justify-center rounded-full ${
+                    request.priority === "urgent" || request.priority === "high"
+                      ? "bg-red-light"
+                      : "bg-warm"
+                  }`}
                 >
-                  <Wrench size={16} style={{ color: request.priority === "urgent" ? "var(--red-soft)" : "var(--muted)" }} />
+                  <Wrench
+                    size={16}
+                    className={
+                      request.priority === "urgent" ? "text-red-soft" : "text-muted"
+                    }
+                  />
                 </div>
 
                 <div>
-                  <h4 style={{ fontSize: "0.85rem", fontWeight: 500, marginBottom: "0.15rem" }}>
+                  <h4 className="mb-0.5 text-[0.85rem] font-medium">
                     {request.description}
                   </h4>
-                  <span style={{ fontSize: "0.7rem", color: "var(--muted)" }}>
+                  <span className="text-[0.7rem] text-muted">
                     {request.tenants?.full_name || "—"} · {request.properties?.name}{request.unit_number ? ` · Unit ${request.unit_number}` : ""}
                   </span>
                 </div>
 
-                <StatusPill status={request.priority} />
-                <StatusPill status={request.status} />
+                <StatusBadge status={request.priority} />
+                <StatusBadge status={request.status} />
 
-                <span style={{ fontSize: "0.72rem", color: "var(--muted)", minWidth: "80px" }}>
+                <span className="min-w-[80px] text-[0.72rem] text-muted">
                   {new Date(request.date_submitted).toLocaleDateString("en-KE", { day: "numeric", month: "short", year: "numeric" })}
                 </span>
               </div>

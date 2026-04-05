@@ -10,6 +10,7 @@ import {
 } from "recharts";
 import Link from "next/link";
 import { BarChart3 } from "lucide-react";
+import EmptyState from "@/components/ui/EmptyState";
 import type { MonthlyIncome } from "@/types";
 
 interface IncomeChartProps {
@@ -20,53 +21,25 @@ export default function IncomeChart({ data }: IncomeChartProps) {
   const isEmpty = data.length === 0;
 
   return (
-    <div
-      className="card-hover"
-      style={{
-        background: "var(--white)",
-        borderRadius: "8px",
-        border: "1px solid rgba(200,150,62,0.08)",
-        overflow: "hidden",
-      }}
-    >
-      <div
-        className="flex justify-between items-center"
-        style={{
-          padding: "1.2rem 1.5rem",
-          borderBottom: "1px solid var(--warm)",
-        }}
-      >
-        <h3
-          className="font-serif"
-          style={{ fontSize: "1.1rem", fontWeight: 600 }}
-        >
+    <div className="overflow-hidden rounded-lg border border-gold/8 bg-white transition-all duration-200 hover:-translate-y-px hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)]">
+      <div className="flex items-center justify-between border-b border-warm px-6 py-4">
+        <h3 className="font-serif text-[1.1rem] font-semibold">
           Monthly Income
         </h3>
         <Link
           href="/payments"
-          className="uppercase cursor-pointer"
-          style={{
-            fontSize: "0.7rem",
-            color: "var(--gold)",
-            textDecoration: "none",
-            letterSpacing: "0.08em",
-          }}
+          className="text-[0.7rem] uppercase tracking-[0.08em] text-gold no-underline"
         >
           Full Report →
         </Link>
       </div>
-      <div style={{ padding: "1.5rem", height: "220px" }}>
+      <div className="h-[220px] p-6">
         {isEmpty ? (
-          <div
-            className="flex flex-col items-center justify-center"
-            style={{ height: "100%", color: "var(--muted)" }}
-          >
-            <BarChart3 size={32} style={{ marginBottom: "0.75rem", opacity: 0.4 }} />
-            <span style={{ fontSize: "0.85rem" }}>No income data yet</span>
-            <span style={{ fontSize: "0.7rem", marginTop: "0.25rem" }}>
-              Payments will appear here once recorded
-            </span>
-          </div>
+          <EmptyState
+            icon={BarChart3}
+            title="No income data yet"
+            description="Payments will appear here once recorded"
+          />
         ) : (
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={data} barGap={2} barCategoryGap="20%">

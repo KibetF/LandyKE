@@ -54,48 +54,29 @@ export default function TenantProfile({ tenant }: Props) {
 
   return (
     <div>
-      <div style={{ marginBottom: "1.5rem" }}>
-        <h1 className="font-serif" style={{ fontSize: "1.5rem", fontWeight: 400, letterSpacing: "-0.02em" }}>
+      <div className="mb-6">
+        <h1 className="font-serif text-2xl font-normal tracking-tight">
           My Profile
         </h1>
-        <p style={{ fontSize: "0.78rem", color: "var(--muted)", marginTop: "0.2rem" }}>
+        <p className="mt-0.5 text-[0.78rem] text-muted">
           View your details and update contact info
         </p>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "1.5rem" }}>
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Profile card */}
-        <div
-          style={{
-            background: "var(--white)",
-            borderRadius: "8px",
-            border: "1px solid rgba(200,150,62,0.08)",
-            padding: "1.5rem",
-          }}
-        >
-          <div className="flex items-center" style={{ gap: "1rem", marginBottom: "1.5rem" }}>
-            <div
-              className="font-serif flex items-center justify-center"
-              style={{
-                width: "56px",
-                height: "56px",
-                borderRadius: "50%",
-                background: "var(--gold)",
-                color: "var(--ink)",
-                fontSize: "1.5rem",
-                fontWeight: 600,
-                flexShrink: 0,
-              }}
-            >
+        <div className="card">
+          <div className="mb-6 flex items-center gap-4">
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-gold font-serif text-2xl font-semibold text-ink">
               {initial}
             </div>
             <div>
-              <h3 style={{ fontSize: "1rem", fontWeight: 500 }}>{tenant.full_name}</h3>
-              <p style={{ fontSize: "0.75rem", color: "var(--muted)" }}>Tenant</p>
+              <h3 className="text-base font-medium">{tenant.full_name}</h3>
+              <p className="text-[0.75rem] text-muted">Tenant</p>
             </div>
           </div>
 
-          <div style={{ display: "flex", flexDirection: "column", gap: "0.9rem" }}>
+          <div className="flex flex-col gap-3.5">
             <ProfileRow icon={Home} label="Property" value={tenant.property_name} />
             <ProfileRow icon={Home} label="Unit" value={tenant.unit_number || "—"} />
             {tenant.unit_type && <ProfileRow icon={Home} label="Type" value={tenant.unit_type} />}
@@ -117,81 +98,45 @@ export default function TenantProfile({ tenant }: Props) {
         </div>
 
         {/* Editable contact info */}
-        <div
-          style={{
-            background: "var(--white)",
-            borderRadius: "8px",
-            border: "1px solid rgba(200,150,62,0.08)",
-            padding: "1.5rem",
-          }}
-        >
-          <h3 className="font-serif" style={{ fontSize: "1.1rem", fontWeight: 500, marginBottom: "1.2rem" }}>
+        <div className="card">
+          <h3 className="mb-5 font-serif text-[1.1rem] font-medium">
             Contact Information
           </h3>
 
           <form onSubmit={handleSave}>
-            <div style={{ marginBottom: "1rem" }}>
-              <label
-                className="flex items-center uppercase"
-                style={{ fontSize: "0.65rem", letterSpacing: "0.1em", color: "var(--muted)", marginBottom: "0.4rem", gap: "0.3rem" }}
-              >
+            <div className="mb-4">
+              <label className="label-upper mb-1.5 flex items-center gap-1">
                 <Phone size={12} /> Phone Number
               </label>
               <input
                 type="tel"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
-                style={{
-                  width: "100%",
-                  padding: "0.8rem 1rem",
-                  border: "1px solid var(--warm)",
-                  borderRadius: "4px",
-                  fontFamily: "var(--font-sans), sans-serif",
-                  fontSize: "0.85rem",
-                  color: "var(--ink)",
-                  outline: "none",
-                  background: "var(--cream)",
-                }}
+                className="w-full rounded border border-warm bg-cream px-4 py-3 font-sans text-[0.85rem] text-ink outline-none transition-colors focus:border-gold/30 focus-visible:ring-2 focus-visible:ring-gold/20"
                 placeholder="0712 345 678"
               />
             </div>
 
-            <div style={{ marginBottom: "1.5rem" }}>
-              <label
-                className="flex items-center uppercase"
-                style={{ fontSize: "0.65rem", letterSpacing: "0.1em", color: "var(--muted)", marginBottom: "0.4rem", gap: "0.3rem" }}
-              >
+            <div className="mb-6">
+              <label className="label-upper mb-1.5 flex items-center gap-1">
                 <Mail size={12} /> Email Address
               </label>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                style={{
-                  width: "100%",
-                  padding: "0.8rem 1rem",
-                  border: "1px solid var(--warm)",
-                  borderRadius: "4px",
-                  fontFamily: "var(--font-sans), sans-serif",
-                  fontSize: "0.85rem",
-                  color: "var(--ink)",
-                  outline: "none",
-                  background: "var(--cream)",
-                }}
+                className="w-full rounded border border-warm bg-cream px-4 py-3 font-sans text-[0.85rem] text-ink outline-none transition-colors focus:border-gold/30 focus-visible:ring-2 focus-visible:ring-gold/20"
                 placeholder="you@example.com"
               />
             </div>
 
             {message && (
               <div
-                style={{
-                  background: message.includes("success") ? "var(--green-light)" : "var(--red-light)",
-                  color: message.includes("success") ? "var(--green)" : "var(--red-soft)",
-                  padding: "0.75rem 1rem",
-                  borderRadius: "4px",
-                  fontSize: "0.8rem",
-                  marginBottom: "1rem",
-                }}
+                className={`mb-4 rounded px-4 py-3 text-[0.8rem] ${
+                  message.includes("success")
+                    ? "bg-green-light text-green"
+                    : "bg-red-light text-red-soft"
+                }`}
               >
                 {message}
               </div>
@@ -200,19 +145,7 @@ export default function TenantProfile({ tenant }: Props) {
             <button
               type="submit"
               disabled={saving}
-              className="flex items-center"
-              style={{
-                gap: "0.5rem",
-                background: "var(--ink)",
-                color: "var(--cream)",
-                padding: "0.7rem 1.5rem",
-                fontSize: "0.78rem",
-                fontWeight: 500,
-                border: "none",
-                borderRadius: "4px",
-                cursor: saving ? "not-allowed" : "pointer",
-                opacity: saving ? 0.7 : 1,
-              }}
+              className="flex items-center gap-2 rounded bg-ink px-6 py-2.5 text-[0.78rem] font-medium text-cream border-none cursor-pointer transition-colors hover:bg-ink/90 disabled:cursor-not-allowed disabled:opacity-70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2"
             >
               <Save size={15} />
               {saving ? "Saving..." : "Save Changes"}
@@ -224,13 +157,13 @@ export default function TenantProfile({ tenant }: Props) {
   );
 }
 
-function ProfileRow({ icon: Icon, label, value }: { icon: React.ComponentType<{ size: number; style?: React.CSSProperties }>; label: string; value: string }) {
+function ProfileRow({ icon: Icon, label, value }: { icon: React.ComponentType<{ size: number; className?: string }>; label: string; value: string }) {
   return (
-    <div className="flex items-center" style={{ gap: "0.75rem" }}>
-      <Icon size={15} style={{ color: "var(--muted)", flexShrink: 0 }} />
+    <div className="flex items-center gap-3">
+      <Icon size={15} className="shrink-0 text-muted" />
       <div>
-        <p style={{ fontSize: "0.65rem", textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--muted)" }}>{label}</p>
-        <p style={{ fontSize: "0.82rem", fontWeight: 500 }}>{value}</p>
+        <p className="label-upper">{label}</p>
+        <p className="text-[0.82rem] font-medium">{value}</p>
       </div>
     </div>
   );

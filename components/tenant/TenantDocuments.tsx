@@ -1,6 +1,8 @@
 "use client";
 
 import { FileText, FileIcon, Download } from "lucide-react";
+import EmptyState from "@/components/ui/EmptyState";
+import StatusBadge from "@/components/ui/StatusBadge";
 
 interface DocumentItem {
   id: string;
@@ -16,12 +18,12 @@ interface Props {
   documents: DocumentItem[];
 }
 
-const typeColors: Record<string, { bg: string; color: string }> = {
-  lease: { bg: "var(--amber-light)", color: "var(--gold)" },
-  invoice: { bg: "#e8f0fd", color: "#1a5296" },
-  receipt: { bg: "var(--green-light)", color: "var(--green)" },
-  report: { bg: "var(--cream)", color: "var(--sage)" },
-  legal: { bg: "var(--red-light)", color: "var(--rust)" },
+const typeToStatus: Record<string, "pending" | "active" | "completed" | "high" | "in-progress"> = {
+  lease: "pending",
+  invoice: "in-progress",
+  receipt: "completed",
+  report: "active",
+  legal: "high",
 };
 
 function formatFileSize(bytes: number | null) {
@@ -46,91 +48,65 @@ export default function TenantDocuments({ documents }: Props) {
 
   return (
     <div>
-      <div style={{ marginBottom: "1.5rem" }}>
-        <h1 className="font-serif" style={{ fontSize: "1.5rem", fontWeight: 400, letterSpacing: "-0.02em" }}>
+      <div className="mb-6">
+        <h1 className="font-serif text-2xl font-normal tracking-tight">
           Documents
         </h1>
-        <p style={{ fontSize: "0.78rem", color: "var(--muted)", marginTop: "0.2rem" }}>
+        <p className="mt-0.5 text-[0.78rem] text-muted">
           Lease agreements, receipts, and property documents
         </p>
       </div>
 
       {documents.length === 0 ? (
-        <div
-          style={{
-            background: "var(--white)",
-            borderRadius: "8px",
-            border: "1px solid rgba(200,150,62,0.08)",
-            padding: "3rem",
-            textAlign: "center",
-          }}
-        >
-          <FileText size={32} style={{ color: "var(--warm)", marginBottom: "0.75rem" }} />
-          <p style={{ fontSize: "0.85rem", color: "var(--muted)" }}>No documents available yet.</p>
+        <div className="card">
+          <EmptyState
+            icon={FileText}
+            title="No documents available yet"
+            description="Your lease agreements and receipts will appear here."
+          />
         </div>
       ) : (
-        <div className="documents-grid">
-          {documents.map((doc) => {
-            const tc = typeColors[doc.type] || typeColors.report;
-            return (
-              <div
-                key={doc.id}
-                className="card-hover"
-                style={{
-                  background: "var(--white)",
-                  borderRadius: "8px",
-                  border: "1px solid rgba(200,150,62,0.08)",
-                  padding: "1.2rem",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "0.75rem",
-                }}
-              >
-                <div className="flex items-center" style={{ gap: "0.6rem" }}>
-                  <FileIcon size={20} style={{ color: "var(--gold)", flexShrink: 0 }} />
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <p style={{ fontSize: "0.8rem", fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      {doc.name}
-                    </p>
-                    <div className="flex items-center" style={{ gap: "0.5rem", marginTop: "0.2rem" }}>
-                      <span className="status-pill" style={{ background: tc.bg, color: tc.color }}>
-                        {doc.type}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 documents-grid">
+          {documents.map((doc) => (
+            <div
+              key={doc.id}
+              className="card card-hover flex flex-col gap-3"
+            >
+              <div className="flex items-center gap-2.5">
+                <FileIcon size={20} className="shrink-0 text-gold" />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-[0.8rem] font-medium">
+                    {doc.name}
+                  </p>
+                  <div className="mt-0.5 flex items-center gap-2">
+                    <StatusBadge
+                      status={typeToStatus[doc.type] || "active"}
+                      label={doc.type}
+                    />
+                    {doc.file_size && (
+                      <span className="text-[0.65rem] text-muted">
+                        {formatFileSize(doc.file_size)}
                       </span>
-                      {doc.file_size && (
-                        <span style={{ fontSize: "0.65rem", color: "var(--muted)" }}>
-                          {formatFileSize(doc.file_size)}
-                        </span>
-                      )}
-                    </div>
+                    )}
                   </div>
                 </div>
-
-                <div className="flex items-center" style={{ justifyContent: "space-between" }}>
-                  <span style={{ fontSize: "0.65rem", color: "var(--muted)" }}>
-                    {new Date(doc.created_at).toLocaleDateString("en-KE", { day: "numeric", month: "short", year: "numeric" })}
-                  </span>
-                  <button
-                    onClick={() => handleDownload(doc)}
-                    className="flex items-center"
-                    style={{
-                      gap: "0.3rem",
-                      background: "transparent",
-                      border: "1px solid var(--warm)",
-                      borderRadius: "4px",
-                      padding: "0.35rem 0.6rem",
-                      fontSize: "0.65rem",
-                      color: "var(--ink)",
-                      cursor: "pointer",
-                      transition: "all 0.2s",
-                    }}
-                  >
-                    <Download size={12} />
-                    Download
-                  </button>
-                </div>
               </div>
-            );
-          })}
+
+              <div className="flex items-center justify-between">
+                <span className="text-[0.65rem] text-muted">
+                  {new Date(doc.created_at).toLocaleDateString("en-KE", { day: "numeric", month: "short", year: "numeric" })}
+                </span>
+                <button
+                  onClick={() => handleDownload(doc)}
+                  aria-label={`Download ${doc.name}`}
+                  className="flex items-center gap-1 rounded border border-warm bg-transparent px-2.5 py-1.5 text-[0.65rem] text-ink cursor-pointer transition-colors hover:bg-warm/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2"
+                >
+                  <Download size={12} />
+                  Download
+                </button>
+              </div>
+            </div>
+          ))}
         </div>
       )}
     </div>

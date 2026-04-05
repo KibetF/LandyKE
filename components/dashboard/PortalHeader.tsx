@@ -113,90 +113,66 @@ export default function PortalHeader() {
 
   return (
     <div className="portal-header">
-      <div className="portal-search" ref={searchRef} style={{ position: "relative" }}>
-        <Search size={16} style={{ color: "var(--muted)", flexShrink: 0 }} />
+      <div className="portal-search relative" ref={searchRef}>
+        <Search size={16} className="shrink-0 text-muted" />
         <input
           type="text"
           placeholder="Search properties, tenants, payments..."
           value={searchQuery}
           onChange={(e) => handleSearch(e.target.value)}
           onFocus={() => { if (searchResults) setShowSearch(true); }}
+          aria-label="Search"
         />
 
         {showSearch && searchResults && (
-          <div
-            style={{
-              position: "absolute",
-              top: "100%",
-              left: 0,
-              right: 0,
-              marginTop: "0.5rem",
-              background: "var(--white)",
-              border: "1px solid var(--warm)",
-              borderRadius: "8px",
-              boxShadow: "0 8px 24px rgba(0,0,0,0.1)",
-              zIndex: 100,
-              overflow: "hidden",
-              maxHeight: "400px",
-              overflowY: "auto",
-            }}
-          >
+          <div className="absolute left-0 right-0 top-full z-[100] mt-2 max-h-[400px] overflow-hidden overflow-y-auto rounded-lg border border-warm bg-white shadow-[0_8px_24px_rgba(0,0,0,0.1)]">
             {!hasResults ? (
-              <div style={{ padding: "1rem", textAlign: "center", fontSize: "0.8rem", color: "var(--muted)" }}>
+              <div className="p-4 text-center text-[0.8rem] text-muted">
                 No results found
               </div>
             ) : (
               <>
                 {searchResults.properties.length > 0 && (
                   <>
-                    <div style={{ padding: "0.5rem 1rem", fontSize: "0.65rem", textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--muted)", background: "var(--cream)" }}>
-                      Properties
-                    </div>
+                    <div className="label-upper bg-cream px-4 py-2">Properties</div>
                     {searchResults.properties.map((p) => (
                       <div
                         key={p.id}
                         onClick={() => { router.push("/properties"); setShowSearch(false); setSearchQuery(""); }}
-                        className="row-hover"
-                        style={{ padding: "0.6rem 1rem", cursor: "pointer", fontSize: "0.85rem" }}
+                        className="row-hover cursor-pointer px-4 py-2.5 text-[0.85rem]"
                       >
                         {p.name}
-                        {p.location && <span style={{ fontSize: "0.7rem", color: "var(--muted)", marginLeft: "0.5rem" }}>{p.location}</span>}
+                        {p.location && <span className="ml-2 text-[0.7rem] text-muted">{p.location}</span>}
                       </div>
                     ))}
                   </>
                 )}
                 {searchResults.tenants.length > 0 && (
                   <>
-                    <div style={{ padding: "0.5rem 1rem", fontSize: "0.65rem", textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--muted)", background: "var(--cream)" }}>
-                      Tenants
-                    </div>
+                    <div className="label-upper bg-cream px-4 py-2">Tenants</div>
                     {searchResults.tenants.map((t) => (
                       <div
                         key={t.id}
                         onClick={() => { router.push("/tenants"); setShowSearch(false); setSearchQuery(""); }}
-                        className="row-hover"
-                        style={{ padding: "0.6rem 1rem", cursor: "pointer", fontSize: "0.85rem" }}
+                        className="row-hover cursor-pointer px-4 py-2.5 text-[0.85rem]"
                       >
                         {t.full_name}
-                        {t.properties && <span style={{ fontSize: "0.7rem", color: "var(--muted)", marginLeft: "0.5rem" }}>{t.properties.name}</span>}
+                        {t.properties && <span className="ml-2 text-[0.7rem] text-muted">{t.properties.name}</span>}
                       </div>
                     ))}
                   </>
                 )}
                 {searchResults.payments.length > 0 && (
                   <>
-                    <div style={{ padding: "0.5rem 1rem", fontSize: "0.65rem", textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--muted)", background: "var(--cream)" }}>
-                      Payments
-                    </div>
+                    <div className="label-upper bg-cream px-4 py-2">Payments</div>
                     {searchResults.payments.map((p) => (
                       <div
                         key={p.id}
                         onClick={() => { router.push("/payments"); setShowSearch(false); setSearchQuery(""); }}
-                        className="row-hover"
-                        style={{ padding: "0.6rem 1rem", cursor: "pointer", fontSize: "0.85rem" }}
+                        className="row-hover cursor-pointer px-4 py-2.5 text-[0.85rem]"
                       >
                         KES {Number(p.amount).toLocaleString()} — {p.tenants?.full_name || "Unknown"}
-                        <span style={{ fontSize: "0.7rem", color: "var(--muted)", marginLeft: "0.5rem" }}>{p.status}</span>
+                        <span className="ml-2 text-[0.7rem] text-muted">{p.status}</span>
                       </div>
                     ))}
                   </>
@@ -207,11 +183,12 @@ export default function PortalHeader() {
         )}
       </div>
 
-      <div style={{ marginLeft: "auto", position: "relative" }} ref={dropdownRef}>
+      <div className="relative ml-auto" ref={dropdownRef}>
         <button
           className="notification-bell"
           onClick={() => setShowNotifications(!showNotifications)}
           aria-label="Notifications"
+          aria-expanded={showNotifications}
         >
           <Bell size={20} />
           {unreadCount > 0 && (
@@ -221,27 +198,19 @@ export default function PortalHeader() {
 
         {showNotifications && (
           <div className="notification-dropdown">
-            <div
-              style={{
-                padding: "1rem 1.2rem",
-                borderBottom: "1px solid var(--warm)",
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-              }}
-            >
-              <span style={{ fontSize: "0.85rem", fontWeight: 600 }}>Notifications</span>
+            <div className="flex items-center justify-between border-b border-warm px-5 py-4">
+              <span className="text-[0.85rem] font-semibold">Notifications</span>
               {unreadCount > 0 && (
-                <span
+                <button
                   onClick={markAllRead}
-                  style={{ fontSize: "0.65rem", color: "var(--gold)", cursor: "pointer" }}
+                  className="border-none bg-transparent text-[0.65rem] text-gold cursor-pointer"
                 >
                   Mark all read
-                </span>
+                </button>
               )}
             </div>
             {notifications.length === 0 ? (
-              <div style={{ padding: "2rem 1.2rem", textAlign: "center", fontSize: "0.8rem", color: "var(--muted)" }}>
+              <div className="px-5 py-8 text-center text-[0.8rem] text-muted">
                 No notifications yet
               </div>
             ) : (
@@ -249,35 +218,20 @@ export default function PortalHeader() {
                 <div
                   key={n.id}
                   onClick={() => markOneRead(n.id)}
-                  style={{
-                    padding: "0.8rem 1.2rem",
-                    borderBottom: "1px solid var(--warm)",
-                    background: n.is_read ? "transparent" : "rgba(200,150,62,0.04)",
-                    cursor: "pointer",
-                    transition: "background 0.15s",
-                  }}
+                  className={`cursor-pointer border-b border-warm px-5 py-3 transition-colors hover:bg-cream/50 ${
+                    !n.is_read ? "bg-gold/[0.04]" : ""
+                  }`}
                 >
-                  <div className="flex justify-between items-start" style={{ marginBottom: "0.2rem" }}>
-                    <span style={{ fontSize: "0.8rem", fontWeight: n.is_read ? 400 : 600 }}>
+                  <div className="mb-0.5 flex items-start justify-between">
+                    <span className={`text-[0.8rem] ${n.is_read ? "font-normal" : "font-semibold"}`}>
                       {n.title}
                     </span>
                     {!n.is_read && (
-                      <span
-                        style={{
-                          width: "6px",
-                          height: "6px",
-                          borderRadius: "50%",
-                          background: "var(--gold)",
-                          flexShrink: 0,
-                          marginTop: "0.3rem",
-                        }}
-                      />
+                      <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-gold" />
                     )}
                   </div>
-                  <p style={{ fontSize: "0.72rem", color: "var(--muted)", marginBottom: "0.15rem" }}>
-                    {n.description}
-                  </p>
-                  <span style={{ fontSize: "0.65rem", color: "var(--muted)" }}>{timeAgo(n.created_at)}</span>
+                  <p className="mb-0.5 text-[0.72rem] text-muted">{n.description}</p>
+                  <span className="text-[0.65rem] text-muted">{timeAgo(n.created_at)}</span>
                 </div>
               ))
             )}

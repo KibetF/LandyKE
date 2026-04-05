@@ -7,28 +7,12 @@ interface TenantHeaderProps {
 
 export default function TenantHeader({ tenantName, propertyName }: TenantHeaderProps) {
   return (
-    <header
-      className="tenant-header"
-      style={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        marginBottom: "2rem",
-      }}
-    >
+    <header className="mb-8 flex items-center justify-between">
       <div>
-        <h1
-          className="font-serif"
-          style={{
-            fontSize: "1.5rem",
-            fontWeight: 400,
-            color: "var(--ink)",
-            letterSpacing: "-0.02em",
-          }}
-        >
+        <h1 className="font-serif text-2xl font-normal tracking-tight text-ink">
           Hello, {tenantName.split(" ")[0]}
         </h1>
-        <p style={{ fontSize: "0.78rem", color: "var(--muted)", marginTop: "0.2rem" }}>
+        <p className="mt-0.5 text-[0.78rem] text-muted">
           {propertyName}
         </p>
       </div>

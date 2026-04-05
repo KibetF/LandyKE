@@ -27,16 +27,13 @@ export default async function TenantLayout({
   const tenantName = tenant.full_name || user.email || "Tenant";
 
   return (
-    <div className="flex tenant-layout" style={{ minHeight: "100vh", background: "#f7f5f2" }}>
+    <div className="flex min-h-screen bg-[#f7f5f2] tenant-layout">
       <TenantNav
         tenantName={tenantName}
         propertyName={propertyName}
         unitNumber={tenant.unit_number}
       />
-      <main
-        className="flex-1 overflow-y-auto tenant-main"
-        style={{ padding: "2rem 2.5rem", paddingBottom: "5rem" }}
-      >
+      <main className="flex-1 overflow-y-auto px-5 py-8 pb-20 sm:px-10 tenant-main">
         {children}
       </main>
     </div>

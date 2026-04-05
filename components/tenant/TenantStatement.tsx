@@ -2,6 +2,9 @@
 
 import { FileText, Download } from "lucide-react";
 import { generateTenantRentStatement } from "@/lib/pdf/generate-tenant-statement";
+import StatusBadge from "@/components/ui/StatusBadge";
+import StatCard from "@/components/ui/StatCard";
+import EmptyState from "@/components/ui/EmptyState";
 
 interface TenantInfo {
   full_name: string;
@@ -24,12 +27,6 @@ interface Props {
   payments: PaymentRow[];
 }
 
-const statusColors: Record<string, { bg: string; color: string }> = {
-  paid: { bg: "var(--green-light)", color: "var(--green)" },
-  pending: { bg: "var(--amber-light)", color: "var(--gold)" },
-  overdue: { bg: "var(--red-light)", color: "var(--red-soft)" },
-};
-
 export default function TenantStatement({ tenant, payments }: Props) {
   function handleDownload() {
     generateTenantRentStatement(tenant, payments);
@@ -41,129 +38,59 @@ export default function TenantStatement({ tenant, payments }: Props) {
 
   return (
     <div>
-      <div className="flex items-center" style={{ justifyContent: "space-between", marginBottom: "1.5rem", flexWrap: "wrap", gap: "1rem" }}>
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="font-serif" style={{ fontSize: "1.5rem", fontWeight: 400, letterSpacing: "-0.02em" }}>
+          <h1 className="font-serif text-2xl font-normal tracking-tight">
             Rent Statement
           </h1>
-          <p style={{ fontSize: "0.78rem", color: "var(--muted)", marginTop: "0.2rem" }}>
+          <p className="mt-0.5 text-[0.78rem] text-muted">
             {tenant.property_name}{tenant.unit_number ? ` · Unit ${tenant.unit_number}` : ""}
           </p>
         </div>
         <button
           onClick={handleDownload}
-          className="flex items-center"
-          style={{
-            gap: "0.5rem",
-            background: "var(--ink)",
-            color: "var(--cream)",
-            padding: "0.7rem 1.2rem",
-            fontSize: "0.78rem",
-            fontWeight: 500,
-            letterSpacing: "0.05em",
-            border: "none",
-            borderRadius: "4px",
-            cursor: "pointer",
-          }}
+          aria-label="Download rent statement as PDF"
+          className="flex items-center gap-2 rounded bg-ink px-5 py-2.5 text-[0.78rem] font-medium tracking-[0.05em] text-cream border-none cursor-pointer transition-colors hover:bg-ink/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2"
         >
           <Download size={16} />
           Download PDF
         </button>
       </div>
 
-      {/* Summary card */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
-          gap: "1rem",
-          marginBottom: "1.5rem",
-        }}
-      >
-        <div
-          className="kpi kpi-gold"
-          style={{
-            position: "relative",
-            background: "var(--white)",
-            borderRadius: "8px",
-            border: "1px solid rgba(200,150,62,0.08)",
-            padding: "1.2rem",
-          }}
-        >
-          <p style={{ fontSize: "0.65rem", textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--muted)", marginBottom: "0.3rem" }}>
-            Total Paid
-          </p>
-          <p className="font-serif" style={{ fontSize: "1.4rem", fontWeight: 600 }}>
-            KES {totalPaid.toLocaleString("en-KE")}
-          </p>
-        </div>
-        <div
-          className="kpi kpi-green"
-          style={{
-            position: "relative",
-            background: "var(--white)",
-            borderRadius: "8px",
-            border: "1px solid rgba(200,150,62,0.08)",
-            padding: "1.2rem",
-          }}
-        >
-          <p style={{ fontSize: "0.65rem", textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--muted)", marginBottom: "0.3rem" }}>
-            Payments Made
-          </p>
-          <p className="font-serif" style={{ fontSize: "1.4rem", fontWeight: 600 }}>
-            {payments.filter((p) => p.status === "paid").length}
-          </p>
-        </div>
-        <div
-          className="kpi kpi-sage"
-          style={{
-            position: "relative",
-            background: "var(--white)",
-            borderRadius: "8px",
-            border: "1px solid rgba(200,150,62,0.08)",
-            padding: "1.2rem",
-          }}
-        >
-          <p style={{ fontSize: "0.65rem", textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--muted)", marginBottom: "0.3rem" }}>
-            Monthly Rent
-          </p>
-          <p className="font-serif" style={{ fontSize: "1.4rem", fontWeight: 600 }}>
-            KES {tenant.rent_amount.toLocaleString("en-KE")}
-          </p>
-        </div>
+      {/* Summary cards */}
+      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <StatCard
+          label="Total Paid"
+          value={`KES ${totalPaid.toLocaleString("en-KE")}`}
+          borderColor="gold"
+        />
+        <StatCard
+          label="Payments Made"
+          value={payments.filter((p) => p.status === "paid").length}
+          borderColor="green"
+        />
+        <StatCard
+          label="Monthly Rent"
+          value={`KES ${tenant.rent_amount.toLocaleString("en-KE")}`}
+          borderColor="sage"
+        />
       </div>
 
       {/* Payment table */}
-      <div
-        style={{
-          background: "var(--white)",
-          borderRadius: "8px",
-          border: "1px solid rgba(200,150,62,0.08)",
-          padding: "1.5rem",
-        }}
-      >
-        <div className="flex items-center" style={{ gap: "0.5rem", marginBottom: "1rem" }}>
-          <FileText size={18} style={{ color: "var(--gold)" }} />
-          <h3 className="font-serif" style={{ fontSize: "1.1rem", fontWeight: 500 }}>
+      <div className="card">
+        <div className="mb-4 flex items-center gap-2">
+          <FileText size={18} className="text-gold" />
+          <h3 className="font-serif text-[1.1rem] font-medium">
             Payment History
           </h3>
         </div>
 
         {payments.length === 0 ? (
-          <p style={{ fontSize: "0.8rem", color: "var(--muted)" }}>No payments recorded yet.</p>
+          <EmptyState title="No payments recorded yet" />
         ) : (
-          <div style={{ overflowX: "auto" }}>
+          <div className="overflow-x-auto">
             {/* Header */}
-            <div
-              className="table-header statement-grid"
-              style={{
-                display: "grid",
-                gridTemplateColumns: "40px 1fr 1fr 1fr 80px",
-                gap: "0.75rem",
-                padding: "0.6rem 0",
-                borderBottom: "1px solid var(--warm)",
-              }}
-            >
+            <div className="grid grid-cols-[40px_1fr_1fr_1fr_80px] gap-3 border-b border-warm py-2.5 text-[0.65rem] uppercase tracking-[0.1em] text-muted statement-grid">
               <span>#</span>
               <span>Date</span>
               <span>Amount</span>
@@ -172,36 +99,24 @@ export default function TenantStatement({ tenant, payments }: Props) {
             </div>
 
             {/* Rows */}
-            {payments.map((p, i) => {
-              const sc = statusColors[p.status] || statusColors.pending;
-              return (
-                <div
-                  key={p.id}
-                  className="row-hover statement-grid"
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "40px 1fr 1fr 1fr 80px",
-                    gap: "0.75rem",
-                    padding: "0.7rem 0",
-                    fontSize: "0.8rem",
-                    borderBottom: i < payments.length - 1 ? "1px solid var(--warm)" : "none",
-                    alignItems: "center",
-                  }}
-                >
-                  <span style={{ color: "var(--muted)" }}>{i + 1}</span>
-                  <span>
-                    {p.paid_date
-                      ? new Date(p.paid_date).toLocaleDateString("en-KE", { day: "numeric", month: "short", year: "numeric" })
-                      : "—"}
-                  </span>
-                  <span style={{ fontWeight: 500 }}>KES {p.amount.toLocaleString("en-KE")}</span>
-                  <span style={{ color: "var(--muted)" }}>{p.method}</span>
-                  <span className="status-pill" style={{ background: sc.bg, color: sc.color }}>
-                    {p.status}
-                  </span>
-                </div>
-              );
-            })}
+            {payments.map((p, i) => (
+              <div
+                key={p.id}
+                className={`row-hover grid grid-cols-[40px_1fr_1fr_1fr_80px] items-center gap-3 py-2.5 text-[0.8rem] statement-grid ${
+                  i < payments.length - 1 ? "border-b border-warm" : ""
+                }`}
+              >
+                <span className="text-muted">{i + 1}</span>
+                <span>
+                  {p.paid_date
+                    ? new Date(p.paid_date).toLocaleDateString("en-KE", { day: "numeric", month: "short", year: "numeric" })
+                    : "—"}
+                </span>
+                <span className="font-medium">KES {p.amount.toLocaleString("en-KE")}</span>
+                <span className="text-muted">{p.method}</span>
+                <StatusBadge status={p.status as "paid" | "pending" | "overdue"} />
+              </div>
+            ))}
           </div>
         )}
       </div>

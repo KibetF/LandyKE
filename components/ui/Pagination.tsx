@@ -25,44 +25,21 @@ export default function Pagination({ currentPage, totalPages }: PaginationProps)
   }
 
   return (
-    <div
-      className="flex items-center justify-center"
-      style={{ gap: "1rem", marginTop: "1.5rem" }}
-    >
+    <div className="mt-6 flex items-center justify-center gap-4">
       <button
         onClick={() => goToPage(currentPage - 1)}
         disabled={currentPage <= 1}
-        style={{
-          background: "var(--white)",
-          border: "1px solid var(--warm)",
-          padding: "0.5rem 1rem",
-          fontSize: "0.8rem",
-          fontFamily: "var(--font-sans), sans-serif",
-          color: currentPage <= 1 ? "var(--muted)" : "var(--ink)",
-          borderRadius: "4px",
-          cursor: currentPage <= 1 ? "default" : "pointer",
-          opacity: currentPage <= 1 ? 0.5 : 1,
-        }}
+        className="rounded border border-warm bg-white px-4 py-2 font-sans text-[0.8rem] text-ink cursor-pointer transition-colors hover:bg-warm/30 disabled:cursor-default disabled:text-muted disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2"
       >
         Previous
       </button>
-      <span style={{ fontSize: "0.8rem", color: "var(--muted)" }}>
+      <span className="text-[0.8rem] text-muted">
         Page {currentPage} of {totalPages}
       </span>
       <button
         onClick={() => goToPage(currentPage + 1)}
         disabled={currentPage >= totalPages}
-        style={{
-          background: "var(--white)",
-          border: "1px solid var(--warm)",
-          padding: "0.5rem 1rem",
-          fontSize: "0.8rem",
-          fontFamily: "var(--font-sans), sans-serif",
-          color: currentPage >= totalPages ? "var(--muted)" : "var(--ink)",
-          borderRadius: "4px",
-          cursor: currentPage >= totalPages ? "default" : "pointer",
-          opacity: currentPage >= totalPages ? 0.5 : 1,
-        }}
+        className="rounded border border-warm bg-white px-4 py-2 font-sans text-[0.8rem] text-ink cursor-pointer transition-colors hover:bg-warm/30 disabled:cursor-default disabled:text-muted disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2"
       >
         Next
       </button>

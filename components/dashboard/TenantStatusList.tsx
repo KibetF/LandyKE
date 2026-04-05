@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Users } from "lucide-react";
-import StatusPill from "@/components/ui/StatusPill";
+import StatusBadge from "@/components/ui/StatusBadge";
+import EmptyState from "@/components/ui/EmptyState";
 
 interface TenantStatus {
   initials: string;
@@ -20,114 +21,54 @@ export default function TenantStatusList({
   const isEmpty = tenants.length === 0;
 
   return (
-    <div
-      className="card-hover"
-      style={{
-        background: "var(--white)",
-        borderRadius: "8px",
-        border: "1px solid rgba(200,150,62,0.08)",
-        overflow: "hidden",
-      }}
-    >
-      <div
-        className="flex justify-between items-center"
-        style={{
-          padding: "1.2rem 1.5rem",
-          borderBottom: "1px solid var(--warm)",
-        }}
-      >
-        <h3
-          className="font-serif"
-          style={{ fontSize: "1.1rem", fontWeight: 600 }}
-        >
+    <div className="overflow-hidden rounded-lg border border-gold/8 bg-white transition-all duration-200 hover:-translate-y-px hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)]">
+      <div className="flex items-center justify-between border-b border-warm px-6 py-4">
+        <h3 className="font-serif text-[1.1rem] font-semibold">
           Tenant Payment Status
         </h3>
         <Link
           href="/tenants"
-          className="uppercase cursor-pointer"
-          style={{
-            fontSize: "0.7rem",
-            color: "var(--gold)",
-            textDecoration: "none",
-            letterSpacing: "0.08em",
-          }}
+          className="text-[0.7rem] uppercase tracking-[0.08em] text-gold no-underline"
         >
           All Tenants →
         </Link>
       </div>
-      <div style={{ padding: "0.5rem" }}>
+      <div className="p-2">
         {isEmpty ? (
-          <div
-            className="flex flex-col items-center justify-center"
-            style={{ padding: "2rem", color: "var(--muted)" }}
-          >
-            <Users size={28} style={{ marginBottom: "0.5rem", opacity: 0.4 }} />
-            <span style={{ fontSize: "0.85rem" }}>No tenants yet</span>
-            <span style={{ fontSize: "0.7rem", marginTop: "0.25rem" }}>
-              Tenant payment status will appear here
-            </span>
-          </div>
+          <EmptyState
+            icon={Users}
+            title="No tenants yet"
+            description="Tenant payment status will appear here"
+          />
         ) : (
           tenants.map((t) => (
             <div
               key={t.name}
-              className="tenant-status-row items-center cursor-pointer row-hover"
-              style={{
-                display: "grid",
-                gap: "1rem",
-                padding: "0.9rem 1rem",
-                borderRadius: "6px",
-                transition: "background 0.15s",
-              }}
+              className="tenant-status-row row-hover grid cursor-pointer items-center gap-4 rounded-md px-4 py-3.5 transition-colors"
             >
               <div
-                className="flex items-center justify-center shrink-0"
+                className="flex shrink-0 items-center justify-center rounded-full text-[0.75rem] font-semibold text-white"
                 style={{
                   width: "34px",
                   height: "34px",
-                  borderRadius: "50%",
                   background: t.color,
-                  fontSize: "0.75rem",
-                  fontWeight: 600,
-                  color: "var(--white)",
                 }}
               >
                 {t.initials}
               </div>
               <div>
-                <h4
-                  style={{
-                    fontSize: "0.82rem",
-                    fontWeight: 500,
-                    marginBottom: "0.15rem",
-                  }}
-                >
-                  {t.name}
-                </h4>
-                <span style={{ fontSize: "0.68rem", color: "var(--muted)" }}>
-                  {t.property}
-                </span>
+                <h4 className="mb-0.5 text-[0.82rem] font-medium">{t.name}</h4>
+                <span className="text-[0.68rem] text-muted">{t.property}</span>
               </div>
               <div className="text-right">
-                <span
-                  className="font-serif"
-                  style={{ fontSize: "1rem", fontWeight: 600 }}
-                >
+                <span className="font-serif text-base font-semibold">
                   {t.amount.toLocaleString()}
                 </span>
-                <small
-                  className="block"
-                  style={{
-                    fontSize: "0.65rem",
-                    color: "var(--muted)",
-                    fontFamily: "var(--font-sans), sans-serif",
-                    fontWeight: 400,
-                  }}
-                >
+                <small className="block font-sans text-[0.65rem] font-normal text-muted">
                   {t.date}
                 </small>
               </div>
-              <StatusPill status={t.status} />
+              <StatusBadge status={t.status} />
             </div>
           ))
         )}
