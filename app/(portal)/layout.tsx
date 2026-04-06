@@ -33,9 +33,12 @@ export default async function PortalLayout({
   const isAdmin = user.email === process.env.ADMIN_EMAIL;
 
   return (
-    <div className="flex min-h-screen bg-[#f7f5f2] portal-layout">
+    <div className="flex portal-layout" style={{ minHeight: "100vh", background: "#f7f5f2" }}>
       <Sidebar userName={userName} isAdmin={isAdmin} />
-      <main className="flex-1 overflow-y-auto px-6 py-8 sm:px-8 lg:px-12 portal-main">
+      <main
+        className="flex-1 overflow-y-auto portal-main"
+        style={{ padding: "2.5rem 3rem" }}
+      >
         <PortalHeader />
         {children}
       </main>

@@ -4,7 +4,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LayoutDashboard, Wrench, FileIcon, User, LogOut } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import MobileNav from "@/components/ui/MobileNav";
 
 const navItems = [
   { href: "/my/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -32,22 +31,66 @@ export default function TenantNav({ tenantName, propertyName, unitNumber }: Tena
   return (
     <>
       {/* Desktop sidebar */}
-      <aside className="tenant-sidebar sticky top-0 flex h-screen w-[200px] min-w-[200px] flex-col bg-ink py-8">
+      <aside
+        className="tenant-sidebar"
+        style={{
+          background: "var(--ink)",
+          padding: "2rem 0",
+          position: "sticky",
+          top: 0,
+          height: "100vh",
+          width: "200px",
+          minWidth: "200px",
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
         {/* User info */}
-        <div className="mb-6 border-b border-cream/8 px-5 pb-6">
-          <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-gold font-serif text-xl font-semibold text-ink">
+        <div
+          style={{
+            padding: "0 1.25rem 1.5rem",
+            borderBottom: "1px solid rgba(245,240,232,0.08)",
+            marginBottom: "1.5rem",
+          }}
+        >
+          <div
+            className="font-serif flex items-center justify-center"
+            style={{
+              width: "40px",
+              height: "40px",
+              borderRadius: "50%",
+              background: "var(--gold)",
+              color: "var(--ink)",
+              fontSize: "1.2rem",
+              fontWeight: 600,
+              marginBottom: "0.8rem",
+            }}
+          >
             {initial}
           </div>
-          <h4 className="mb-0.5 text-[0.8rem] font-medium text-cream">
+          <h4
+            style={{
+              color: "var(--cream)",
+              fontSize: "0.8rem",
+              fontWeight: 500,
+              marginBottom: "0.2rem",
+            }}
+          >
             {tenantName}
           </h4>
-          <span className="text-[0.65rem] tracking-[0.05em] text-cream/35">
+          <span
+            style={{
+              fontSize: "0.65rem",
+              color: "rgba(245,240,232,0.35)",
+              letterSpacing: "0.05em",
+            }}
+          >
             {propertyName}{unitNumber ? ` · Unit ${unitNumber}` : ""}
           </span>
         </div>
 
         {/* Nav */}
-        <nav className="flex-1 px-2" role="navigation" aria-label="Tenant navigation">
+        <nav className="flex-1" style={{ padding: "0 0.5rem" }}>
           {navItems.map((item) => {
             const isActive = pathname === item.href || (item.href !== "/my/dashboard" && pathname.startsWith(item.href));
             const Icon = item.icon;
@@ -55,12 +98,18 @@ export default function TenantNav({ tenantName, propertyName, unitNumber }: Tena
               <Link
                 key={item.label}
                 href={item.href}
-                aria-current={isActive ? "page" : undefined}
-                className={`mb-0.5 flex items-center gap-2.5 rounded px-3 py-2.5 text-[0.78rem] tracking-[0.03em] no-underline transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2 focus-visible:ring-offset-ink ${
-                  isActive
-                    ? "bg-gold/12 text-gold-light"
-                    : "text-cream/45 hover:bg-cream/5 hover:text-cream/70"
-                }`}
+                className={`flex items-center no-underline ${isActive ? "" : "sidebar-link"}`}
+                style={{
+                  gap: "0.65rem",
+                  padding: "0.65rem 0.75rem",
+                  fontSize: "0.78rem",
+                  color: isActive ? "var(--gold-light)" : "rgba(245,240,232,0.45)",
+                  borderRadius: "4px",
+                  marginBottom: "0.15rem",
+                  transition: "all 0.2s",
+                  letterSpacing: "0.03em",
+                  background: isActive ? "rgba(200,150,62,0.12)" : "transparent",
+                }}
               >
                 <Icon size={17} />
                 {item.label}
@@ -70,27 +119,80 @@ export default function TenantNav({ tenantName, propertyName, unitNumber }: Tena
         </nav>
 
         {/* Sign Out */}
-        <div className="px-2 mb-2">
+        <div style={{ padding: "0 0.5rem", marginBottom: "0.5rem" }}>
           <button
             onClick={handleLogout}
-            className="flex w-full items-center gap-2.5 rounded border-none bg-transparent px-3 py-2.5 text-[0.78rem] tracking-[0.03em] text-cream/45 transition-all cursor-pointer hover:bg-cream/5 hover:text-cream/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold"
+            className="flex items-center sidebar-signout"
+            style={{
+              gap: "0.65rem",
+              padding: "0.65rem 0.75rem",
+              fontSize: "0.78rem",
+              color: "rgba(245,240,232,0.45)",
+              borderRadius: "4px",
+              letterSpacing: "0.03em",
+              background: "transparent",
+              border: "none",
+              cursor: "pointer",
+              width: "100%",
+              transition: "all 0.2s",
+            }}
           >
             <LogOut size={17} />
             Sign Out
           </button>
         </div>
 
-        <div className="border-t border-cream/8 px-5 pt-4 text-[0.65rem] text-cream/20">
+        <div
+          style={{
+            padding: "1rem 1.25rem",
+            borderTop: "1px solid rgba(245,240,232,0.08)",
+            fontSize: "0.65rem",
+            color: "rgba(245,240,232,0.2)",
+          }}
+        >
           LandyKe © 2026
         </div>
       </aside>
 
       {/* Mobile bottom nav */}
-      <MobileNav
-        items={navItems}
-        onLogout={handleLogout}
+      <nav
         className="tenant-mobile-nav"
-      />
+        style={{
+          display: "none",
+          position: "fixed",
+          bottom: 0,
+          left: 0,
+          right: 0,
+          background: "var(--ink)",
+          borderTop: "1px solid rgba(245,240,232,0.08)",
+          zIndex: 50,
+          justifyContent: "space-around",
+          padding: "0.5rem 0 env(safe-area-inset-bottom, 0.5rem)",
+        }}
+      >
+        {navItems.map((item) => {
+          const isActive = pathname === item.href || (item.href !== "/my/dashboard" && pathname.startsWith(item.href));
+          const Icon = item.icon;
+          return (
+            <Link
+              key={item.label}
+              href={item.href}
+              className="flex flex-col items-center no-underline"
+              style={{
+                gap: "0.2rem",
+                padding: "0.4rem 0.75rem",
+                fontSize: "0.6rem",
+                color: isActive ? "var(--gold-light)" : "rgba(245,240,232,0.45)",
+                letterSpacing: "0.03em",
+                transition: "color 0.2s",
+              }}
+            >
+              <Icon size={20} />
+              {item.label}
+            </Link>
+          );
+        })}
+      </nav>
     </>
   );
 }

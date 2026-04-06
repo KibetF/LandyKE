@@ -1,9 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Send, Users } from "lucide-react";
-import StatusBadge from "@/components/ui/StatusBadge";
-import EmptyState from "@/components/ui/EmptyState";
+import { Send } from "lucide-react";
+import StatusPill from "@/components/ui/StatusPill";
 import Pagination from "@/components/ui/Pagination";
 
 interface TenantData {
@@ -87,46 +86,165 @@ export default function TenantTable({ tenants, properties, currentPage = 1, tota
   return (
     <>
       {/* Header */}
-      <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
+      <div
+        className="flex justify-between items-start dashboard-header"
+        style={{ marginBottom: "2rem" }}
+      >
         <div>
-          <h1 className="font-serif text-[2rem] font-light text-ink">Tenants</h1>
-          <p className="mt-0.5 text-[0.8rem] text-muted">
+          <h1
+            className="font-serif"
+            style={{ fontSize: "2rem", fontWeight: 300, color: "var(--ink)" }}
+          >
+            Tenants
+          </h1>
+          <p
+            style={{
+              fontSize: "0.8rem",
+              color: "var(--muted)",
+              marginTop: "0.2rem",
+            }}
+          >
             View all tenants across your properties
           </p>
         </div>
 
+        {/* Property filter */}
         <select
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
-          className="rounded border border-warm bg-white px-5 py-2.5 font-sans text-[0.8rem] text-ink outline-none cursor-pointer transition-colors focus:border-gold/30 focus-visible:ring-2 focus-visible:ring-gold/20"
+          style={{
+            background: "var(--white)",
+            border: "1px solid var(--warm)",
+            padding: "0.6rem 1.2rem",
+            fontFamily: "var(--font-sans), sans-serif",
+            fontSize: "0.8rem",
+            color: "var(--ink)",
+            borderRadius: "4px",
+            cursor: "pointer",
+            outline: "none",
+          }}
         >
           <option value="all">All Properties</option>
           {properties.map((p) => (
-            <option key={p.id} value={p.id}>{p.name}</option>
+            <option key={p.id} value={p.id}>
+              {p.name}
+            </option>
           ))}
         </select>
       </div>
 
       {/* Summary stats */}
-      <div className="mb-6 flex gap-6">
-        <div className="card flex-1 py-4 px-6">
-          <span className="label-upper">Total</span>
-          <div className="font-serif text-2xl font-semibold">{totalCount}</div>
+      <div
+        className="flex"
+        style={{
+          gap: "1.5rem",
+          marginBottom: "1.5rem",
+        }}
+      >
+        <div
+          style={{
+            background: "var(--white)",
+            borderRadius: "8px",
+            border: "1px solid rgba(200,150,62,0.08)",
+            padding: "1rem 1.5rem",
+            flex: 1,
+          }}
+        >
+          <span
+            style={{
+              fontSize: "0.65rem",
+              color: "var(--muted)",
+              textTransform: "uppercase",
+              letterSpacing: "0.08em",
+            }}
+          >
+            Total
+          </span>
+          <div
+            className="font-serif"
+            style={{ fontSize: "1.5rem", fontWeight: 600 }}
+          >
+            {totalCount}
+          </div>
         </div>
-        <div className="card flex-1 py-4 px-6">
-          <span className="label-upper text-green">Active</span>
-          <div className="font-serif text-2xl font-semibold text-green">{activeCount}</div>
+        <div
+          style={{
+            background: "var(--white)",
+            borderRadius: "8px",
+            border: "1px solid rgba(200,150,62,0.08)",
+            padding: "1rem 1.5rem",
+            flex: 1,
+          }}
+        >
+          <span
+            style={{
+              fontSize: "0.65rem",
+              color: "var(--green)",
+              textTransform: "uppercase",
+              letterSpacing: "0.08em",
+            }}
+          >
+            Active
+          </span>
+          <div
+            className="font-serif"
+            style={{ fontSize: "1.5rem", fontWeight: 600, color: "var(--green)" }}
+          >
+            {activeCount}
+          </div>
         </div>
-        <div className="card flex-1 py-4 px-6">
-          <span className="label-upper text-red-soft">Inactive</span>
-          <div className="font-serif text-2xl font-semibold text-red-soft">{inactiveCount}</div>
+        <div
+          style={{
+            background: "var(--white)",
+            borderRadius: "8px",
+            border: "1px solid rgba(200,150,62,0.08)",
+            padding: "1rem 1.5rem",
+            flex: 1,
+          }}
+        >
+          <span
+            style={{
+              fontSize: "0.65rem",
+              color: "var(--red-soft)",
+              textTransform: "uppercase",
+              letterSpacing: "0.08em",
+            }}
+          >
+            Inactive
+          </span>
+          <div
+            className="font-serif"
+            style={{
+              fontSize: "1.5rem",
+              fontWeight: 600,
+              color: "var(--red-soft)",
+            }}
+          >
+            {inactiveCount}
+          </div>
         </div>
       </div>
 
       {/* Tenant list */}
-      <div className="overflow-hidden rounded-lg border border-gold/8 bg-white">
+      <div
+        style={{
+          background: "var(--white)",
+          borderRadius: "8px",
+          border: "1px solid rgba(200,150,62,0.08)",
+          overflow: "hidden",
+        }}
+      >
         {filtered.length === 0 ? (
-          <EmptyState icon={Users} title="No tenants found" />
+          <div
+            style={{
+              padding: "3rem",
+              textAlign: "center",
+              color: "var(--muted)",
+              fontSize: "0.85rem",
+            }}
+          >
+            No tenants found.
+          </div>
         ) : (
           <div>
             {filtered.map((tenant, i) => {
@@ -136,22 +254,48 @@ export default function TenantTable({ tenants, properties, currentPage = 1, tota
               return (
                 <div
                   key={tenant.id}
-                  className={`tenant-row row-hover grid items-center gap-4 px-6 py-4 transition-colors ${
-                    i < filtered.length - 1 ? "border-b border-warm" : ""
-                  }`}
+                  className="tenant-row items-center row-hover"
+                  style={{
+                    display: "grid",
+                    gap: "1rem",
+                    padding: "1rem 1.5rem",
+                    borderBottom:
+                      i < filtered.length - 1
+                        ? "1px solid var(--warm)"
+                        : "none",
+                    transition: "background 0.15s",
+                  }}
                 >
                   {/* Avatar */}
                   <div
-                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[0.75rem] font-semibold text-white"
-                    style={{ background: color }}
+                    className="flex items-center justify-center shrink-0"
+                    style={{
+                      width: "36px",
+                      height: "36px",
+                      borderRadius: "50%",
+                      background: color,
+                      fontSize: "0.75rem",
+                      fontWeight: 600,
+                      color: "var(--white)",
+                    }}
                   >
                     {initials}
                   </div>
 
                   {/* Name + property */}
                   <div>
-                    <h4 className="mb-0.5 text-[0.85rem] font-medium">{tenant.full_name}</h4>
-                    <span className="text-[0.7rem] text-muted">
+                    <h4
+                      style={{
+                        fontSize: "0.85rem",
+                        fontWeight: 500,
+                        marginBottom: "0.15rem",
+                      }}
+                    >
+                      {tenant.full_name}
+                    </h4>
+                    <span
+                      style={{ fontSize: "0.7rem", color: "var(--muted)" }}
+                    >
                       {tenant.properties?.name}
                       {tenant.unit_number ? ` · Unit ${tenant.unit_number}` : ""}
                     </span>
@@ -159,28 +303,55 @@ export default function TenantTable({ tenants, properties, currentPage = 1, tota
 
                   {/* Rent */}
                   <div className="text-right">
-                    <span className="font-serif text-[0.95rem] font-semibold">
+                    <span
+                      className="font-serif"
+                      style={{ fontSize: "0.95rem", fontWeight: 600 }}
+                    >
                       KES {Number(tenant.rent_amount).toLocaleString()}
                     </span>
-                    <small className="block label-upper text-[0.6rem]">/month</small>
+                    <small
+                      className="block"
+                      style={{
+                        fontSize: "0.6rem",
+                        color: "var(--muted)",
+                        textTransform: "uppercase",
+                        letterSpacing: "0.05em",
+                      }}
+                    >
+                      /month
+                    </small>
                   </div>
 
                   {/* Phone */}
-                  <span className="min-w-[100px] text-[0.75rem] text-muted">
+                  <span
+                    style={{
+                      fontSize: "0.75rem",
+                      color: "var(--muted)",
+                      minWidth: "100px",
+                    }}
+                  >
                     {tenant.phone || "—"}
                   </span>
 
                   {/* Status + Portal */}
-                  <div className="flex items-center gap-2">
-                    <StatusBadge
+                  <div className="flex items-center" style={{ gap: "0.5rem" }}>
+                    <StatusPill
                       status={tenant.status === "active" ? "active" : tenant.status === "moved" ? "moved" : "inactive"}
                     />
                     {tenant.user_id ? (
-                      <StatusBadge status="completed" label="Portal" />
+                      <span
+                        className="status-pill"
+                        style={{
+                          background: "var(--green-light)",
+                          color: "var(--green)",
+                        }}
+                      >
+                        Portal
+                      </span>
                     ) : tenant.status === "active" ? (
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center" style={{ gap: "0.3rem" }}>
                         {inviteMsg?.id === tenant.id && (
-                          <span className={`text-[0.65rem] ${inviteMsg.ok ? "text-green" : "text-red-soft"}`}>
+                          <span style={{ fontSize: "0.65rem", color: inviteMsg.ok ? "var(--green)" : "var(--red-soft)" }}>
                             {inviteMsg.msg}
                           </span>
                         )}
@@ -190,13 +361,34 @@ export default function TenantTable({ tenants, properties, currentPage = 1, tota
                           value={inviting === tenant.id ? inviteEmail : (inviteEmail && inviteMsg?.id === tenant.id ? inviteEmail : "")}
                           onChange={(e) => { setInviteEmail(e.target.value); setInviteMsg(null); }}
                           onFocus={() => { if (tenant.email && !inviteEmail) setInviteEmail(tenant.email); }}
-                          className="w-[140px] rounded border border-warm bg-cream px-2 py-1 font-sans text-[0.7rem] outline-none focus:border-gold/30"
+                          style={{
+                            width: "140px",
+                            padding: "0.3rem 0.5rem",
+                            fontSize: "0.7rem",
+                            border: "1px solid var(--warm)",
+                            borderRadius: "3px",
+                            outline: "none",
+                            background: "var(--cream)",
+                            fontFamily: "var(--font-sans), sans-serif",
+                          }}
                         />
                         <button
                           onClick={() => handleInvite(tenant.id)}
                           disabled={inviting === tenant.id}
                           title="Invite to Tenant Portal"
-                          className="flex items-center gap-0.5 rounded bg-ink px-2 py-1 text-[0.65rem] text-cream border-none cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
+                          style={{
+                            background: "var(--ink)",
+                            color: "var(--cream)",
+                            border: "none",
+                            borderRadius: "3px",
+                            padding: "0.3rem 0.5rem",
+                            cursor: inviting === tenant.id ? "not-allowed" : "pointer",
+                            opacity: inviting === tenant.id ? 0.6 : 1,
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "0.2rem",
+                            fontSize: "0.65rem",
+                          }}
                         >
                           <Send size={11} />
                           Invite

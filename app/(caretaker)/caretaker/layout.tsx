@@ -29,9 +29,12 @@ export default async function CaretakerLayout({
   const caretakerName = user.user_metadata?.full_name || user.email || "Caretaker";
 
   return (
-    <div className="flex min-h-screen bg-[#f7f5f2] caretaker-layout">
+    <div className="flex caretaker-layout" style={{ minHeight: "100vh", background: "#f7f5f2" }}>
       <CaretakerNav caretakerName={caretakerName} propertyNames={propertyNames} />
-      <main className="flex-1 overflow-y-auto px-5 py-8 pb-20 sm:px-10 caretaker-main">
+      <main
+        className="flex-1 overflow-y-auto caretaker-main"
+        style={{ padding: "2rem 2.5rem", paddingBottom: "5rem" }}
+      >
         {children}
       </main>
     </div>

@@ -2,8 +2,6 @@
 
 import Link from "next/link";
 import { Wrench, FileText, CheckCircle, Clock, AlertCircle } from "lucide-react";
-import StatusBadge from "@/components/ui/StatusBadge";
-import EmptyState from "@/components/ui/EmptyState";
 import type { TenantPaymentSummary } from "@/types";
 
 interface TenantInfo {
@@ -35,10 +33,10 @@ interface Props {
 }
 
 const statusConfig = {
-  paid: { colorClass: "text-green", borderClass: "border-t-green", label: "Paid", Icon: CheckCircle },
-  pending: { colorClass: "text-gold", borderClass: "border-t-gold", label: "Pending", Icon: Clock },
-  overdue: { colorClass: "text-red-soft", borderClass: "border-t-red-soft", label: "Overdue", Icon: AlertCircle },
-  vacated_unpaid: { colorClass: "text-[#6b5e5e]", borderClass: "border-t-[#6b5e5e]", label: "Vacated - Unpaid", Icon: AlertCircle },
+  paid: { bg: "var(--green-light)", color: "var(--green)", label: "Paid", Icon: CheckCircle },
+  pending: { bg: "var(--amber-light)", color: "var(--gold)", label: "Pending", Icon: Clock },
+  overdue: { bg: "var(--red-light)", color: "var(--red-soft)", label: "Overdue", Icon: AlertCircle },
+  vacated_unpaid: { bg: "#f0eded", color: "#6b5e5e", label: "Vacated - Unpaid", Icon: AlertCircle },
 };
 
 export default function TenantDashboard({ tenant, payments, balance }: Props) {
@@ -52,40 +50,60 @@ export default function TenantDashboard({ tenant, payments, balance }: Props) {
   return (
     <div>
       {/* Greeting */}
-      <div className="mb-8">
-        <h1 className="font-serif text-2xl font-normal tracking-tight">
+      <div style={{ marginBottom: "2rem" }}>
+        <h1
+          className="font-serif"
+          style={{ fontSize: "1.5rem", fontWeight: 400, letterSpacing: "-0.02em" }}
+        >
           Hello, {tenant.full_name.split(" ")[0]}
         </h1>
-        <p className="mt-0.5 text-[0.78rem] text-muted">
+        <p style={{ fontSize: "0.78rem", color: "var(--muted)", marginTop: "0.2rem" }}>
           {tenant.property_name}{tenant.unit_number ? ` · Unit ${tenant.unit_number}` : ""}
           {tenant.property_location ? ` · ${tenant.property_location}` : ""}
         </p>
       </div>
 
       {/* Balance card */}
-      <div className={`card mb-6 border-t-[3px] ${config.borderClass}`}>
-        <div className="mb-4 flex items-center gap-2">
-          <StatusIcon size={20} className={config.colorClass} />
-          <span className={`label-upper font-medium ${config.colorClass}`}>
+      <div
+        style={{
+          background: "var(--white)",
+          borderRadius: "8px",
+          border: "1px solid rgba(200,150,62,0.08)",
+          padding: "1.5rem",
+          marginBottom: "1.5rem",
+          borderTop: `3px solid ${config.color}`,
+        }}
+      >
+        <div className="flex items-center" style={{ gap: "0.5rem", marginBottom: "1rem" }}>
+          <StatusIcon size={20} style={{ color: config.color }} />
+          <span
+            style={{
+              fontSize: "0.65rem",
+              letterSpacing: "0.1em",
+              textTransform: "uppercase",
+              color: config.color,
+              fontWeight: 500,
+            }}
+          >
             {currentMonthLabel} — {config.label}
           </span>
         </div>
 
-        <div className="flex flex-wrap items-end gap-4">
-          <div className="min-w-[200px]">
-            <p className="mb-1 text-[0.7rem] text-muted">
+        <div className="flex items-end" style={{ gap: "1rem", flexWrap: "wrap" }}>
+          <div style={{ minWidth: "200px" }}>
+            <p style={{ fontSize: "0.7rem", color: "var(--muted)", marginBottom: "0.25rem" }}>
               {balance.currentMonthStatus === "paid" ? "Rent Paid" : "Amount Due"}
             </p>
-            <p className="font-serif text-[2rem] font-semibold text-ink">
+            <p className="font-serif" style={{ fontSize: "2rem", fontWeight: 600, color: "var(--ink)" }}>
               KES {(balance.currentMonthStatus === "paid" ? tenant.rent_amount : balance.balance).toLocaleString("en-KE")}
             </p>
           </div>
-          <div className="ml-auto">
-            <p className="text-[0.7rem] text-muted">
+          <div style={{ marginLeft: "auto" }}>
+            <p style={{ fontSize: "0.7rem", color: "var(--muted)" }}>
               Monthly Rent: KES {tenant.rent_amount.toLocaleString("en-KE")}
             </p>
             {balance.lastPaymentDate && (
-              <p className="mt-0.5 text-[0.7rem] text-muted">
+              <p style={{ fontSize: "0.7rem", color: "var(--muted)", marginTop: "0.15rem" }}>
                 Last paid: {new Date(balance.lastPaymentDate).toLocaleDateString("en-KE", { day: "numeric", month: "short", year: "numeric" })}
               </p>
             )}
@@ -94,75 +112,134 @@ export default function TenantDashboard({ tenant, payments, balance }: Props) {
       </div>
 
       {/* Quick actions */}
-      <div className="mb-8 grid grid-cols-2 gap-3">
+      <div className="flex" style={{ gap: "1rem", marginBottom: "2rem", flexWrap: "wrap" }}>
         <Link
           href="/my/maintenance"
-          aria-label="Report a maintenance problem"
-          className="card card-hover flex items-center gap-2.5 no-underline text-[0.8rem] font-medium text-ink"
+          className="flex items-center no-underline card-hover"
+          style={{
+            gap: "0.6rem",
+            background: "var(--white)",
+            border: "1px solid rgba(200,150,62,0.08)",
+            borderRadius: "8px",
+            padding: "0.9rem 1.3rem",
+            fontSize: "0.8rem",
+            color: "var(--ink)",
+            fontWeight: 500,
+          }}
         >
-          <Wrench size={16} className="text-gold" />
+          <Wrench size={16} style={{ color: "var(--gold)" }} />
           Report a Problem
         </Link>
         <Link
           href="/my/statement"
-          aria-label="Download rent statement"
-          className="card card-hover flex items-center gap-2.5 no-underline text-[0.8rem] font-medium text-ink"
+          className="flex items-center no-underline card-hover"
+          style={{
+            gap: "0.6rem",
+            background: "var(--white)",
+            border: "1px solid rgba(200,150,62,0.08)",
+            borderRadius: "8px",
+            padding: "0.9rem 1.3rem",
+            fontSize: "0.8rem",
+            color: "var(--ink)",
+            fontWeight: 500,
+          }}
         >
-          <FileText size={16} className="text-gold" />
+          <FileText size={16} style={{ color: "var(--gold)" }} />
           Download Statement
         </Link>
       </div>
 
       {/* Recent payments */}
-      <div className="card mb-6">
-        <h3 className="mb-4 font-serif text-[1.1rem] font-medium">
+      <div
+        style={{
+          background: "var(--white)",
+          borderRadius: "8px",
+          border: "1px solid rgba(200,150,62,0.08)",
+          padding: "1.5rem",
+          marginBottom: "1.5rem",
+        }}
+      >
+        <h3
+          className="font-serif"
+          style={{ fontSize: "1.1rem", fontWeight: 500, marginBottom: "1rem" }}
+        >
           Recent Payments
         </h3>
 
         {recentPayments.length === 0 ? (
-          <EmptyState
-            title="No payments recorded yet"
-            description="Your payment history will appear here once rent is paid."
-          />
+          <p style={{ fontSize: "0.8rem", color: "var(--muted)" }}>No payments recorded yet.</p>
         ) : (
           <div>
-            {recentPayments.map((p, i) => (
-              <div
-                key={p.id}
-                className={`flex flex-wrap items-center gap-4 py-3 ${
-                  i < recentPayments.length - 1 ? "border-b border-warm" : ""
-                }`}
-              >
-                <div className="min-w-[120px] flex-1">
-                  <p className="text-[0.8rem] font-medium">
-                    KES {Number(p.amount).toLocaleString("en-KE")}
-                  </p>
-                  <p className="text-[0.7rem] text-muted">{p.method}</p>
+            {recentPayments.map((p, i) => {
+              const pConfig = statusConfig[p.status as keyof typeof statusConfig] || statusConfig.pending;
+              return (
+                <div
+                  key={p.id}
+                  className="flex items-center"
+                  style={{
+                    padding: "0.75rem 0",
+                    borderBottom: i < recentPayments.length - 1 ? "1px solid var(--warm)" : "none",
+                    gap: "1rem",
+                    flexWrap: "wrap",
+                  }}
+                >
+                  <div style={{ flex: 1, minWidth: "120px" }}>
+                    <p style={{ fontSize: "0.8rem", fontWeight: 500 }}>
+                      KES {Number(p.amount).toLocaleString("en-KE")}
+                    </p>
+                    <p style={{ fontSize: "0.7rem", color: "var(--muted)" }}>
+                      {p.method}
+                    </p>
+                  </div>
+                  <div style={{ textAlign: "right" }}>
+                    <p style={{ fontSize: "0.75rem", color: "var(--muted)" }}>
+                      {p.paid_date
+                        ? new Date(p.paid_date).toLocaleDateString("en-KE", {
+                            day: "numeric",
+                            month: "short",
+                            year: "numeric",
+                          })
+                        : "—"}
+                    </p>
+                  </div>
+                  <span
+                    className="status-pill"
+                    style={{
+                      background: pConfig.bg,
+                      color: pConfig.color,
+                    }}
+                  >
+                    {pConfig.label}
+                  </span>
                 </div>
-                <div className="text-right">
-                  <p className="text-[0.75rem] text-muted">
-                    {p.paid_date
-                      ? new Date(p.paid_date).toLocaleDateString("en-KE", {
-                          day: "numeric",
-                          month: "short",
-                          year: "numeric",
-                        })
-                      : "—"}
-                  </p>
-                </div>
-                <StatusBadge status={p.status as "paid" | "pending" | "overdue"} />
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
 
       {/* Lease info */}
-      <div className="card">
-        <h3 className="mb-4 font-serif text-[1.1rem] font-medium">
+      <div
+        style={{
+          background: "var(--white)",
+          borderRadius: "8px",
+          border: "1px solid rgba(200,150,62,0.08)",
+          padding: "1.5rem",
+        }}
+      >
+        <h3
+          className="font-serif"
+          style={{ fontSize: "1.1rem", fontWeight: 500, marginBottom: "1rem" }}
+        >
           Lease Details
         </h3>
-        <div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-4">
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
+            gap: "1rem",
+          }}
+        >
           <InfoItem label="Property" value={tenant.property_name} />
           <InfoItem label="Unit" value={tenant.unit_number || "—"} />
           {tenant.unit_type && <InfoItem label="Type" value={tenant.unit_type} />}
@@ -192,8 +269,18 @@ export default function TenantDashboard({ tenant, payments, balance }: Props) {
 function InfoItem({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <p className="label-upper mb-1">{label}</p>
-      <p className="text-[0.85rem] font-medium">{value}</p>
+      <p
+        style={{
+          fontSize: "0.65rem",
+          letterSpacing: "0.1em",
+          textTransform: "uppercase",
+          color: "var(--muted)",
+          marginBottom: "0.25rem",
+        }}
+      >
+        {label}
+      </p>
+      <p style={{ fontSize: "0.85rem", fontWeight: 500 }}>{value}</p>
     </div>
   );
 }

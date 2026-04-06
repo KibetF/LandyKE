@@ -26,8 +26,17 @@ export default function MonthSelector() {
     <select
       value={current}
       onChange={(e) => handleChange(e.target.value)}
-      aria-label="Select month"
-      className="rounded border border-warm bg-white px-5 py-2.5 font-sans text-[0.8rem] text-ink outline-none cursor-pointer transition-colors focus:border-gold/30 focus-visible:ring-2 focus-visible:ring-gold/20"
+      style={{
+        background: "var(--white)",
+        border: "1px solid var(--warm)",
+        padding: "0.6rem 1.2rem",
+        fontFamily: "var(--font-sans), sans-serif",
+        fontSize: "0.8rem",
+        color: "var(--ink)",
+        borderRadius: "4px",
+        cursor: "pointer",
+        outline: "none",
+      }}
     >
       {months.map((m) => (
         <option key={m.value} value={m.value}>

@@ -2,9 +2,7 @@
 
 import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, ChevronDown, ChevronUp, Wrench } from "lucide-react";
-import StatusBadge from "@/components/ui/StatusBadge";
-import EmptyState from "@/components/ui/EmptyState";
+import { Plus, ChevronDown, ChevronUp } from "lucide-react";
 
 interface MaintenanceItem {
   id: string;
@@ -22,6 +20,19 @@ interface Props {
   unitNumber: string | null;
   requests: MaintenanceItem[];
 }
+
+const priorityConfig = {
+  low: { bg: "var(--green-light)", color: "var(--green)" },
+  medium: { bg: "var(--amber-light)", color: "var(--gold)" },
+  high: { bg: "var(--red-light)", color: "var(--rust)" },
+  urgent: { bg: "var(--red-light)", color: "var(--red-soft)" },
+};
+
+const statusConfig = {
+  open: { bg: "var(--amber-light)", color: "var(--gold)" },
+  "in-progress": { bg: "#e8f0fd", color: "#1a5296" },
+  completed: { bg: "var(--green-light)", color: "var(--green)" },
+};
 
 export default function TenantMaintenance({ tenantId, propertyId, unitNumber, requests }: Props) {
   const router = useRouter();
@@ -67,18 +78,30 @@ export default function TenantMaintenance({ tenantId, propertyId, unitNumber, re
 
   return (
     <div>
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+      <div className="flex items-center" style={{ justifyContent: "space-between", marginBottom: "1.5rem", flexWrap: "wrap", gap: "1rem" }}>
         <div>
-          <h1 className="font-serif text-2xl font-normal tracking-tight">
+          <h1 className="font-serif" style={{ fontSize: "1.5rem", fontWeight: 400, letterSpacing: "-0.02em" }}>
             Maintenance
           </h1>
-          <p className="mt-0.5 text-[0.78rem] text-muted">
+          <p style={{ fontSize: "0.78rem", color: "var(--muted)", marginTop: "0.2rem" }}>
             Report issues and track your requests
           </p>
         </div>
         <button
           onClick={() => setShowForm(!showForm)}
-          className="flex items-center gap-2 rounded bg-ink px-5 py-2.5 text-[0.78rem] font-medium tracking-[0.05em] text-cream border-none cursor-pointer transition-colors hover:bg-ink/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2"
+          className="flex items-center"
+          style={{
+            gap: "0.5rem",
+            background: "var(--ink)",
+            color: "var(--cream)",
+            padding: "0.7rem 1.2rem",
+            fontSize: "0.78rem",
+            fontWeight: 500,
+            letterSpacing: "0.05em",
+            border: "none",
+            borderRadius: "4px",
+            cursor: "pointer",
+          }}
         >
           <Plus size={16} />
           Report a Problem
@@ -87,13 +110,24 @@ export default function TenantMaintenance({ tenantId, propertyId, unitNumber, re
 
       {/* New request form */}
       {showForm && (
-        <div className="card mb-6 border-gold/15">
-          <h3 className="mb-4 font-serif text-base font-medium">
+        <div
+          style={{
+            background: "var(--white)",
+            borderRadius: "8px",
+            border: "1px solid rgba(200,150,62,0.15)",
+            padding: "1.5rem",
+            marginBottom: "1.5rem",
+          }}
+        >
+          <h3 className="font-serif" style={{ fontSize: "1rem", fontWeight: 500, marginBottom: "1rem" }}>
             New Maintenance Request
           </h3>
           <form onSubmit={handleSubmit}>
-            <div className="mb-4">
-              <label className="label-upper mb-1.5 block">
+            <div style={{ marginBottom: "1rem" }}>
+              <label
+                className="block uppercase"
+                style={{ fontSize: "0.65rem", letterSpacing: "0.1em", color: "var(--muted)", marginBottom: "0.4rem" }}
+              >
                 Describe the issue
               </label>
               <textarea
@@ -101,19 +135,43 @@ export default function TenantMaintenance({ tenantId, propertyId, unitNumber, re
                 onChange={(e) => setDescription(e.target.value)}
                 required
                 rows={4}
-                className="w-full resize-y rounded border border-warm bg-cream px-4 py-3 font-sans text-[0.85rem] text-ink outline-none transition-colors focus:border-gold/30 focus-visible:ring-2 focus-visible:ring-gold/20"
+                style={{
+                  width: "100%",
+                  padding: "0.8rem 1rem",
+                  border: "1px solid var(--warm)",
+                  borderRadius: "4px",
+                  fontFamily: "var(--font-sans), sans-serif",
+                  fontSize: "0.85rem",
+                  color: "var(--ink)",
+                  outline: "none",
+                  background: "var(--cream)",
+                  resize: "vertical",
+                }}
                 placeholder="e.g., The kitchen sink is leaking under the counter..."
               />
             </div>
 
-            <div className="mb-5">
-              <label className="label-upper mb-1.5 block">
+            <div style={{ marginBottom: "1.2rem" }}>
+              <label
+                className="block uppercase"
+                style={{ fontSize: "0.65rem", letterSpacing: "0.1em", color: "var(--muted)", marginBottom: "0.4rem" }}
+              >
                 Priority
               </label>
               <select
                 value={priority}
                 onChange={(e) => setPriority(e.target.value as typeof priority)}
-                className="w-full rounded border border-warm bg-cream px-4 py-3 font-sans text-[0.85rem] text-ink outline-none transition-colors focus:border-gold/30 focus-visible:ring-2 focus-visible:ring-gold/20"
+                style={{
+                  width: "100%",
+                  padding: "0.8rem 1rem",
+                  border: "1px solid var(--warm)",
+                  borderRadius: "4px",
+                  fontFamily: "var(--font-sans), sans-serif",
+                  fontSize: "0.85rem",
+                  color: "var(--ink)",
+                  outline: "none",
+                  background: "var(--cream)",
+                }}
               >
                 <option value="low">Low — not urgent</option>
                 <option value="medium">Medium — needs attention soon</option>
@@ -123,23 +181,41 @@ export default function TenantMaintenance({ tenantId, propertyId, unitNumber, re
             </div>
 
             {error && (
-              <div className="mb-4 rounded bg-red-light px-4 py-3 text-[0.8rem] text-red-soft">
+              <div style={{ background: "var(--red-light)", color: "var(--red-soft)", padding: "0.75rem 1rem", borderRadius: "4px", fontSize: "0.8rem", marginBottom: "1rem" }}>
                 {error}
               </div>
             )}
 
-            <div className="flex gap-3">
+            <div className="flex" style={{ gap: "0.75rem" }}>
               <button
                 type="submit"
                 disabled={submitting}
-                className="rounded bg-ink px-6 py-2.5 text-[0.78rem] font-medium text-cream border-none cursor-pointer transition-colors hover:bg-ink/90 disabled:cursor-not-allowed disabled:opacity-70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2"
+                style={{
+                  background: "var(--ink)",
+                  color: "var(--cream)",
+                  padding: "0.7rem 1.5rem",
+                  fontSize: "0.78rem",
+                  fontWeight: 500,
+                  border: "none",
+                  borderRadius: "4px",
+                  cursor: submitting ? "not-allowed" : "pointer",
+                  opacity: submitting ? 0.7 : 1,
+                }}
               >
                 {submitting ? "Submitting..." : "Submit Request"}
               </button>
               <button
                 type="button"
                 onClick={() => setShowForm(false)}
-                className="rounded border border-warm bg-transparent px-6 py-2.5 text-[0.78rem] text-muted cursor-pointer transition-colors hover:bg-warm/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2"
+                style={{
+                  background: "transparent",
+                  color: "var(--muted)",
+                  padding: "0.7rem 1.5rem",
+                  fontSize: "0.78rem",
+                  border: "1px solid var(--warm)",
+                  borderRadius: "4px",
+                  cursor: "pointer",
+                }}
               >
                 Cancel
               </button>
@@ -149,62 +225,71 @@ export default function TenantMaintenance({ tenantId, propertyId, unitNumber, re
       )}
 
       {/* Requests list */}
-      <div className="card">
-        <h3 className="mb-4 font-serif text-[1.1rem] font-medium">
+      <div
+        style={{
+          background: "var(--white)",
+          borderRadius: "8px",
+          border: "1px solid rgba(200,150,62,0.08)",
+          padding: "1.5rem",
+        }}
+      >
+        <h3 className="font-serif" style={{ fontSize: "1.1rem", fontWeight: 500, marginBottom: "1rem" }}>
           My Requests
         </h3>
 
         {requests.length === 0 ? (
-          <EmptyState
-            icon={Wrench}
-            title="No maintenance requests yet"
-            description='Click "Report a Problem" to submit one.'
-          />
+          <p style={{ fontSize: "0.8rem", color: "var(--muted)" }}>
+            No maintenance requests yet. Click &ldquo;Report a Problem&rdquo; to submit one.
+          </p>
         ) : (
           <div>
             {requests.map((r, i) => {
+              const pCfg = priorityConfig[r.priority];
+              const sCfg = statusConfig[r.status];
               const isExpanded = expanded === r.id;
 
               return (
                 <div
                   key={r.id}
-                  className={`py-3.5 ${i < requests.length - 1 ? "border-b border-warm" : ""}`}
+                  style={{
+                    padding: "0.9rem 0",
+                    borderBottom: i < requests.length - 1 ? "1px solid var(--warm)" : "none",
+                  }}
                 >
-                  <button
-                    className="flex w-full cursor-pointer flex-wrap items-center gap-3 border-none bg-transparent p-0 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold rounded"
+                  <div
+                    className="flex items-center"
+                    style={{ gap: "0.75rem", cursor: "pointer", flexWrap: "wrap" }}
                     onClick={() => setExpanded(isExpanded ? null : r.id)}
-                    aria-expanded={isExpanded}
-                    aria-label={`Toggle details for: ${r.description.slice(0, 50)}`}
                   >
-                    <div className="min-w-[150px] flex-1">
-                      <p className="mb-0.5 text-[0.82rem] font-medium">
+                    <div style={{ flex: 1, minWidth: "150px" }}>
+                      <p style={{ fontSize: "0.82rem", fontWeight: 500, marginBottom: "0.2rem" }}>
                         {r.description.length > 80 ? r.description.slice(0, 80) + "..." : r.description}
                       </p>
-                      <p className="text-[0.7rem] text-muted">
+                      <p style={{ fontSize: "0.7rem", color: "var(--muted)" }}>
                         Submitted {new Date(r.date_submitted).toLocaleDateString("en-KE", { day: "numeric", month: "short", year: "numeric" })}
                       </p>
                     </div>
-                    <StatusBadge status={r.priority} />
-                    <StatusBadge status={r.status} />
-                    {isExpanded ? (
-                      <ChevronUp size={16} className="text-muted" />
-                    ) : (
-                      <ChevronDown size={16} className="text-muted" />
-                    )}
-                  </button>
+                    <span className="status-pill" style={{ background: pCfg.bg, color: pCfg.color }}>
+                      {r.priority}
+                    </span>
+                    <span className="status-pill" style={{ background: sCfg.bg, color: sCfg.color }}>
+                      {r.status}
+                    </span>
+                    {isExpanded ? <ChevronUp size={16} style={{ color: "var(--muted)" }} /> : <ChevronDown size={16} style={{ color: "var(--muted)" }} />}
+                  </div>
 
                   {isExpanded && (
-                    <div className="mt-3 pl-2 text-[0.8rem] text-ink">
-                      <p className="mb-2">{r.description}</p>
+                    <div style={{ marginTop: "0.75rem", paddingLeft: "0.5rem", fontSize: "0.8rem", color: "var(--ink)" }}>
+                      <p style={{ marginBottom: "0.5rem" }}>{r.description}</p>
                       {r.date_resolved && (
-                        <p className="text-[0.7rem] text-green">
+                        <p style={{ fontSize: "0.7rem", color: "var(--green)" }}>
                           Resolved on {new Date(r.date_resolved).toLocaleDateString("en-KE", { day: "numeric", month: "short", year: "numeric" })}
                         </p>
                       )}
                       {r.notes && (
-                        <div className="mt-2 rounded bg-cream p-3 text-[0.78rem]">
-                          <strong className="label-upper">Notes:</strong>
-                          <p className="mt-1">{r.notes}</p>
+                        <div style={{ marginTop: "0.5rem", padding: "0.6rem 0.8rem", background: "var(--cream)", borderRadius: "4px", fontSize: "0.78rem" }}>
+                          <strong style={{ fontSize: "0.65rem", textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--muted)" }}>Notes:</strong>
+                          <p style={{ marginTop: "0.25rem" }}>{r.notes}</p>
                         </div>
                       )}
                     </div>

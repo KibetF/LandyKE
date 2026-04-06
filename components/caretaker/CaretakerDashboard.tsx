@@ -2,8 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronLeft, ChevronRight, Check, Banknote, Users } from "lucide-react";
-import EmptyState from "@/components/ui/EmptyState";
+import { ChevronLeft, ChevronRight, Check, Banknote } from "lucide-react";
 import type { UnitStatus } from "@/lib/queries-caretaker";
 
 interface CaretakerDashboardProps {
@@ -11,8 +10,6 @@ interface CaretakerDashboardProps {
   selectedMonth: string;
   monthLabel: string;
 }
-
-const inputClasses = "w-full rounded border border-warm bg-white px-4 py-2.5 font-sans text-[0.85rem] text-ink outline-none transition-colors focus:border-gold/30 focus-visible:ring-2 focus-visible:ring-gold/20";
 
 export default function CaretakerDashboard({
   units,
@@ -89,50 +86,105 @@ export default function CaretakerDashboard({
     }
   }
 
+  const labelStyle: React.CSSProperties = {
+    display: "block",
+    fontSize: "0.65rem",
+    textTransform: "uppercase",
+    letterSpacing: "0.08em",
+    color: "var(--muted)",
+    marginBottom: "0.4rem",
+  };
+
+  const inputStyle: React.CSSProperties = {
+    width: "100%",
+    padding: "0.7rem 1rem",
+    border: "1px solid var(--warm)",
+    borderRadius: "4px",
+    fontSize: "0.85rem",
+    outline: "none",
+    background: "var(--white)",
+    fontFamily: "var(--font-sans), sans-serif",
+    color: "var(--ink)",
+  };
+
   return (
     <>
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="mb-2 font-serif text-3xl font-light text-ink">
+      <div style={{ marginBottom: "2rem" }}>
+        <h1
+          className="font-serif"
+          style={{ fontSize: "1.8rem", fontWeight: 300, color: "var(--ink)", marginBottom: "0.5rem" }}
+        >
           Payment Tracker
         </h1>
 
         {/* Month selector */}
-        <div className="mb-4 flex items-center gap-3">
+        <div className="flex items-center" style={{ gap: "0.75rem", marginBottom: "1rem" }}>
           <button
             onClick={() => navigateMonth(-1)}
-            aria-label="Previous month"
-            className="flex items-center rounded border border-warm bg-white p-1.5 cursor-pointer transition-colors hover:bg-warm/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold"
+            style={{
+              background: "var(--white)",
+              border: "1px solid var(--warm)",
+              borderRadius: "4px",
+              padding: "0.4rem",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+            }}
           >
-            <ChevronLeft size={18} className="text-muted" />
+            <ChevronLeft size={18} color="var(--muted)" />
           </button>
-          <span className="min-w-[140px] text-center text-[0.9rem] font-medium text-ink">
+          <span style={{ fontSize: "0.9rem", fontWeight: 500, color: "var(--ink)", minWidth: "140px", textAlign: "center" }}>
             {monthLabel}
           </span>
           <button
             onClick={() => navigateMonth(1)}
             disabled={isCurrentMonth}
-            aria-label="Next month"
-            className="flex items-center rounded border border-warm bg-white p-1.5 cursor-pointer transition-colors hover:bg-warm/30 disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold"
+            style={{
+              background: "var(--white)",
+              border: "1px solid var(--warm)",
+              borderRadius: "4px",
+              padding: "0.4rem",
+              cursor: isCurrentMonth ? "not-allowed" : "pointer",
+              display: "flex",
+              alignItems: "center",
+              opacity: isCurrentMonth ? 0.4 : 1,
+            }}
           >
-            <ChevronRight size={18} className="text-muted" />
+            <ChevronRight size={18} color="var(--muted)" />
           </button>
         </div>
 
         {/* Summary */}
-        <div className="card flex items-center gap-3">
+        <div
+          style={{
+            background: "var(--white)",
+            borderRadius: "8px",
+            padding: "1.2rem 1.5rem",
+            border: "1px solid rgba(200,150,62,0.08)",
+            display: "flex",
+            alignItems: "center",
+            gap: "0.75rem",
+          }}
+        >
           <div
-            className={`flex h-[42px] w-[42px] items-center justify-center rounded-full ${
-              paidCount === totalCount ? "bg-green-light" : "bg-gold/10"
-            }`}
+            style={{
+              width: "42px",
+              height: "42px",
+              borderRadius: "50%",
+              background: paidCount === totalCount ? "var(--green-light)" : "rgba(200,150,62,0.1)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
           >
-            <Banknote size={20} className={paidCount === totalCount ? "text-green" : "text-gold"} />
+            <Banknote size={20} color={paidCount === totalCount ? "var(--green)" : "var(--gold)"} />
           </div>
           <div>
-            <div className="font-serif text-[1.4rem] font-semibold text-ink">
-              {paidCount} <span className="text-[0.9rem] font-light text-muted">of {totalCount} units paid</span>
+            <div className="font-serif" style={{ fontSize: "1.4rem", fontWeight: 600, color: "var(--ink)" }}>
+              {paidCount} <span style={{ fontSize: "0.9rem", fontWeight: 300, color: "var(--muted)" }}>of {totalCount} units paid</span>
             </div>
-            <div className="text-[0.75rem] text-muted">
+            <div style={{ fontSize: "0.75rem", color: "var(--muted)" }}>
               {totalCount - paidCount === 0 ? "All payments collected" : `${totalCount - paidCount} remaining`}
             </div>
           </div>
@@ -140,37 +192,73 @@ export default function CaretakerDashboard({
       </div>
 
       {/* Unit list */}
-      <div className="flex flex-col gap-3">
+      <div className="flex flex-col" style={{ gap: "0.75rem" }}>
         {units.map((unit) => (
           <div
             key={unit.tenantId}
-            className="card flex flex-wrap items-center justify-between gap-4"
+            style={{
+              background: "var(--white)",
+              borderRadius: "8px",
+              padding: "1.2rem 1.5rem",
+              border: "1px solid rgba(200,150,62,0.08)",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              gap: "1rem",
+              flexWrap: "wrap",
+            }}
           >
-            <div className="min-w-[150px] flex-1">
-              <div className="mb-0.5 text-[0.9rem] font-medium text-ink">
+            <div style={{ flex: 1, minWidth: "150px" }}>
+              <div style={{ fontSize: "0.9rem", fontWeight: 500, color: "var(--ink)", marginBottom: "0.2rem" }}>
                 {unit.tenantName}
               </div>
-              <div className="text-[0.75rem] text-muted">
+              <div style={{ fontSize: "0.75rem", color: "var(--muted)" }}>
                 {unit.propertyName}{unit.unitNumber ? ` · Unit ${unit.unitNumber}` : ""}
               </div>
             </div>
 
-            <div className="min-w-[100px] text-right">
-              <div className="font-serif text-base font-semibold text-ink">
+            <div style={{ textAlign: "right", minWidth: "100px" }}>
+              <div className="font-serif" style={{ fontSize: "1rem", fontWeight: 600, color: "var(--ink)" }}>
                 KES {unit.expectedRent.toLocaleString()}
               </div>
             </div>
 
-            <div className="min-w-[120px] text-right">
+            <div style={{ minWidth: "120px", textAlign: "right" }}>
               {unit.isPaid ? (
-                <span className="inline-flex items-center gap-1 rounded-[20px] bg-green-light px-3 py-1.5 text-[0.7rem] font-medium uppercase tracking-[0.06em] text-green">
+                <span
+                  className="inline-flex items-center"
+                  style={{
+                    gap: "0.3rem",
+                    background: "var(--green-light)",
+                    color: "var(--green)",
+                    fontSize: "0.7rem",
+                    fontWeight: 500,
+                    letterSpacing: "0.06em",
+                    textTransform: "uppercase",
+                    padding: "0.4rem 0.8rem",
+                    borderRadius: "20px",
+                  }}
+                >
                   <Check size={14} />
                   Paid
                 </span>
               ) : (
                 <button
                   onClick={() => openModal(unit)}
-                  className="whitespace-nowrap rounded bg-ink px-4 py-2 text-[0.72rem] font-medium uppercase tracking-[0.06em] text-cream border-none cursor-pointer transition-all hover:bg-ink/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2"
+                  style={{
+                    background: "var(--ink)",
+                    color: "var(--cream)",
+                    border: "none",
+                    padding: "0.5rem 1rem",
+                    fontSize: "0.72rem",
+                    fontWeight: 500,
+                    letterSpacing: "0.06em",
+                    textTransform: "uppercase",
+                    borderRadius: "4px",
+                    cursor: "pointer",
+                    transition: "all 0.2s",
+                    whiteSpace: "nowrap",
+                  }}
                 >
                   Mark as Paid
                 </button>
@@ -180,60 +268,87 @@ export default function CaretakerDashboard({
         ))}
 
         {units.length === 0 && (
-          <EmptyState
-            icon={Users}
-            title="No active tenants found"
-            description="No active tenants found for this property."
-          />
+          <div
+            style={{
+              textAlign: "center",
+              padding: "3rem",
+              color: "var(--muted)",
+              fontSize: "0.85rem",
+            }}
+          >
+            No active tenants found for this property.
+          </div>
         )}
       </div>
 
       {/* Mark as Paid Modal */}
       {modalUnit && (
         <div
-          className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/40 p-4"
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.4)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1000,
+            padding: "1rem",
+          }}
           onClick={(e) => { if (e.target === e.currentTarget) closeModal(); }}
         >
-          <div className="w-full max-w-[440px] max-h-[90vh] overflow-y-auto rounded-lg bg-white p-6">
-            <h3 className="mb-1 font-serif text-xl font-semibold">
+          <div
+            style={{
+              background: "var(--white)",
+              borderRadius: "8px",
+              padding: "1.5rem",
+              width: "100%",
+              maxWidth: "440px",
+              maxHeight: "90vh",
+              overflowY: "auto",
+            }}
+          >
+            <h3
+              className="font-serif"
+              style={{ fontSize: "1.2rem", fontWeight: 600, marginBottom: "0.3rem" }}
+            >
               Record Payment
             </h3>
-            <p className="mb-6 text-[0.8rem] text-muted">
+            <p style={{ fontSize: "0.8rem", color: "var(--muted)", marginBottom: "1.5rem" }}>
               {modalUnit.tenantName} — {modalUnit.propertyName}
               {modalUnit.unitNumber ? ` · Unit ${modalUnit.unitNumber}` : ""}
             </p>
 
             <form onSubmit={handleSubmit}>
-              <div className="mb-4">
-                <label className="label-upper mb-1.5 block">Amount (KES)</label>
+              <div style={{ marginBottom: "1rem" }}>
+                <label style={labelStyle}>Amount (KES)</label>
                 <input
                   type="number"
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
                   required
                   min="1"
-                  className={inputClasses}
+                  style={inputStyle}
                 />
               </div>
 
-              <div className="mb-4">
-                <label className="label-upper mb-1.5 block">Payment Date</label>
+              <div style={{ marginBottom: "1rem" }}>
+                <label style={labelStyle}>Payment Date</label>
                 <input
                   type="date"
                   value={paidDate}
                   onChange={(e) => setPaidDate(e.target.value)}
                   required
-                  className={inputClasses}
+                  style={inputStyle}
                 />
               </div>
 
-              <div className="mb-4">
-                <label className="label-upper mb-1.5 block">Payment Method</label>
+              <div style={{ marginBottom: "1rem" }}>
+                <label style={labelStyle}>Payment Method</label>
                 <select
                   value={method}
                   onChange={(e) => setMethod(e.target.value)}
                   required
-                  className={`${inputClasses} cursor-pointer`}
+                  style={{ ...inputStyle, cursor: "pointer" }}
                 >
                   <option value="M-Pesa">M-Pesa</option>
                   <option value="Cash">Cash</option>
@@ -242,36 +357,67 @@ export default function CaretakerDashboard({
               </div>
 
               {method === "M-Pesa" && (
-                <div className="mb-4">
-                  <label className="label-upper mb-1.5 block">M-Pesa Reference (optional)</label>
+                <div style={{ marginBottom: "1rem" }}>
+                  <label style={labelStyle}>M-Pesa Reference (optional)</label>
                   <input
                     type="text"
                     value={mpesaRef}
                     onChange={(e) => setMpesaRef(e.target.value)}
                     placeholder="e.g. QHK7ABC123"
-                    className={inputClasses}
+                    style={inputStyle}
                   />
                 </div>
               )}
 
               {error && (
-                <div className="mb-4 rounded bg-red-light px-4 py-3 text-[0.8rem] text-red-soft">
+                <div
+                  style={{
+                    background: "var(--red-light)",
+                    color: "var(--red-soft)",
+                    padding: "0.75rem 1rem",
+                    borderRadius: "4px",
+                    fontSize: "0.8rem",
+                    marginBottom: "1rem",
+                  }}
+                >
                   {error}
                 </div>
               )}
 
-              <div className="flex gap-3">
+              <div className="flex" style={{ gap: "0.75rem" }}>
                 <button
                   type="button"
                   onClick={closeModal}
-                  className="flex-1 rounded border border-warm bg-cream py-3 text-[0.8rem] font-medium text-muted cursor-pointer transition-colors hover:bg-warm/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold"
+                  style={{
+                    flex: 1,
+                    padding: "0.75rem",
+                    background: "var(--cream)",
+                    color: "var(--muted)",
+                    border: "1px solid var(--warm)",
+                    borderRadius: "4px",
+                    fontSize: "0.8rem",
+                    fontWeight: 500,
+                    cursor: "pointer",
+                  }}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={loading}
-                  className="flex-1 rounded bg-ink py-3 text-[0.8rem] font-medium tracking-[0.05em] text-cream border-none cursor-pointer transition-colors hover:bg-ink/90 disabled:cursor-not-allowed disabled:opacity-70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2"
+                  style={{
+                    flex: 1,
+                    padding: "0.75rem",
+                    background: "var(--ink)",
+                    color: "var(--cream)",
+                    border: "none",
+                    borderRadius: "4px",
+                    fontSize: "0.8rem",
+                    fontWeight: 500,
+                    cursor: loading ? "not-allowed" : "pointer",
+                    opacity: loading ? 0.7 : 1,
+                    letterSpacing: "0.05em",
+                  }}
                 >
                   {loading ? "Saving..." : "Confirm Payment"}
                 </button>

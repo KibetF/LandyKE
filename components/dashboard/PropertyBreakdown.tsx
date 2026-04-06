@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { Home } from "lucide-react";
-import EmptyState from "@/components/ui/EmptyState";
 
 interface PropertyData {
   name: string;
@@ -18,40 +17,83 @@ export default function PropertyBreakdown({
   const isEmpty = properties.length === 0;
 
   return (
-    <div className="overflow-hidden rounded-lg border border-gold/8 bg-white transition-all duration-200 hover:-translate-y-px hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)]">
-      <div className="flex items-center justify-between border-b border-warm px-6 py-4">
-        <h3 className="font-serif text-[1.1rem] font-semibold">
+    <div
+      className="card-hover"
+      style={{
+        background: "var(--white)",
+        borderRadius: "8px",
+        border: "1px solid rgba(200,150,62,0.08)",
+        overflow: "hidden",
+      }}
+    >
+      <div
+        className="flex justify-between items-center"
+        style={{
+          padding: "1.2rem 1.5rem",
+          borderBottom: "1px solid var(--warm)",
+        }}
+      >
+        <h3
+          className="font-serif"
+          style={{ fontSize: "1.1rem", fontWeight: 600 }}
+        >
           By Property
         </h3>
         <Link
           href="/properties"
-          className="text-[0.7rem] uppercase tracking-[0.08em] text-gold no-underline"
+          className="uppercase cursor-pointer"
+          style={{
+            fontSize: "0.7rem",
+            color: "var(--gold)",
+            textDecoration: "none",
+            letterSpacing: "0.08em",
+          }}
         >
           Manage →
         </Link>
       </div>
-      <div className="p-2">
+      <div style={{ padding: "0.5rem" }}>
         {isEmpty ? (
-          <EmptyState icon={Home} title="No properties yet" />
+          <div
+            className="flex flex-col items-center justify-center"
+            style={{ padding: "2rem", color: "var(--muted)" }}
+          >
+            <Home size={28} style={{ marginBottom: "0.5rem", opacity: 0.4 }} />
+            <span style={{ fontSize: "0.85rem" }}>No properties yet</span>
+          </div>
         ) : (
           properties.map((p, i) => (
             <div
               key={p.name}
-              className={`row-hover flex cursor-pointer items-center justify-between rounded-md px-4 py-3.5 transition-colors ${
-                i < properties.length - 1 ? "border-b border-warm" : ""
-              }`}
+              className="flex justify-between items-center cursor-pointer row-hover"
+              style={{
+                padding: "0.9rem 1rem",
+                borderRadius: "6px",
+                transition: "background 0.15s",
+                borderBottom:
+                  i < properties.length - 1
+                    ? "1px solid var(--warm)"
+                    : "none",
+              }}
             >
               <div>
-                <h4 className="mb-0.5 text-[0.82rem] font-medium">{p.name}</h4>
-                <span className="text-[0.68rem] text-muted">
+                <h4 style={{ fontSize: "0.82rem", fontWeight: 500, marginBottom: "0.15rem" }}>
+                  {p.name}
+                </h4>
+                <span style={{ fontSize: "0.68rem", color: "var(--muted)" }}>
                   {p.units} units · {p.location}
                 </span>
               </div>
               <div className="text-right">
-                <div className="font-serif text-base font-semibold">
+                <div
+                  className="font-serif"
+                  style={{ fontSize: "1rem", fontWeight: 600 }}
+                >
                   {p.income.toLocaleString()}
                 </div>
-                <div className="text-[0.65rem] text-green">{p.occupancy}</div>
+                <div style={{ fontSize: "0.65rem", color: "var(--green)" }}>
+                  {p.occupancy}
+                </div>
               </div>
             </div>
           ))

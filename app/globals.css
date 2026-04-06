@@ -29,7 +29,6 @@
   --color-rust: var(--rust);
   --color-sage: var(--sage);
   --color-muted: var(--muted);
-  --color-white: var(--white);
   --color-green: var(--green);
   --color-green-light: var(--green-light);
   --color-red-soft: var(--red-soft);
@@ -37,22 +36,6 @@
   --color-amber-light: var(--amber-light);
   --font-sans: var(--font-dm-sans);
   --font-serif: var(--font-cormorant);
-}
-
-/* Reusable component classes */
-@layer components {
-  .card {
-    background: var(--white);
-    border-radius: 8px;
-    border: 1px solid rgba(200, 150, 62, 0.08);
-    padding: 1.5rem;
-  }
-  .label-upper {
-    font-size: 0.65rem;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--muted);
-  }
 }
 
 * {
