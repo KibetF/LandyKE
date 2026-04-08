@@ -4,8 +4,9 @@ import { useState, useEffect, useCallback, Fragment } from "react";
 import {
   UserPlus, Users, Check, AlertCircle, Home, CreditCard,
   Building2, Plus, ChevronDown, ChevronUp, Pencil, Trash2, X,
-  LayoutDashboard, FileText, Send, Download, BarChart3, AlertTriangle, Eye,
+  LayoutDashboard, FileText, Send, Download, BarChart3, AlertTriangle, Eye, Wifi,
 } from "lucide-react";
+import WifiManagement from "@/components/admin/WifiManagement";
 import { generateRentStatement, generatePropertySummary, generateTenantPaymentReport } from "@/lib/pdf/generate-report";
 import { generateReceipt, generateReceiptBlob, generateReceiptNumber, type ReceiptData } from "@/lib/pdf/generate-receipt";
 import { getAvailableMonths } from "@/lib/queries";
@@ -62,6 +63,7 @@ interface Payment {
   due_date: string | null;
   notes: string | null;
   status: string;
+  payment_type?: string;
   tenants?: { full_name: string; property_id: string; unit_number?: string | null; phone?: string | null; properties?: { name: string; location?: string | null } };
 }
 
@@ -69,7 +71,7 @@ interface AdminViewProps {
   landlords: Landlord[];
 }
 
-type Tab = "overview" | "accounts" | "properties" | "tenants" | "payments" | "reports";
+type Tab = "overview" | "accounts" | "properties" | "tenants" | "payments" | "wifi" | "reports";
 
 interface PropertyBreakdown {
   name: string;
@@ -353,6 +355,10 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
     const totalRevenue = reportData.incomeData.reduce((s, d) => s + d.collected, 0);
     const totalExpected = reportData.incomeData.reduce((s, d) => s + d.expected, 0);
     const collectionRate = totalExpected > 0 ? Math.round((totalRevenue / totalExpected) * 100) : 0;
+    const totals = reportData.propertyBreakdown.reduce((acc, p) => ({
+      receivedInAccount: acc.receivedInAccount + (p.receivedInAccount || 0),
+      paidToExternal: acc.paidToExternal + (p.paidToExternal || 0),
+    }), { receivedInAccount: 0, paidToExternal: 0 });
     generateRentStatement({
       month: formatMonthLabel(reportMonth),
       incomeData: reportData.incomeData,
@@ -360,6 +366,8 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
       collectionRate,
       totalCollected: totalRevenue,
       totalExpected,
+      receivedInAccount: totals.receivedInAccount,
+      paidToExternal: totals.paidToExternal,
     });
   }
 
@@ -860,6 +868,7 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
     { key: "properties", label: "Properties", icon: Home },
     { key: "tenants", label: "Tenants", icon: Users },
     { key: "payments", label: "Payments", icon: CreditCard },
+    { key: "wifi", label: "WiFi", icon: Wifi },
     { key: "reports", label: "Reports", icon: FileText },
   ];
 
@@ -1591,6 +1600,9 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
                     <div className="flex justify-between items-center">
                       <div>
                         <h4 style={{ fontSize: "0.85rem", fontWeight: 500, marginBottom: "0.15rem" }}>
+                          {p.payment_type === "wifi" && (
+                            <span style={{ fontSize: "0.55rem", fontWeight: 600, background: "rgba(200,150,62,0.12)", color: "var(--gold)", padding: "0.15rem 0.4rem", borderRadius: "3px", marginRight: "0.4rem", verticalAlign: "middle", textTransform: "uppercase", letterSpacing: "0.05em" }}>WiFi</span>
+                          )}
                           {p.notes || "Payment"} · {p.tenants?.full_name || "—"}
                         </h4>
                         <span style={{ fontSize: "0.7rem", color: "var(--muted)" }}>
@@ -1689,6 +1701,15 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
             </div>
           </div>
         </div>
+      )}
+
+      {/* === WIFI TAB === */}
+      {tab === "wifi" && selectedLandlord && (
+        <WifiManagement
+          properties={properties}
+          tenants={tenants}
+          selectedLandlordId={selectedLandlord.id}
+        />
       )}
 
       {/* === REPORTS TAB === */}

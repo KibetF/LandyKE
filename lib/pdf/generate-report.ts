@@ -9,6 +9,8 @@ interface RentStatementData {
   collectionRate: number;
   totalCollected: number;
   totalExpected: number;
+  receivedInAccount?: number;
+  paidToExternal?: number;
 }
 
 export function generateRentStatement(data: RentStatementData) {
@@ -46,6 +48,22 @@ export function generateRentStatement(data: RentStatementData) {
   });
 
   y += 30;
+
+  // Account reconciliation note
+  const hasExternal = (data.paidToExternal || 0) > 0;
+  if (hasExternal) {
+    doc.setFillColor(...COLORS.cream);
+    doc.roundedRect(20, y, 170, 12, 2, 2, "F");
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(6.5);
+    doc.setTextColor(230, 81, 0);
+    doc.text(
+      `Received in our A/C: KES ${(data.receivedInAccount || 0).toLocaleString()}  |  Paid to old A/C (KCB): KES ${(data.paidToExternal || 0).toLocaleString()}`,
+      25,
+      y + 7.5
+    );
+    y += 16;
+  }
 
   // Income trend table
   y = addSectionTitle(doc, "Income Trend — Last 6 Months", y);
