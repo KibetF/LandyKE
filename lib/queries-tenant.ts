@@ -40,6 +40,28 @@ export async function getTenantDocuments(supabase: SupabaseClient, tenantId: str
   return data || [];
 }
 
+export async function getTenantWifiSubscription(supabase: SupabaseClient, tenantId: string) {
+  const { data } = await supabase
+    .schema("landyke")
+    .from("wifi_subscriptions")
+    .select("*, property_wifi_plans(*, wifi_plans(*))")
+    .eq("tenant_id", tenantId)
+    .eq("status", "active")
+    .single();
+  return data;
+}
+
+export async function getPropertyWifiPlansForTenant(supabase: SupabaseClient, propertyId: string) {
+  const { data } = await supabase
+    .schema("landyke")
+    .from("property_wifi_plans")
+    .select("*, wifi_plans(*)")
+    .eq("property_id", propertyId)
+    .eq("is_available", true)
+    .order("wifi_plans(sort_order)", { ascending: true });
+  return data || [];
+}
+
 /**
  * Compute the tenant's current month balance/status.
  */

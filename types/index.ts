@@ -125,3 +125,35 @@ export interface TenantPaymentSummary {
   lastPaymentDate: string | null;
   lastPaymentAmount: number | null;
 }
+
+export interface WifiPlan {
+  id: string;
+  name: string;
+  description: string | null;
+  default_price: number;
+  sort_order: number;
+  is_active: boolean;
+  created_at?: string;
+}
+
+export interface PropertyWifiPlan {
+  id: string;
+  property_id: string;
+  wifi_plan_id: string;
+  price: number;
+  is_available: boolean;
+  created_at?: string;
+  wifi_plans?: WifiPlan;
+}
+
+export interface WifiSubscription {
+  id: string;
+  tenant_id: string;
+  property_wifi_plan_id: string;
+  status: "active" | "suspended" | "cancelled";
+  started_at: string;
+  ended_at: string | null;
+  created_at?: string;
+  property_wifi_plans?: PropertyWifiPlan & { wifi_plans?: WifiPlan };
+  tenants?: { full_name: string; unit_number: string | null; property_id: string; properties?: { name: string } };
+}

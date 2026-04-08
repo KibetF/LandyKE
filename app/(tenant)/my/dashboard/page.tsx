@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { getTenantByUserId, getTenantPayments, computeTenantBalance } from "@/lib/queries-tenant";
+import { getTenantByUserId, getTenantPayments, computeTenantBalance, getTenantWifiSubscription } from "@/lib/queries-tenant";
 import TenantDashboard from "@/components/tenant/TenantDashboard";
 
 export default async function TenantDashboardPage() {
@@ -14,8 +14,17 @@ export default async function TenantDashboardPage() {
   const tenant = await getTenantByUserId(supabase, user.id);
   if (!tenant) redirect("/unauthorized");
 
-  const payments = await getTenantPayments(supabase, tenant.id);
+  const [payments, wifiSub] = await Promise.all([
+    getTenantPayments(supabase, tenant.id),
+    getTenantWifiSubscription(supabase, tenant.id),
+  ]);
   const balance = computeTenantBalance(payments, Number(tenant.rent_amount || tenant.monthly_rent));
+
+  const wifiInfo = wifiSub ? {
+    planName: wifiSub.property_wifi_plans?.wifi_plans?.name || "WiFi",
+    price: Number(wifiSub.property_wifi_plans?.price || 0),
+    status: wifiSub.status as "active" | "suspended" | "cancelled",
+  } : null;
 
   return (
     <TenantDashboard
@@ -40,6 +49,7 @@ export default async function TenantDashboardPage() {
         status: p.status as string,
       }))}
       balance={balance}
+      wifi={wifiInfo}
     />
   );
 }

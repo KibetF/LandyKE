@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Wrench, FileText, CheckCircle, Clock, AlertCircle } from "lucide-react";
+import { Wrench, FileText, CheckCircle, Clock, AlertCircle, Wifi } from "lucide-react";
 import type { TenantPaymentSummary } from "@/types";
 
 interface TenantInfo {
@@ -26,10 +26,17 @@ interface PaymentRow {
   status: string;
 }
 
+interface WifiInfo {
+  planName: string;
+  price: number;
+  status: "active" | "suspended" | "cancelled";
+}
+
 interface Props {
   tenant: TenantInfo;
   payments: PaymentRow[];
   balance: TenantPaymentSummary;
+  wifi?: WifiInfo | null;
 }
 
 const statusConfig = {
@@ -39,7 +46,7 @@ const statusConfig = {
   vacated_unpaid: { bg: "#f0eded", color: "#6b5e5e", label: "Vacated - Unpaid", Icon: AlertCircle },
 };
 
-export default function TenantDashboard({ tenant, payments, balance }: Props) {
+export default function TenantDashboard({ tenant, payments, balance, wifi }: Props) {
   const config = statusConfig[balance.currentMonthStatus];
   const StatusIcon = config.Icon;
 
@@ -110,6 +117,53 @@ export default function TenantDashboard({ tenant, payments, balance }: Props) {
           </div>
         </div>
       </div>
+
+      {/* WiFi card */}
+      {wifi && (
+        <Link
+          href="/my/wifi"
+          className="no-underline"
+          style={{ display: "block", marginBottom: "1.5rem" }}
+        >
+          <div
+            className="card-hover"
+            style={{
+              background: "var(--white)",
+              borderRadius: "8px",
+              border: "1px solid rgba(200,150,62,0.08)",
+              padding: "1rem 1.5rem",
+            }}
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center" style={{ gap: "0.75rem" }}>
+                <Wifi size={18} style={{ color: "var(--gold)" }} />
+                <div>
+                  <h4 style={{ fontSize: "0.85rem", fontWeight: 500, color: "var(--ink)" }}>
+                    {wifi.planName} WiFi
+                  </h4>
+                  <span style={{ fontSize: "0.7rem", color: "var(--muted)" }}>
+                    KES {wifi.price.toLocaleString()}/mo
+                  </span>
+                </div>
+              </div>
+              <span
+                style={{
+                  padding: "0.2rem 0.5rem",
+                  fontSize: "0.6rem",
+                  fontWeight: 600,
+                  borderRadius: "4px",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.05em",
+                  background: wifi.status === "active" ? "rgba(45,106,79,0.1)" : wifi.status === "suspended" ? "var(--amber-light)" : "rgba(139,58,42,0.1)",
+                  color: wifi.status === "active" ? "var(--green)" : wifi.status === "suspended" ? "var(--gold)" : "var(--rust)",
+                }}
+              >
+                {wifi.status}
+              </span>
+            </div>
+          </div>
+        </Link>
+      )}
 
       {/* Quick actions */}
       <div className="flex" style={{ gap: "1rem", marginBottom: "2rem", flexWrap: "wrap" }}>

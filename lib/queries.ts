@@ -48,6 +48,38 @@ export async function getPayments(supabase: SupabaseClient, landlordId: string) 
   return data || [];
 }
 
+// --- WiFi queries ---
+
+export async function getWifiPlans(supabase: SupabaseClient) {
+  const { data } = await supabase
+    .schema("landyke")
+    .from("wifi_plans")
+    .select("*")
+    .eq("is_active", true)
+    .order("sort_order", { ascending: true });
+  return data || [];
+}
+
+export async function getPropertyWifiPlans(supabase: SupabaseClient, propertyId: string) {
+  const { data } = await supabase
+    .schema("landyke")
+    .from("property_wifi_plans")
+    .select("*, wifi_plans(*)")
+    .eq("property_id", propertyId)
+    .order("wifi_plans(sort_order)", { ascending: true });
+  return data || [];
+}
+
+export async function getWifiSubscriptions(supabase: SupabaseClient, propertyId: string) {
+  const { data } = await supabase
+    .schema("landyke")
+    .from("wifi_subscriptions")
+    .select("*, property_wifi_plans(*, wifi_plans(*)), tenants(full_name, unit_number, property_id, properties(name))")
+    .eq("tenants.property_id", propertyId)
+    .order("created_at", { ascending: false });
+  return data || [];
+}
+
 // --- Paginated queries ---
 
 const PAGE_SIZE = 20;

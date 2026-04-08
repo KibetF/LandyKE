@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Wrench, FileIcon, User, LogOut } from "lucide-react";
+import { LayoutDashboard, Wrench, FileIcon, User, LogOut, Wifi } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
 const navItems = [
   { href: "/my/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/my/maintenance", label: "Maintenance", icon: Wrench },
+  { href: "/my/wifi", label: "WiFi", icon: Wifi },
   { href: "/my/documents", label: "Documents", icon: FileIcon },
   { href: "/my/profile", label: "Profile", icon: User },
 ];
