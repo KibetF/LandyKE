@@ -1,11 +1,14 @@
 interface StatusPillProps {
-  status: "paid" | "pending" | "overdue" | "vacated_unpaid" | "active" | "inactive" | "moved" | "open" | "in-progress" | "completed" | "low" | "medium" | "high" | "urgent";
+  status: "paid" | "pending" | "overdue" | "vacated_unpaid" | "partial" | "credit" | "outstanding" | "active" | "inactive" | "moved" | "open" | "in-progress" | "completed" | "low" | "medium" | "high" | "urgent";
 }
 
 const statusStyles: Record<string, { background: string; color: string }> = {
   paid: { background: "var(--green-light)", color: "var(--green)" },
   pending: { background: "var(--amber-light)", color: "#7a5c00" },
   overdue: { background: "var(--red-light)", color: "var(--red-soft)" },
+  partial: { background: "#fdf2dd", color: "#8a5a00" },
+  credit: { background: "#e0f0e6", color: "#1f6b3a" },
+  outstanding: { background: "var(--red-light)", color: "var(--red-soft)" },
   vacated_unpaid: { background: "#f0eded", color: "#6b5e5e" },
   active: { background: "var(--green-light)", color: "var(--green)" },
   inactive: { background: "var(--red-light)", color: "var(--red-soft)" },

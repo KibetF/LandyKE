@@ -41,6 +41,7 @@ interface Props {
 
 const statusConfig = {
   paid: { bg: "var(--green-light)", color: "var(--green)", label: "Paid", Icon: CheckCircle },
+  partial: { bg: "#fdf2dd", color: "#8a5a00", label: "Partial", Icon: AlertCircle },
   pending: { bg: "var(--amber-light)", color: "var(--gold)", label: "Pending", Icon: Clock },
   overdue: { bg: "var(--red-light)", color: "var(--red-soft)", label: "Overdue", Icon: AlertCircle },
   vacated_unpaid: { bg: "#f0eded", color: "#6b5e5e", label: "Vacated - Unpaid", Icon: AlertCircle },
@@ -99,11 +100,16 @@ export default function TenantDashboard({ tenant, payments, balance, wifi }: Pro
         <div className="flex items-end" style={{ gap: "1rem", flexWrap: "wrap" }}>
           <div style={{ minWidth: "200px" }}>
             <p style={{ fontSize: "0.7rem", color: "var(--muted)", marginBottom: "0.25rem" }}>
-              {balance.currentMonthStatus === "paid" ? "Rent Paid" : "Amount Due"}
+              {balance.netPosition >= 0 ? "Credit Balance" : "Amount Owed"}
             </p>
-            <p className="font-serif" style={{ fontSize: "2rem", fontWeight: 600, color: "var(--ink)" }}>
-              KES {(balance.currentMonthStatus === "paid" ? tenant.rent_amount : balance.balance).toLocaleString("en-KE")}
+            <p className="font-serif" style={{ fontSize: "2rem", fontWeight: 600, color: balance.netPosition >= 0 ? "var(--green)" : "var(--ink)" }}>
+              KES {Math.abs(balance.netPosition).toLocaleString("en-KE")}
             </p>
+            {balance.currentMonthStatus === "partial" && balance.balance > 0 && (
+              <p style={{ fontSize: "0.7rem", color: "#8a5a00", marginTop: "0.25rem" }}>
+                KES {balance.balance.toLocaleString("en-KE")} still owed for {currentMonthLabel}
+              </p>
+            )}
           </div>
           <div style={{ marginLeft: "auto" }}>
             <p style={{ fontSize: "0.7rem", color: "var(--muted)" }}>

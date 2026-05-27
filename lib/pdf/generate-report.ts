@@ -156,7 +156,7 @@ interface TenantPaymentReportData {
     unit?: string;
     amount: number;
     date: string;
-    status: "paid" | "pending" | "overdue" | "vacated_unpaid";
+    status: "paid" | "pending" | "overdue" | "vacated_unpaid" | "partial";
     notes?: string;
   }[];
   totalCollected: number;
@@ -172,6 +172,7 @@ export function generateTenantPaymentReport(data: TenantPaymentReportData) {
 
   // Summary boxes
   const paidCount = data.tenants.filter((t) => t.status === "paid").length;
+  const partialCount = data.tenants.filter((t) => t.status === "partial").length;
   const overdueCount = data.tenants.filter((t) => t.status === "overdue").length;
   const pendingCount = data.tenants.filter((t) => t.status === "pending").length;
   const vacatedCount = data.tenants.filter((t) => t.status === "vacated_unpaid").length;
@@ -179,6 +180,7 @@ export function generateTenantPaymentReport(data: TenantPaymentReportData) {
   const summaryItems: { label: string; value: string; color: [number, number, number] }[] = [
     { label: "Total Tenants", value: `${data.tenants.length}`, color: COLORS.ink },
     { label: "Paid", value: `${paidCount}`, color: COLORS.green },
+    { label: "Partial", value: `${partialCount}`, color: [138, 90, 0] },
     { label: "Pending", value: `${pendingCount}`, color: COLORS.gold },
     { label: "Overdue", value: `${overdueCount}`, color: COLORS.rust },
   ];

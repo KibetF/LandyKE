@@ -1,6 +1,8 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { addHeader, addFooter, addSectionTitle, COLORS } from "./pdf-theme";
+import type { TenantPaymentSummary } from "@/types";
+import { periodOf } from "@/lib/queries";
 
 interface TenantInfo {
   full_name: string;
@@ -13,11 +15,17 @@ interface TenantInfo {
 interface PaymentRow {
   amount: number;
   paid_date: string | null;
+  rent_period: string | null;
   method: string;
   status: string;
+  payment_type?: string | null;
 }
 
-export function generateTenantRentStatement(tenant: TenantInfo, payments: PaymentRow[]) {
+export function generateTenantRentStatement(
+  tenant: TenantInfo,
+  payments: PaymentRow[],
+  summary: TenantPaymentSummary
+) {
   const doc = new jsPDF();
 
   let y = addHeader(doc, "Rent Statement", tenant.full_name);
@@ -47,23 +55,49 @@ export function generateTenantRentStatement(tenant: TenantInfo, payments: Paymen
 
   y += 6;
 
-  // Payment history table
-  y = addSectionTitle(doc, "Payment History", y);
+  // Account summary
+  y = addSectionTitle(doc, "Account Summary", y);
+  const balanceLabel = summary.netPosition >= 0 ? "Credit Balance" : "Amount Owed";
+  const balanceValue = `KES ${Math.abs(summary.netPosition).toLocaleString("en-KE")}`;
+  const summaryRows = [
+    [balanceLabel, balanceValue],
+    ["Total Outstanding", `KES ${summary.totalOutstanding.toLocaleString("en-KE")}`],
+    ["Credit / Advance", `KES ${summary.carriedCredit.toLocaleString("en-KE")}`],
+  ];
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
+  summaryRows.forEach(([label, value]) => {
+    doc.setTextColor(...COLORS.muted);
+    doc.text(label + ":", 20, y);
+    doc.setTextColor(...COLORS.ink);
+    doc.text(value, 80, y);
+    y += 5.5;
+  });
 
-  const tableData = payments.map((p, i) => [
-    String(i + 1),
-    p.paid_date
-      ? new Date(p.paid_date).toLocaleDateString("en-KE", { day: "numeric", month: "short", year: "numeric" })
-      : "—",
-    `KES ${p.amount.toLocaleString("en-KE")}`,
-    p.method,
-    p.status.charAt(0).toUpperCase() + p.status.slice(1),
-  ]);
+  y += 6;
+
+  // Month-by-month ledger
+  y = addSectionTitle(doc, "Month-by-Month Ledger", y);
+  const ledgerRows = [...summary.perMonth].sort((a, b) => (a.period < b.period ? 1 : -1));
+  const ledgerData = ledgerRows.map((row) => {
+    const balanceText = row.balance > 0
+      ? `KES ${row.balance.toLocaleString("en-KE")}`
+      : row.balance < 0
+        ? `+KES ${(-row.balance).toLocaleString("en-KE")}`
+        : "—";
+    return [
+      row.periodLabel,
+      `KES ${row.expected.toLocaleString("en-KE")}`,
+      `KES ${row.paid.toLocaleString("en-KE")}`,
+      balanceText,
+      row.status.charAt(0).toUpperCase() + row.status.slice(1),
+    ];
+  });
 
   autoTable(doc, {
     startY: y,
-    head: [["#", "Date", "Amount", "Method", "Status"]],
-    body: tableData,
+    head: [["Period", "Expected", "Paid", "Balance", "Status"]],
+    body: ledgerData,
     theme: "plain",
     styles: {
       font: "helvetica",
@@ -79,42 +113,60 @@ export function generateTenantRentStatement(tenant: TenantInfo, payments: Paymen
       fontStyle: "bold",
       fontSize: 7.5,
     },
-    alternateRowStyles: {
-      fillColor: [250, 248, 244],
-    },
+    alternateRowStyles: { fillColor: [250, 248, 244] },
     columnStyles: {
-      0: { cellWidth: 12 },
+      1: { halign: "right" },
       2: { halign: "right" },
+      3: { halign: "right" },
     },
   });
 
-  // Balance summary
+  // Payment events history
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const finalY = (doc as any).lastAutoTable?.finalY || y + 20;
-  let summaryY = finalY + 10;
+  let nextY = (doc as any).lastAutoTable?.finalY || y + 20;
+  nextY += 10;
 
-  summaryY = addSectionTitle(doc, "Summary", summaryY);
+  if (payments.length > 0) {
+    nextY = addSectionTitle(doc, "Payment Events", nextY);
+    const eventData = payments
+      .filter((p) => !p.payment_type || p.payment_type === "rent")
+      .map((p, i) => [
+        String(i + 1),
+        p.paid_date
+          ? new Date(p.paid_date).toLocaleDateString("en-KE", { day: "numeric", month: "short", year: "numeric" })
+          : "—",
+        `KES ${p.amount.toLocaleString("en-KE")}`,
+        p.method,
+        periodOf(p) || "—",
+        p.status.charAt(0).toUpperCase() + p.status.slice(1),
+      ]);
 
-  const totalPaid = payments
-    .filter((p) => p.status === "paid")
-    .reduce((s, p) => s + p.amount, 0);
-  const totalPayments = payments.filter((p) => p.status === "paid").length;
-
-  const summaryRows = [
-    ["Total Payments Made", String(totalPayments)],
-    ["Total Amount Paid", `KES ${totalPaid.toLocaleString("en-KE")}`],
-    ["Monthly Rent", `KES ${tenant.rent_amount.toLocaleString("en-KE")}`],
-  ];
-
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(9);
-  summaryRows.forEach(([label, value]) => {
-    doc.setTextColor(...COLORS.muted);
-    doc.text(label + ":", 20, summaryY);
-    doc.setTextColor(...COLORS.ink);
-    doc.text(value, 80, summaryY);
-    summaryY += 5.5;
-  });
+    autoTable(doc, {
+      startY: nextY,
+      head: [["#", "Paid Date", "Amount", "Method", "For Period", "Status"]],
+      body: eventData,
+      theme: "plain",
+      styles: {
+        font: "helvetica",
+        fontSize: 8.5,
+        cellPadding: 3,
+        textColor: COLORS.ink,
+        lineColor: COLORS.warm,
+        lineWidth: 0.3,
+      },
+      headStyles: {
+        fillColor: COLORS.cream,
+        textColor: COLORS.ink,
+        fontStyle: "bold",
+        fontSize: 7.5,
+      },
+      alternateRowStyles: { fillColor: [250, 248, 244] },
+      columnStyles: {
+        0: { cellWidth: 12 },
+        2: { halign: "right" },
+      },
+    });
+  }
 
   // Footer
   const totalPages = doc.getNumberOfPages();

@@ -18,8 +18,8 @@ interface ReportsViewProps {
   incomeData: { month: string; collected: number; expected: number }[];
   occupancyData: { name: string; total: number; occupied: number; rate: number }[];
   collectionRates: { month: string; rate: number }[];
-  arrearsData: { tenant: string; property: string; unit: string; amount: number; days: number }[];
-  tenantStatusData: { name: string; property: string; unit?: string; amount: number; date: string; status: "paid" | "pending" | "overdue" | "vacated_unpaid" }[];
+  arrearsData: { tenant: string; property: string; unit: string; amount: number; rentTotal?: number; paid?: number; days: number }[];
+  tenantStatusData: { name: string; property: string; unit?: string; amount: number; date: string; status: "paid" | "pending" | "overdue" | "vacated_unpaid" | "partial" }[];
   selectedMonth: string;
 }
 

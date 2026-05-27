@@ -33,8 +33,8 @@ export default async function ReportsPage({
   let incomeData: { month: string; collected: number; expected: number }[] = [];
   let occupancyData: { name: string; total: number; occupied: number; rate: number }[] = [];
   let collectionRates: { month: string; rate: number }[] = [];
-  let arrearsData: { tenant: string; property: string; unit: string; amount: number; days: number }[] = [];
-  let tenantStatusData: { name: string; property: string; unit: string; amount: number; date: string; status: "paid" | "pending" | "overdue" | "vacated_unpaid" }[] = [];
+  let arrearsData: { tenant: string; property: string; unit: string; amount: number; rentTotal?: number; paid?: number; days: number }[] = [];
+  let tenantStatusData: { name: string; property: string; unit: string; amount: number; date: string; status: "paid" | "pending" | "overdue" | "vacated_unpaid" | "partial" }[] = [];
 
   if (user) {
     const landlord = await getLandlord(supabase, user.id);

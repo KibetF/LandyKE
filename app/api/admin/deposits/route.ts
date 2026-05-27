@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { createNotification } from "@/lib/notifications";
 
 async function verifyAdmin() {
   const supabase = await createClient();
@@ -22,13 +21,13 @@ export async function GET(request: NextRequest) {
   const adminClient = createAdminClient();
   const { data, error } = await adminClient
     .schema("landyke")
-    .from("payments")
+    .from("deposits")
     .select("*, tenants(full_name, property_id, unit_number, phone, properties(name, location))")
     .eq("landlord_id", landlordId)
-    .order("paid_date", { ascending: false });
+    .order("deposit_date", { ascending: false });
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ payments: data || [] });
+  return NextResponse.json({ deposits: data || [] });
 }
 
 export async function POST(request: NextRequest) {
@@ -36,53 +35,29 @@ export async function POST(request: NextRequest) {
   if (!user) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const body = await request.json();
-  const { tenant_id, landlord_id, amount, paid_date, due_date, notes, status, rent_period, method, payment_type } = body;
+  const { tenant_id, landlord_id, property_id, amount, deposit_date, notes } = body;
 
-  if (!tenant_id || !landlord_id || !amount || !status) {
-    return NextResponse.json({ error: "tenant_id, landlord_id, amount, and status are required" }, { status: 400 });
-  }
-
-  let resolvedPeriod: string | null = rent_period || null;
-  if (!resolvedPeriod && paid_date) {
-    resolvedPeriod = String(paid_date).slice(0, 7);
+  if (!tenant_id || !landlord_id || !property_id || !amount) {
+    return NextResponse.json({ error: "tenant_id, landlord_id, property_id, and amount are required" }, { status: 400 });
   }
 
   const adminClient = createAdminClient();
   const { data, error } = await adminClient
     .schema("landyke")
-    .from("payments")
+    .from("deposits")
     .insert({
       tenant_id,
       landlord_id,
+      property_id,
       amount: Number(amount),
-      paid_date: paid_date || null,
-      due_date: due_date || null,
+      deposit_date: deposit_date || new Date().toISOString().split("T")[0],
       notes: notes || null,
-      status,
-      rent_period: resolvedPeriod,
-      method: method || undefined,
-      payment_type: payment_type || undefined,
     })
     .select("*, tenants(full_name, property_id, unit_number, phone, properties(name, location))")
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
-
-  // Create notification for payment received
-  if (data) {
-    const tenantName = data.tenants?.full_name || "Unknown";
-    const propertyName = data.tenants?.properties?.name || "";
-    await createNotification(
-      adminClient,
-      landlord_id,
-      "payment_received",
-      "Payment Received",
-      `KES ${Number(amount).toLocaleString()} from ${tenantName} — ${propertyName}`,
-      { payment_id: data.id, tenant_id, amount: Number(amount) }
-    );
-  }
-
-  return NextResponse.json({ payment: data }, { status: 201 });
+  return NextResponse.json({ deposit: data }, { status: 201 });
 }
 
 export async function PATCH(request: NextRequest) {
@@ -90,61 +65,72 @@ export async function PATCH(request: NextRequest) {
   if (!user) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const body = await request.json();
-  const { payment_id, status, paid_date, rent_period, amount, notes } = body;
+  const { deposit_id, status, return_date, amount_returned, deductions, return_reason, amount, deposit_date, notes } = body;
 
-  if (!payment_id || !status) {
-    return NextResponse.json({ error: "payment_id and status are required" }, { status: 400 });
+  if (!deposit_id) {
+    return NextResponse.json({ error: "deposit_id is required" }, { status: 400 });
   }
 
   const adminClient = createAdminClient();
-  const updateData: Record<string, string | number | null> = { status };
-  if (status === "paid" && paid_date) {
-    updateData.paid_date = paid_date;
+
+  // If processing a return/refund/forfeit
+  if (status && status !== "held") {
+    const updateData: Record<string, unknown> = {
+      status,
+      return_date: return_date || new Date().toISOString().split("T")[0],
+      amount_returned: Number(amount_returned || 0),
+      deductions: Number(deductions || 0),
+      return_reason: return_reason || null,
+    };
+
+    const { data, error } = await adminClient
+      .schema("landyke")
+      .from("deposits")
+      .update(updateData)
+      .eq("id", deposit_id)
+      .eq("status", "held") // Only allow processing held deposits
+      .select("*, tenants(full_name, property_id, unit_number, phone, properties(name, location))")
+      .single();
+
+    if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+    return NextResponse.json({ deposit: data });
   }
-  if (rent_period !== undefined) updateData.rent_period = rent_period || null;
+
+  // Otherwise, edit a held deposit's basic fields
+  const updateData: Record<string, unknown> = {};
   if (amount !== undefined) updateData.amount = Number(amount);
+  if (deposit_date) updateData.deposit_date = deposit_date;
   if (notes !== undefined) updateData.notes = notes || null;
 
   const { data, error } = await adminClient
     .schema("landyke")
-    .from("payments")
+    .from("deposits")
     .update(updateData)
-    .eq("id", payment_id)
+    .eq("id", deposit_id)
+    .eq("status", "held")
     .select("*, tenants(full_name, property_id, unit_number, phone, properties(name, location))")
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
-
-  // Create notification if payment marked overdue
-  if (data && status === "overdue") {
-    const tenantName = data.tenants?.full_name || "Unknown";
-    const propertyName = data.tenants?.properties?.name || "";
-    await createNotification(
-      adminClient,
-      data.landlord_id,
-      "payment_overdue",
-      "Payment Overdue",
-      `${tenantName} — ${propertyName} payment is now overdue`,
-      { payment_id: data.id, tenant_id: data.tenant_id }
-    );
-  }
-
-  return NextResponse.json({ payment: data });
+  return NextResponse.json({ deposit: data });
 }
 
 export async function DELETE(request: NextRequest) {
   const user = await verifyAdmin();
   if (!user) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
-  const { payment_id } = await request.json();
-  if (!payment_id) return NextResponse.json({ error: "payment_id required" }, { status: 400 });
+  const { deposit_id } = await request.json();
+  if (!deposit_id) return NextResponse.json({ error: "deposit_id required" }, { status: 400 });
 
   const adminClient = createAdminClient();
+
+  // Only allow deleting held deposits
   const { error } = await adminClient
     .schema("landyke")
-    .from("payments")
+    .from("deposits")
     .delete()
-    .eq("id", payment_id);
+    .eq("id", deposit_id)
+    .eq("status", "held");
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ success: true });

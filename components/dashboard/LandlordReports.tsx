@@ -34,7 +34,7 @@ interface TenantStatus {
   unit?: string;
   amount: number;
   date: string;
-  status: "paid" | "pending" | "overdue";
+  status: "paid" | "pending" | "overdue" | "partial" | "vacated_unpaid";
   notes?: string;
 }
 
@@ -161,6 +161,7 @@ export default function LandlordReports({ selectedMonth }: { selectedMonth: stri
   const occupiedUnits = reportData.occupancyData.reduce((s, d) => s + d.occupied, 0);
   const occupancyRate = totalUnits > 0 ? Math.round((occupiedUnits / totalUnits) * 100) : 0;
   const paidCount = reportData.tenantStatusData.filter((t) => t.status === "paid").length;
+  const partialCount = reportData.tenantStatusData.filter((t) => t.status === "partial").length;
   const pendingCount = reportData.tenantStatusData.filter((t) => t.status === "pending").length;
   const overdueCount = reportData.tenantStatusData.filter((t) => t.status === "overdue").length;
 
@@ -172,10 +173,11 @@ export default function LandlordReports({ selectedMonth }: { selectedMonth: stri
 
   const statusData = [
     { name: "Paid", value: paidCount },
+    { name: "Partial", value: partialCount },
     { name: "Pending", value: pendingCount },
     { name: "Overdue", value: overdueCount },
   ].filter((d) => d.value > 0);
-  const statusColors = ["#2d6a4f", "#c8963e", "#8b3a2a"];
+  const statusColors = ["#2d6a4f", "#c8963e", "#d4a447", "#8b3a2a"];
 
   return (
     <>
@@ -406,10 +408,16 @@ export default function LandlordReports({ selectedMonth }: { selectedMonth: stri
                                         <td style={{ padding: "0.6rem 1rem" }}>KES {t.amount.toLocaleString()}</td>
                                         <td style={{ padding: "0.6rem 1rem" }}>
                                           <span className="status-pill" style={{
-                                            background: t.status === "paid" ? "var(--green-light)" : t.status === "pending" ? "var(--gold-light)" : "var(--red-light)",
-                                            color: t.status === "paid" ? "var(--green)" : t.status === "pending" ? "var(--gold)" : "var(--rust)",
+                                            background: t.status === "paid" ? "var(--green-light)"
+                                              : t.status === "pending" ? "var(--gold-light)"
+                                              : t.status === "partial" ? "#fdf2dd"
+                                              : "var(--red-light)",
+                                            color: t.status === "paid" ? "var(--green)"
+                                              : t.status === "pending" ? "var(--gold)"
+                                              : t.status === "partial" ? "#8a5a00"
+                                              : "var(--rust)",
                                           }}>
-                                            {t.status.charAt(0).toUpperCase() + t.status.slice(1)}
+                                            {t.status === "vacated_unpaid" ? "Vacated" : t.status.charAt(0).toUpperCase() + t.status.slice(1)}
                                           </span>
                                         </td>
                                         <td className="reports-table-mobile-hide" style={{ padding: "0.6rem 1rem", fontSize: "0.75rem", color: "var(--muted)" }}>{t.date}</td>

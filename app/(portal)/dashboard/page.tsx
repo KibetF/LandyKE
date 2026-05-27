@@ -7,9 +7,9 @@ import {
   getActiveTenants,
   getPayments,
   getMonthRange,
-  getMonthStart,
   getMonthEnd,
   formatMonthKey,
+  periodOf,
   computeIncomeByMonth,
   computePropertyBreakdown,
   computeTenantStatus,
@@ -52,7 +52,7 @@ export default async function DashboardPage({
   let userName = "User";
   let incomeData: { month: string; collected: number; expected: number }[] = [];
   let properties: { name: string; location: string; units: number; income: number; occupancy: string }[] = [];
-  let tenants: { initials: string; color: string; name: string; property: string; amount: number; date: string; status: "paid" | "pending" | "overdue" | "vacated_unpaid" }[] = [];
+  let tenants: { initials: string; color: string; name: string; property: string; amount: number; date: string; status: "paid" | "pending" | "overdue" | "vacated_unpaid" | "partial" }[] = [];
   let transactions: { title: string; detail: string; amount: string; isDeduction?: boolean }[] = [];
   let kpiData = {
     totalCollected: 0,
@@ -83,7 +83,6 @@ export default async function DashboardPage({
 
         // Count tenants created during or before the selected month for expected rent
         // Also skip tenants from properties where collection hasn't started yet
-        const monthStart = getMonthStart(selectedMonth);
         const monthEndStr = getMonthEnd(selectedMonth);
         const propStartMap = new Map(dbProperties.map((p: { id: string; collection_start_month?: string | null }) => [p.id, p.collection_start_month]));
         const tenantsForMonth = activeTenants.filter(
@@ -99,21 +98,30 @@ export default async function DashboardPage({
         const totalUnits = dbProperties.reduce((sum: number, p: { total_units: number }) => sum + (p.total_units || 0), 0);
         const occupancyRate = totalUnits > 0 ? Math.round((activeTenants.length / totalUnits) * 100) : 0;
 
-        // Filter payments for selected month using paid_date
-        const monthEnd = getMonthEnd(selectedMonth);
-        const monthPayments = allPayments.filter(
-          (p: { paid_date: string | null }) => p.paid_date && p.paid_date >= monthStart && p.paid_date <= monthEnd
-        );
+        // Filter payments for selected period using rent_period (fallback to paid_date YYYY-MM)
+        const monthPayments = allPayments.filter((p: { paid_date: string | null; rent_period?: string | null; payment_type?: string | null }) => {
+          if (p.payment_type && p.payment_type !== "rent") return false;
+          return periodOf(p) === selectedMonth;
+        });
         const paidPayments = monthPayments.filter((p: { status: string }) => p.status === "paid");
         const totalCollected = paidPayments.reduce((sum: number, p: { amount: number }) => sum + Number(p.amount), 0);
+
+        // Tenants who paid in full for the period (paid sum >= rent)
+        const tenantPaidSum = new Map<string, number>();
+        for (const p of paidPayments as Array<{ tenant_id: string; amount: number }>) {
+          tenantPaidSum.set(p.tenant_id, (tenantPaidSum.get(p.tenant_id) || 0) + Number(p.amount));
+        }
+        const tenantsFullyPaid = tenantsForMonth.filter((t: { id: string; rent_amount: number }) =>
+          (tenantPaidSum.get(t.id) || 0) >= Number(t.rent_amount)
+        ).length;
 
         kpiData = {
           totalCollected,
           totalExpected,
-          tenantsPaid: paidPayments.length,
+          tenantsPaid: tenantsFullyPaid,
           totalTenants,
           outstanding: Math.max(0, totalExpected - totalCollected),
-          outstandingCount: totalTenants - paidPayments.length,
+          outstandingCount: totalTenants - tenantsFullyPaid,
           propertyCount: dbProperties.length,
           totalUnits,
           occupancyRate,

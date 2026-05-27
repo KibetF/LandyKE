@@ -9,7 +9,7 @@ interface TenantStatus {
   property: string;
   amount: number;
   date: string;
-  status: "paid" | "pending" | "overdue" | "vacated_unpaid";
+  status: "paid" | "pending" | "overdue" | "vacated_unpaid" | "partial";
 }
 
 export default function TenantStatusList({

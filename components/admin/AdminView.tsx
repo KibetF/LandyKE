@@ -6,7 +6,7 @@ import {
   Building2, Plus, ChevronDown, ChevronUp, Pencil, Trash2, X,
   LayoutDashboard, FileText, Send, Download, BarChart3, AlertTriangle, Eye, Wifi, Banknote, MessageCircle,
 } from "lucide-react";
-import { normalizePhone } from "@/lib/sms/twilio-client";
+import { normalizePhone } from "@/lib/sms/phone";
 import WifiManagement from "@/components/admin/WifiManagement";
 import DepositsManagement from "@/components/admin/DepositsManagement";
 import { generateRentStatement, generatePropertySummary, generateTenantPaymentReport } from "@/lib/pdf/generate-report";

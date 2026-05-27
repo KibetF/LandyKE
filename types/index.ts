@@ -39,8 +39,11 @@ export interface Payment {
   amount: number;
   due_date: string | null;
   paid_date: string | null;
+  rent_period: string | null;
   status: string;
   notes: string | null;
+  method?: string | null;
+  payment_type?: string | null;
   marked_by?: string | null;
   created_at?: string;
 }
@@ -119,11 +122,54 @@ export interface TenantProfile {
   properties?: { name: string; location: string | null };
 }
 
-export interface TenantPaymentSummary {
-  currentMonthStatus: "paid" | "pending" | "overdue" | "vacated_unpaid";
+export type PeriodStatus =
+  | "paid"
+  | "partial"
+  | "credit"
+  | "outstanding"
+  | "pending";
+
+export interface PeriodLedgerRow {
+  period: string;
+  periodLabel: string;
+  expected: number;
+  paid: number;
   balance: number;
+  status: PeriodStatus;
+}
+
+export interface TenantPaymentSummary {
+  currentMonthStatus: "paid" | "pending" | "overdue" | "vacated_unpaid" | "partial";
+  balance: number;
+  carriedCredit: number;
+  totalOutstanding: number;
+  netPosition: number;
   lastPaymentDate: string | null;
   lastPaymentAmount: number | null;
+  perMonth: PeriodLedgerRow[];
+}
+
+export interface Deposit {
+  id: string;
+  tenant_id: string;
+  landlord_id: string;
+  property_id: string;
+  amount: number;
+  deposit_date: string;
+  status: "held" | "returned" | "partially_refunded" | "forfeited";
+  notes: string | null;
+  return_date: string | null;
+  amount_returned: number | null;
+  deductions: number | null;
+  return_reason: string | null;
+  created_at?: string;
+  tenants?: {
+    full_name: string;
+    property_id: string;
+    unit_number: string | null;
+    phone: string | null;
+    properties?: { name: string; location: string | null };
+  };
 }
 
 export interface WifiPlan {

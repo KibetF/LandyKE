@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Send, MessageCircle, X } from "lucide-react";
 import StatusPill from "@/components/ui/StatusPill";
 import Pagination from "@/components/ui/Pagination";
-import { normalizePhone } from "@/lib/sms/twilio-client";
+import { normalizePhone } from "@/lib/sms/phone";
 
 interface TenantData {
   id: string;
