@@ -304,8 +304,17 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
       if (!res.ok) {
         setWaMsg({ type: "error", text: data.error || "Failed to send message" });
       } else {
-        setWaMsg({ type: "success", text: `Sent to ${data.to || waPhone}` });
-        setWaBody("");
+        const status = data.status || "queued";
+        const sidShort = data.messageSid ? `SID ${String(data.messageSid).slice(0, 14)}…` : "";
+        const errPart = data.twilioErrorCode
+          ? ` · Twilio ${data.twilioErrorCode}: ${data.twilioErrorMessage || "no message"}`
+          : "";
+        const isFailure = ["failed", "undelivered"].includes(status) || data.twilioErrorCode;
+        setWaMsg({
+          type: isFailure ? "error" : "success",
+          text: `Twilio status: ${status}${errPart} · ${sidShort}`,
+        });
+        if (!isFailure) setWaBody("");
       }
     } catch {
       setWaMsg({ type: "error", text: "Network error" });
