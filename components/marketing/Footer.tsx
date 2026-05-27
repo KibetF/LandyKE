@@ -174,7 +174,7 @@ export default function Footer() {
           letterSpacing: "0.05em",
         }}
       >
-        <span>&copy; 2026 LandyKe Property Management. All rights reserved.</span>
+        <span>&copy; 2026 LandyKe Property Management &mdash; operated by Fred Kibet. All rights reserved.</span>
         <span>
           <Link href="/privacy" className="no-underline" style={{ color: "rgba(245,240,232,0.25)", transition: "color 0.2s" }}>
             Privacy Policy
