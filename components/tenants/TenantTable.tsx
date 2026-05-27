@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { Send } from "lucide-react";
+import { Send, MessageCircle, X } from "lucide-react";
 import StatusPill from "@/components/ui/StatusPill";
 import Pagination from "@/components/ui/Pagination";
+import { normalizePhone } from "@/lib/sms/twilio-client";
 
 interface TenantData {
   id: string;
@@ -50,6 +51,51 @@ export default function TenantTable({ tenants, properties, currentPage = 1, tota
   const [inviting, setInviting] = useState<string | null>(null);
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteMsg, setInviteMsg] = useState<{ id: string; msg: string; ok: boolean } | null>(null);
+
+  // WhatsApp modal state
+  const [waTarget, setWaTarget] = useState<{ id: string; name: string; phone: string } | null>(null);
+  const [waBody, setWaBody] = useState("");
+  const [waSending, setWaSending] = useState(false);
+  const [waMsg, setWaMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
+  function openWhatsApp(tenant: TenantData) {
+    if (!tenant.phone) return;
+    setWaTarget({ id: tenant.id, name: tenant.full_name, phone: tenant.phone });
+    setWaBody("");
+    setWaMsg(null);
+  }
+
+  function closeWhatsApp() {
+    setWaTarget(null);
+    setWaBody("");
+    setWaMsg(null);
+    setWaSending(false);
+  }
+
+  async function sendWhatsAppToTenant(e: React.FormEvent) {
+    e.preventDefault();
+    if (!waTarget || !waBody.trim()) return;
+    setWaSending(true);
+    setWaMsg(null);
+    try {
+      const res = await fetch("/api/twilio/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ to: waTarget.phone, body: waBody }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setWaMsg({ type: "error", text: data.error || "Failed to send" });
+      } else {
+        setWaMsg({ type: "success", text: `Sent to ${data.to || waTarget.phone}` });
+        setWaBody("");
+        setTimeout(() => closeWhatsApp(), 1500);
+      }
+    } catch {
+      setWaMsg({ type: "error", text: "Network error" });
+    }
+    setWaSending(false);
+  }
 
   async function handleInvite(tenantId: string) {
     if (!inviteEmail.trim()) return;
@@ -323,15 +369,30 @@ export default function TenantTable({ tenants, properties, currentPage = 1, tota
                   </div>
 
                   {/* Phone */}
-                  <span
-                    style={{
-                      fontSize: "0.75rem",
-                      color: "var(--muted)",
-                      minWidth: "100px",
-                    }}
-                  >
-                    {tenant.phone || "—"}
-                  </span>
+                  <div className="flex items-center" style={{ minWidth: "100px", gap: "0.4rem" }}>
+                    <span style={{ fontSize: "0.75rem", color: "var(--muted)" }}>
+                      {tenant.phone || "—"}
+                    </span>
+                    {tenant.phone && (
+                      <button
+                        onClick={() => openWhatsApp(tenant)}
+                        title={`Send WhatsApp to ${tenant.full_name}`}
+                        style={{
+                          background: "#25D366",
+                          color: "#ffffff",
+                          border: "none",
+                          borderRadius: "3px",
+                          padding: "0.3rem 0.4rem",
+                          cursor: "pointer",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                      >
+                        <MessageCircle size={11} />
+                      </button>
+                    )}
+                  </div>
 
                   {/* Status + Portal */}
                   <div className="flex items-center" style={{ gap: "0.5rem" }}>
@@ -404,6 +465,138 @@ export default function TenantTable({ tenants, properties, currentPage = 1, tota
       </div>
 
       <Pagination currentPage={currentPage} totalPages={totalPages} />
+
+      {/* === WHATSAPP MODAL === */}
+      {waTarget && (
+        <div
+          onClick={closeWhatsApp}
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.4)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1000,
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: "var(--white)",
+              borderRadius: "8px",
+              padding: "1.5rem",
+              width: "calc(100% - 2rem)",
+              maxWidth: "500px",
+              maxHeight: "90vh",
+              overflowY: "auto",
+              margin: "1rem",
+            }}
+          >
+            <div className="flex justify-between items-center" style={{ marginBottom: "1rem" }}>
+              <div className="flex items-center" style={{ gap: "0.5rem" }}>
+                <MessageCircle size={18} style={{ color: "#25D366" }} />
+                <h3 className="font-serif" style={{ fontSize: "1.1rem", fontWeight: 600 }}>
+                  Send WhatsApp to {waTarget.name}
+                </h3>
+              </div>
+              <button onClick={closeWhatsApp} style={{ background: "none", border: "none", cursor: "pointer" }}>
+                <X size={18} style={{ color: "var(--muted)" }} />
+              </button>
+            </div>
+
+            <div style={{ fontSize: "0.75rem", color: "var(--muted)", marginBottom: "1rem" }}>
+              To: <span style={{ color: "var(--ink)", fontFamily: "monospace" }}>{normalizePhone(waTarget.phone)}</span>
+            </div>
+
+            <form onSubmit={sendWhatsAppToTenant}>
+              {waMsg && (
+                <div
+                  className="flex items-center"
+                  style={{
+                    gap: "0.5rem",
+                    padding: "0.6rem 0.8rem",
+                    borderRadius: "4px",
+                    marginBottom: "1rem",
+                    fontSize: "0.75rem",
+                    background: waMsg.type === "success" ? "var(--green-light)" : "var(--red-light)",
+                    color: waMsg.type === "success" ? "var(--green)" : "var(--red-soft)",
+                  }}
+                >
+                  {waMsg.text}
+                </div>
+              )}
+
+              <div style={{ marginBottom: "1rem" }}>
+                <textarea
+                  required
+                  value={waBody}
+                  onChange={(e) => setWaBody(e.target.value)}
+                  rows={5}
+                  maxLength={1600}
+                  placeholder={`Hi ${waTarget.name.split(" ")[0]}, ...`}
+                  style={{
+                    width: "100%",
+                    padding: "0.7rem 1rem",
+                    border: "1px solid var(--warm)",
+                    borderRadius: "4px",
+                    fontSize: "0.85rem",
+                    fontFamily: "var(--font-sans), sans-serif",
+                    color: "var(--ink)",
+                    outline: "none",
+                    resize: "vertical",
+                  }}
+                />
+                <div style={{ fontSize: "0.7rem", color: "var(--muted)", marginTop: "0.3rem", textAlign: "right" }}>
+                  {waBody.length}/1600
+                </div>
+              </div>
+
+              <div className="flex" style={{ gap: "0.5rem" }}>
+                <button
+                  type="button"
+                  onClick={closeWhatsApp}
+                  style={{
+                    flex: 1,
+                    background: "var(--cream)",
+                    color: "var(--ink)",
+                    border: "1px solid var(--warm)",
+                    padding: "0.7rem",
+                    fontSize: "0.85rem",
+                    borderRadius: "4px",
+                    cursor: "pointer",
+                    fontFamily: "var(--font-sans), sans-serif",
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={waSending || !waBody.trim()}
+                  className="flex items-center justify-center"
+                  style={{
+                    flex: 1,
+                    gap: "0.4rem",
+                    background: "#25D366",
+                    color: "#ffffff",
+                    border: "none",
+                    padding: "0.7rem",
+                    fontSize: "0.85rem",
+                    borderRadius: "4px",
+                    cursor: (waSending || !waBody.trim()) ? "not-allowed" : "pointer",
+                    opacity: (waSending || !waBody.trim()) ? 0.6 : 1,
+                    fontFamily: "var(--font-sans), sans-serif",
+                    fontWeight: 500,
+                  }}
+                >
+                  <Send size={14} />
+                  {waSending ? "Sending..." : "Send"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </>
   );
 }

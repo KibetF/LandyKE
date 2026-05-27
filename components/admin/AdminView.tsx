@@ -4,12 +4,26 @@ import { useState, useEffect, useCallback, Fragment } from "react";
 import {
   UserPlus, Users, Check, AlertCircle, Home, CreditCard,
   Building2, Plus, ChevronDown, ChevronUp, Pencil, Trash2, X,
-  LayoutDashboard, FileText, Send, Download, BarChart3, AlertTriangle, Eye, Wifi,
+  LayoutDashboard, FileText, Send, Download, BarChart3, AlertTriangle, Eye, Wifi, Banknote, MessageCircle,
 } from "lucide-react";
+import { normalizePhone } from "@/lib/sms/twilio-client";
 import WifiManagement from "@/components/admin/WifiManagement";
+import DepositsManagement from "@/components/admin/DepositsManagement";
 import { generateRentStatement, generatePropertySummary, generateTenantPaymentReport } from "@/lib/pdf/generate-report";
 import { generateReceipt, generateReceiptBlob, generateReceiptNumber, type ReceiptData } from "@/lib/pdf/generate-receipt";
-import { getAvailableMonths } from "@/lib/queries";
+import { getAvailableMonths, formatMonthKey, periodOf } from "@/lib/queries";
+
+function getRentPeriodOptions() {
+  const months = getAvailableMonths(); // launch → current, newest first
+  const now = new Date();
+  const future: { value: string; label: string }[] = [];
+  for (let i = 1; i <= 2; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    future.push({ value: key, label: `${formatMonthKey(key)} (advance)` });
+  }
+  return [...future.reverse(), ...months];
+}
 import {
   BarChart,
   Bar,
@@ -61,6 +75,7 @@ interface Payment {
   amount: number;
   paid_date: string | null;
   due_date: string | null;
+  rent_period: string | null;
   notes: string | null;
   status: string;
   payment_type?: string;
@@ -71,7 +86,7 @@ interface AdminViewProps {
   landlords: Landlord[];
 }
 
-type Tab = "overview" | "accounts" | "properties" | "tenants" | "payments" | "wifi" | "reports";
+type Tab = "overview" | "accounts" | "properties" | "tenants" | "payments" | "deposits" | "wifi" | "reports" | "messages";
 
 interface PropertyBreakdown {
   name: string;
@@ -249,7 +264,7 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
   const [tenantForm, setTenantForm] = useState({ property_id: "", full_name: "", email: "", phone: "", rent_amount: "", unit_number: "", unit_type: "" });
   const [paymentPropertyFilter, setPaymentPropertyFilter] = useState("");
   const [paymentMonthFilter, setPaymentMonthFilter] = useState(new Date().toISOString().slice(0, 7));
-  const [paymentForm, setPaymentForm] = useState({ tenant_id: "", amount: "", paid_date: "", due_date: "", method: "M-Pesa", notes: "", status: "paid" });
+  const [paymentForm, setPaymentForm] = useState({ tenant_id: "", amount: "", paid_date: "", due_date: "", rent_period: new Date().toISOString().slice(0, 7), method: "M-Pesa", notes: "", status: "paid" });
 
   // Edit modals
   const [editingProperty, setEditingProperty] = useState<Property | null>(null);
@@ -263,10 +278,40 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
   // Edit form states
   const [editPropertyForm, setEditPropertyForm] = useState({ name: "", location: "", total_units: "", collection_start_month: "" });
   const [editTenantForm, setEditTenantForm] = useState({ full_name: "", email: "", phone: "", rent_amount: "", unit_number: "", unit_type: "", property_id: "", status: "" });
-  const [editPaymentForm, setEditPaymentForm] = useState({ amount: "", paid_date: "", due_date: "", notes: "", status: "" });
+  const [editPaymentForm, setEditPaymentForm] = useState({ amount: "", paid_date: "", due_date: "", rent_period: "", notes: "", status: "" });
 
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
+  // WhatsApp compose state
+  const [waPhone, setWaPhone] = useState("");
+  const [waBody, setWaBody] = useState("");
+  const [waSending, setWaSending] = useState(false);
+  const [waMsg, setWaMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
+  async function sendWhatsAppMessage(e: React.FormEvent) {
+    e.preventDefault();
+    if (!waPhone.trim() || !waBody.trim()) return;
+    setWaSending(true);
+    setWaMsg(null);
+    try {
+      const res = await fetch("/api/twilio/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ to: waPhone.trim(), body: waBody }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setWaMsg({ type: "error", text: data.error || "Failed to send message" });
+      } else {
+        setWaMsg({ type: "success", text: `Sent to ${data.to || waPhone}` });
+        setWaBody("");
+      }
+    } catch {
+      setWaMsg({ type: "error", text: "Network error" });
+    }
+    setWaSending(false);
+  }
 
   const fetchProperties = useCallback(async (landlordId: string) => {
     const res = await fetch(`/api/admin/properties?landlord_id=${landlordId}`);
@@ -547,7 +592,7 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
         if (data.payment.status === "paid") {
           openReceiptPreview(data.payment);
         }
-        setPaymentForm({ tenant_id: "", amount: "", paid_date: "", due_date: "", method: "M-Pesa", notes: "", status: "paid" });
+        setPaymentForm({ tenant_id: "", amount: "", paid_date: "", due_date: "", rent_period: new Date().toISOString().slice(0, 7), method: "M-Pesa", notes: "", status: "paid" });
       }
     } catch {
       setMessage({ type: "error", text: "Network error" });
@@ -620,6 +665,9 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
           payment_id: editingPayment.id,
           status: editPaymentForm.status,
           paid_date: editPaymentForm.paid_date || null,
+          rent_period: editPaymentForm.rent_period || null,
+          amount: editPaymentForm.amount,
+          notes: editPaymentForm.notes,
         }),
       });
       const data = await res.json();
@@ -856,6 +904,7 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
       amount: String(p.amount),
       paid_date: p.paid_date || "",
       due_date: p.due_date || "",
+      rent_period: p.rent_period || (p.paid_date ? p.paid_date.slice(0, 7) : ""),
       notes: p.notes || "",
       status: p.status,
     });
@@ -868,8 +917,10 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
     { key: "properties", label: "Properties", icon: Home },
     { key: "tenants", label: "Tenants", icon: Users },
     { key: "payments", label: "Payments", icon: CreditCard },
+    { key: "deposits", label: "Deposits", icon: Banknote },
     { key: "wifi", label: "WiFi", icon: Wifi },
     { key: "reports", label: "Reports", icon: FileText },
+    { key: "messages", label: "Messages", icon: MessageCircle },
   ];
 
   const actionBtnStyle = (color: string): React.CSSProperties => ({
@@ -1127,7 +1178,7 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
       )}
 
       {/* Landlord selector */}
-      {tab !== "accounts" && tab !== "overview" && tab !== "reports" && (
+      {tab !== "accounts" && tab !== "overview" && tab !== "reports" && tab !== "messages" && (
         <div style={{ marginBottom: "1.5rem" }}>
           <label style={labelStyle}>Select Landlord</label>
           <div style={{ position: "relative", maxWidth: "400px" }}>
@@ -1510,9 +1561,53 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
                   </div>
                   <div className="form-grid-2col" style={{ marginBottom: "1rem" }}>
                     <div>
+                      <label style={labelStyle}>Rent Period *</label>
+                      <select
+                        required
+                        value={paymentForm.rent_period}
+                        onChange={(e) => setPaymentForm((f) => ({ ...f, rent_period: e.target.value }))}
+                        style={inputStyle}
+                      >
+                        {getRentPeriodOptions().map((o) => (
+                          <option key={o.value} value={o.value}>{o.label}</option>
+                        ))}
+                      </select>
+                      {(() => {
+                        const selectedTenant = tenants.find((t) => t.id === paymentForm.tenant_id);
+                        if (!selectedTenant || !paymentForm.amount || !paymentForm.rent_period) return null;
+                        const rent = Number(selectedTenant.rent_amount);
+                        const enteredAmount = Number(paymentForm.amount);
+                        const existingForPeriod = payments
+                          .filter((p) =>
+                            p.tenant_id === paymentForm.tenant_id &&
+                            p.status === "paid" &&
+                            periodOf(p) === paymentForm.rent_period
+                          )
+                          .reduce((s, p) => s + Number(p.amount), 0);
+                        const newTotal = existingForPeriod + enteredAmount;
+                        let hint = "";
+                        let color = "var(--muted)";
+                        if (newTotal > rent) {
+                          hint = `Surplus — KES ${(newTotal - rent).toLocaleString("en-KE")} credit after this payment`;
+                          color = "var(--green)";
+                        } else if (newTotal < rent) {
+                          hint = `Partial — KES ${(rent - newTotal).toLocaleString("en-KE")} still owed for this period`;
+                          color = "#8a5a00";
+                        } else if (newTotal === rent && rent > 0) {
+                          hint = `Clears the period in full`;
+                          color = "var(--green)";
+                        }
+                        return hint ? (
+                          <p style={{ fontSize: "0.7rem", marginTop: "0.35rem", color }}>{hint}</p>
+                        ) : null;
+                      })()}
+                    </div>
+                    <div>
                       <label style={labelStyle}>Due Date</label>
                       <input type="date" value={paymentForm.due_date} onChange={(e) => setPaymentForm((f) => ({ ...f, due_date: e.target.value }))} style={inputStyle} />
                     </div>
+                  </div>
+                  <div className="form-grid-2col" style={{ marginBottom: "1rem" }}>
                     <div>
                       <label style={labelStyle}>Status *</label>
                       <select value={paymentForm.status} onChange={(e) => setPaymentForm((f) => ({ ...f, status: e.target.value }))} style={inputStyle}>
@@ -1522,6 +1617,7 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
                         <option value="vacated_unpaid">Vacated - Unpaid</option>
                       </select>
                     </div>
+                    <div />
                   </div>
                   <div className="form-grid-2col" style={{ marginBottom: "1.5rem" }}>
                     <div>
@@ -1557,8 +1653,8 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
                 <div className="flex items-center" style={{ gap: "0.5rem" }}>
                   <span style={{ fontSize: "0.7rem", color: "var(--muted)", background: "var(--cream)", padding: "0.25rem 0.6rem", borderRadius: "20px" }}>
                     {payments.filter((p) => {
-                      const d = p.paid_date || p.due_date;
-                      return d && d.slice(0, 7) === paymentMonthFilter;
+                      const period = periodOf(p) || (p.due_date ? p.due_date.slice(0, 7) : null);
+                      return period === paymentMonthFilter;
                     }).length} of {payments.length}
                   </span>
                   <button
@@ -1584,8 +1680,8 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
             </div>
             <div>
               {payments.filter((p) => {
-                const d = p.paid_date || p.due_date;
-                return d && d.slice(0, 7) === paymentMonthFilter;
+                const period = periodOf(p) || (p.due_date ? p.due_date.slice(0, 7) : null);
+                return period === paymentMonthFilter;
               }).length === 0 ? (
                 <div className="flex flex-col items-center justify-center" style={{ padding: "2rem", color: "var(--muted)" }}>
                   <CreditCard size={28} style={{ marginBottom: "0.5rem", opacity: 0.4 }} />
@@ -1593,8 +1689,8 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
                 </div>
               ) : (
                 payments.filter((p) => {
-                  const d = p.paid_date || p.due_date;
-                  return d && d.slice(0, 7) === paymentMonthFilter;
+                  const period = periodOf(p) || (p.due_date ? p.due_date.slice(0, 7) : null);
+                  return period === paymentMonthFilter;
                 }).map((p, i, filtered) => (
                   <div key={p.id} className="row-hover" style={{ padding: "1rem 1.5rem", borderBottom: i < filtered.length - 1 ? "1px solid var(--warm)" : "none" }}>
                     <div className="flex justify-between items-center">
@@ -1606,7 +1702,10 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
                           {p.notes || "Payment"} · {p.tenants?.full_name || "—"}
                         </h4>
                         <span style={{ fontSize: "0.7rem", color: "var(--muted)" }}>
-                          {p.tenants?.properties?.name || "—"} · {(p.paid_date || p.due_date) ? new Date(p.paid_date || p.due_date!).toLocaleDateString("en-KE", { day: "numeric", month: "short", year: "numeric" }) : "—"}
+                          {p.tenants?.properties?.name || "—"} · paid {(p.paid_date || p.due_date) ? new Date(p.paid_date || p.due_date!).toLocaleDateString("en-KE", { day: "numeric", month: "short", year: "numeric" }) : "—"}
+                          {p.rent_period && (p.payment_type === "rent" || !p.payment_type) ? (
+                            <> · for <strong style={{ color: "var(--ink)" }}>{formatMonthKey(p.rent_period)}</strong></>
+                          ) : null}
                         </span>
                       </div>
                       <div className="flex items-center" style={{ gap: "0.5rem" }}>
@@ -1701,6 +1800,15 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
             </div>
           </div>
         </div>
+      )}
+
+      {/* === DEPOSITS TAB === */}
+      {tab === "deposits" && selectedLandlord && (
+        <DepositsManagement
+          properties={properties}
+          tenants={tenants}
+          selectedLandlordId={selectedLandlord.id}
+        />
       )}
 
       {/* === WIFI TAB === */}
@@ -2232,8 +2340,66 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
         </>
       )}
 
+      {/* === MESSAGES TAB === */}
+      {tab === "messages" && (
+        <div style={{ maxWidth: "640px" }}>
+          <div style={cardStyle}>
+            <div className="flex items-center" style={{ padding: "1.2rem 1.5rem", borderBottom: "1px solid var(--warm)", gap: "0.5rem" }}>
+              <MessageCircle size={18} style={{ color: "#25D366" }} />
+              <h3 className="font-serif" style={{ fontSize: "1.1rem", fontWeight: 600 }}>Send WhatsApp Message</h3>
+            </div>
+            <form onSubmit={sendWhatsAppMessage} style={{ padding: "1.5rem" }}>
+              <Message message={waMsg} />
+              <div style={{ marginBottom: "1rem" }}>
+                <label style={labelStyle}>Phone Number *</label>
+                <input
+                  type="tel"
+                  required
+                  value={waPhone}
+                  onChange={(e) => setWaPhone(e.target.value)}
+                  placeholder="e.g. 0712345678 or +254712345678"
+                  style={inputStyle}
+                />
+                {waPhone.trim() && (
+                  <div style={{ fontSize: "0.7rem", color: "var(--muted)", marginTop: "0.4rem" }}>
+                    Will send to: <span style={{ color: "var(--ink)", fontFamily: "monospace" }}>{normalizePhone(waPhone.trim())}</span>
+                  </div>
+                )}
+              </div>
+              <div style={{ marginBottom: "1rem" }}>
+                <label style={labelStyle}>Message *</label>
+                <textarea
+                  required
+                  value={waBody}
+                  onChange={(e) => setWaBody(e.target.value)}
+                  rows={6}
+                  maxLength={1600}
+                  placeholder="Type your WhatsApp message..."
+                  style={{ ...inputStyle, resize: "vertical", fontFamily: "var(--font-sans), sans-serif" }}
+                />
+                <div style={{ fontSize: "0.7rem", color: "var(--muted)", marginTop: "0.3rem", textAlign: "right" }}>
+                  {waBody.length}/1600
+                </div>
+              </div>
+              <button
+                type="submit"
+                disabled={waSending || !waPhone.trim() || !waBody.trim()}
+                className="flex items-center justify-center"
+                style={{ ...btnStyle, width: "100%", opacity: (waSending || !waPhone.trim() || !waBody.trim()) ? 0.6 : 1 }}
+              >
+                <Send size={15} />
+                {waSending ? "Sending..." : "Send WhatsApp"}
+              </button>
+              <p style={{ fontSize: "0.7rem", color: "var(--muted)", marginTop: "1rem", lineHeight: 1.5 }}>
+                Sent from LandyKE WhatsApp business sender. Outbound messages are logged for audit.
+              </p>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* Prompt to select landlord */}
-      {tab !== "accounts" && tab !== "overview" && tab !== "reports" && !selectedLandlord && (
+      {tab !== "accounts" && tab !== "overview" && tab !== "reports" && tab !== "messages" && !selectedLandlord && (
         <div className="flex flex-col items-center justify-center" style={{ padding: "4rem", color: "var(--muted)" }}>
           <Users size={40} style={{ marginBottom: "1rem", opacity: 0.3 }} />
           <span style={{ fontSize: "0.95rem" }}>Select a landlord above to manage their data</span>
@@ -2365,7 +2531,13 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
               <div className="form-grid-2col" style={{ marginBottom: "1rem" }}>
                 <div>
                   <label style={labelStyle}>Amount (KES)</label>
-                  <input type="text" readOnly value={`KES ${Number(editPaymentForm.amount).toLocaleString()}`} style={{ ...inputStyle, background: "var(--cream)", cursor: "default" }} />
+                  <input
+                    type="number"
+                    min={1}
+                    value={editPaymentForm.amount}
+                    onChange={(e) => setEditPaymentForm((f) => ({ ...f, amount: e.target.value }))}
+                    style={inputStyle}
+                  />
                 </div>
                 <div>
                   <label style={labelStyle}>Status *</label>
@@ -2375,6 +2547,25 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
                     <option value="overdue">Overdue</option>
                     <option value="vacated_unpaid">Vacated - Unpaid</option>
                   </select>
+                </div>
+              </div>
+              <div className="form-grid-2col" style={{ marginBottom: "1rem" }}>
+                <div>
+                  <label style={labelStyle}>Rent Period</label>
+                  <select
+                    value={editPaymentForm.rent_period}
+                    onChange={(e) => setEditPaymentForm((f) => ({ ...f, rent_period: e.target.value }))}
+                    style={inputStyle}
+                  >
+                    <option value="">— None —</option>
+                    {getRentPeriodOptions().map((o) => (
+                      <option key={o.value} value={o.value}>{o.label}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label style={labelStyle}>Notes</label>
+                  <input type="text" value={editPaymentForm.notes} onChange={(e) => setEditPaymentForm((f) => ({ ...f, notes: e.target.value }))} style={inputStyle} />
                 </div>
               </div>
               <div className="form-grid-2col" style={{ marginBottom: "1.5rem" }}>
