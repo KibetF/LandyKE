@@ -4,9 +4,9 @@ import { useState, type FormEvent } from "react";
 import { MapPin, Phone, Mail, Clock, Loader2, CheckCircle } from "lucide-react";
 
 const contactInfo = [
-  { Icon: MapPin, label: "Office", value: "Eldoret, Uasin Gishu County, Kenya" },
-  { Icon: Phone, label: "Phone", value: "+254 700 000 000" },
-  { Icon: Mail, label: "Email", value: "hello@landyke.co.ke" },
+  { Icon: MapPin, label: "Office", value: "Kapsoya, near Moi Girls High School, Eldoret, Uasin Gishu County" },
+  { Icon: Phone, label: "Phone", value: "+254 759 342 765 \u00b7 +254 722 338 510" },
+  { Icon: Mail, label: "Email", value: "yafredkibet@gmail.com" },
   { Icon: Clock, label: "Hours", value: "Mon \u2013 Fri, 8:00 AM \u2013 5:00 PM EAT" },
 ];
 

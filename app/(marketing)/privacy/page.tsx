@@ -29,7 +29,7 @@ const sections = [
   {
     title: "Your Rights",
     content:
-      "Under Kenyan data protection law (Data Protection Act, 2019), you have the right to access, correct, or delete your personal data. You may also object to processing or request data portability. To exercise these rights, contact us at hello@landyke.co.ke.",
+      "Under Kenyan data protection law (Data Protection Act, 2019), you have the right to access, correct, or delete your personal data. You may also object to processing or request data portability. To exercise these rights, contact us at yafredkibet@gmail.com.",
   },
   {
     title: "Data Retention",
@@ -137,8 +137,8 @@ export default function PrivacyPage() {
             <p style={{ fontSize: "0.85rem", color: "var(--muted)", lineHeight: 1.7 }}>
               <strong style={{ color: "var(--ink)" }}>Questions?</strong> Contact our
               data protection team at{" "}
-              <a href="mailto:hello@landyke.co.ke" style={{ color: "var(--gold)" }}>
-                hello@landyke.co.ke
+              <a href="mailto:yafredkibet@gmail.com" style={{ color: "var(--gold)" }}>
+                yafredkibet@gmail.com
               </a>
             </p>
           </div>

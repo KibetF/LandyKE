@@ -141,7 +141,7 @@ export default function Footer() {
             </li>
             <li style={{ marginBottom: "0.6rem" }}>
               <Link
-                href="mailto:hello@landyke.co.ke"
+                href="mailto:yafredkibet@gmail.com"
                 className="footer-link no-underline"
                 style={footerLinkStyle}
               >
@@ -156,9 +156,13 @@ export default function Footer() {
                 color: "rgba(245,240,232,0.3)",
               }}
             >
-              📍 Eldoret, Uasin Gishu
+              📍 Kapsoya, near Moi Girls High School, Eldoret
               <br />
-              📞 +254 700 000 000
+              📞 +254 759 342 765
+              <br />
+              📞 +254 722 338 510
+              <br />
+              ✉ yafredkibet@gmail.com
             </p>
           </div>
         </div>

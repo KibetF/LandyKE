@@ -144,7 +144,7 @@ export default function SettingsView({ landlord }: SettingsViewProps) {
 
   function handleDeleteAccount() {
     window.confirm(
-      "To delete your account and all associated data, please contact support at support@landyke.co.ke"
+      "To delete your account and all associated data, please contact support at yafredkibet@gmail.com"
     );
   }
 

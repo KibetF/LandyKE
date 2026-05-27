@@ -147,8 +147,8 @@ export default function TermsPage() {
             <p style={{ fontSize: "0.85rem", color: "var(--muted)", lineHeight: 1.7 }}>
               <strong style={{ color: "var(--ink)" }}>Questions about these terms?</strong>{" "}
               Contact us at{" "}
-              <a href="mailto:hello@landyke.co.ke" style={{ color: "var(--gold)" }}>
-                hello@landyke.co.ke
+              <a href="mailto:yafredkibet@gmail.com" style={{ color: "var(--gold)" }}>
+                yafredkibet@gmail.com
               </a>
             </p>
           </div>
