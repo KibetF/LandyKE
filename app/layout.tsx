@@ -19,6 +19,11 @@ export const metadata: Metadata = {
   title: "LandyKe — Property Management, Simplified",
   description:
     "Professional property management across Kenya. Rent collection, tenant management, maintenance coordination, and full financial reporting.",
+  verification: {
+    other: {
+      "facebook-domain-verification": "xjqdxxf672xpl53xm4tgbdzxasbzgp",
+    },
+  },
 };
 
 export default function RootLayout({
