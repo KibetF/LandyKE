@@ -33,11 +33,18 @@ export async function POST(request: NextRequest) {
   if (body.length > 1600) return NextResponse.json({ error: "Message exceeds 1600 characters" }, { status: 400 });
 
   const result = await sendWhatsApp(to, body);
+  console.log("[twilio-send] result", {
+    success: result.success,
+    sid: result.messageSid,
+    status: result.status,
+    to: result.normalizedTo,
+    error: result.error,
+  });
 
   try {
     const admin = createAdminClient();
     const sender = getWhatsAppSender() || "";
-    await admin
+    const { error: logError } = await admin
       .schema("landyke")
       .from("whatsapp_messages")
       .insert({
@@ -54,8 +61,11 @@ export async function POST(request: NextRequest) {
         sent_by_user_id: user.id,
         raw_payload: { initiated_by: user.email },
       });
+    if (logError) {
+      console.error("[twilio-send] insert failed", logError);
+    }
   } catch (e) {
-    console.error("[twilio-send] failed to log outbound message", e);
+    console.error("[twilio-send] unexpected log error", e);
   }
 
   if (!result.success) {
