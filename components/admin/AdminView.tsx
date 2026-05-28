@@ -88,6 +88,14 @@ interface AdminViewProps {
 
 type Tab = "overview" | "accounts" | "properties" | "tenants" | "payments" | "deposits" | "wifi" | "reports" | "messages";
 
+interface WhatsAppTemplate {
+  sid: string;
+  name: string;
+  body: string;
+  variables: string[];
+  language: string;
+}
+
 interface PropertyBreakdown {
   name: string;
   location: string | null;
@@ -288,17 +296,65 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
   const [waBody, setWaBody] = useState("");
   const [waSending, setWaSending] = useState(false);
   const [waMsg, setWaMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [waMode, setWaMode] = useState<"template" | "freeform">("template");
+  const [waTemplates, setWaTemplates] = useState<WhatsAppTemplate[]>([]);
+  const [waTemplatesLoading, setWaTemplatesLoading] = useState(false);
+  const [waSelectedSid, setWaSelectedSid] = useState("");
+  const [waTemplateVars, setWaTemplateVars] = useState<Record<string, string>>({});
+
+  const fetchTemplates = useCallback(async () => {
+    setWaTemplatesLoading(true);
+    try {
+      const res = await fetch("/api/twilio/templates");
+      const data = await res.json();
+      if (res.ok && Array.isArray(data.templates)) setWaTemplates(data.templates);
+    } catch { /* ignore */ }
+    setWaTemplatesLoading(false);
+  }, []);
+
+  useEffect(() => {
+    if (tab === "messages" && waTemplates.length === 0) fetchTemplates();
+  }, [tab, waTemplates.length, fetchTemplates]);
+
+  const selectedTemplate = waTemplates.find((t) => t.sid === waSelectedSid) || null;
+
+  function previewTemplateBody(): string {
+    if (!selectedTemplate) return "";
+    return selectedTemplate.body.replace(/\{\{(\d+)\}\}/g, (_, n) => waTemplateVars[n] || `{{${n}}}`);
+  }
 
   async function sendWhatsAppMessage(e: React.FormEvent) {
     e.preventDefault();
-    if (!waPhone.trim() || !waBody.trim()) return;
+    if (!waPhone.trim()) return;
+
+    let requestBody: Record<string, unknown>;
+    if (waMode === "template") {
+      if (!selectedTemplate) {
+        setWaMsg({ type: "error", text: "Select a template" });
+        return;
+      }
+      const missing = selectedTemplate.variables.filter((v) => !waTemplateVars[v]?.trim());
+      if (missing.length > 0) {
+        setWaMsg({ type: "error", text: `Fill in all template fields (${missing.length} missing)` });
+        return;
+      }
+      requestBody = {
+        to: waPhone.trim(),
+        contentSid: selectedTemplate.sid,
+        contentVariables: waTemplateVars,
+      };
+    } else {
+      if (!waBody.trim()) return;
+      requestBody = { to: waPhone.trim(), body: waBody };
+    }
+
     setWaSending(true);
     setWaMsg(null);
     try {
       const res = await fetch("/api/twilio/send", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ to: waPhone.trim(), body: waBody }),
+        body: JSON.stringify(requestBody),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -314,7 +370,10 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
           type: isFailure ? "error" : "success",
           text: `Twilio status: ${status}${errPart} · ${sidShort}`,
         });
-        if (!isFailure) setWaBody("");
+        if (!isFailure) {
+          setWaBody("");
+          setWaTemplateVars({});
+        }
       }
     } catch {
       setWaMsg({ type: "error", text: "Network error" });
@@ -2375,26 +2434,102 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
                   </div>
                 )}
               </div>
-              <div style={{ marginBottom: "1rem" }}>
-                <label style={labelStyle}>Message *</label>
-                <textarea
-                  required
-                  value={waBody}
-                  onChange={(e) => setWaBody(e.target.value)}
-                  rows={6}
-                  maxLength={1600}
-                  placeholder="Type your WhatsApp message..."
-                  style={{ ...inputStyle, resize: "vertical", fontFamily: "var(--font-sans), sans-serif" }}
-                />
-                <div style={{ fontSize: "0.7rem", color: "var(--muted)", marginTop: "0.3rem", textAlign: "right" }}>
-                  {waBody.length}/1600
-                </div>
+              {/* Mode toggle */}
+              <div className="flex" style={{ gap: "0.5rem", marginBottom: "1rem" }}>
+                {([
+                  { key: "template", label: "Template" },
+                  { key: "freeform", label: "Free-form" },
+                ] as const).map((m) => (
+                  <button
+                    key={m.key}
+                    type="button"
+                    onClick={() => { setWaMode(m.key); setWaMsg(null); }}
+                    style={{
+                      flex: 1,
+                      padding: "0.5rem",
+                      fontSize: "0.75rem",
+                      borderRadius: "4px",
+                      border: waMode === m.key ? "1px solid var(--gold)" : "1px solid var(--warm)",
+                      background: waMode === m.key ? "rgba(201,146,26,0.08)" : "var(--white)",
+                      color: waMode === m.key ? "var(--ink)" : "var(--muted)",
+                      fontWeight: waMode === m.key ? 600 : 400,
+                      cursor: "pointer",
+                      fontFamily: "var(--font-sans), sans-serif",
+                    }}
+                  >
+                    {m.label}
+                  </button>
+                ))}
               </div>
+
+              {waMode === "template" ? (
+                <>
+                  <div style={{ marginBottom: "1rem" }}>
+                    <label style={labelStyle}>Template *</label>
+                    <select
+                      value={waSelectedSid}
+                      onChange={(e) => { setWaSelectedSid(e.target.value); setWaTemplateVars({}); }}
+                      style={{ ...inputStyle, appearance: "none" }}
+                    >
+                      <option value="">
+                        {waTemplatesLoading ? "Loading templates…" : waTemplates.length === 0 ? "No approved templates yet" : "— Select a template —"}
+                      </option>
+                      {waTemplates.map((t) => (
+                        <option key={t.sid} value={t.sid}>{t.name}</option>
+                      ))}
+                    </select>
+                    {!waTemplatesLoading && waTemplates.length === 0 && (
+                      <div style={{ fontSize: "0.7rem", color: "var(--muted)", marginTop: "0.4rem", lineHeight: 1.5 }}>
+                        Create and get templates approved in Twilio Content Template Builder, then they appear here.
+                      </div>
+                    )}
+                  </div>
+
+                  {selectedTemplate && selectedTemplate.variables.map((v) => (
+                    <div key={v} style={{ marginBottom: "0.75rem" }}>
+                      <label style={labelStyle}>Variable {`{{${v}}}`} *</label>
+                      <input
+                        type="text"
+                        value={waTemplateVars[v] || ""}
+                        onChange={(e) => setWaTemplateVars((prev) => ({ ...prev, [v]: e.target.value }))}
+                        placeholder={`Value for {{${v}}}`}
+                        style={inputStyle}
+                      />
+                    </div>
+                  ))}
+
+                  {selectedTemplate && (
+                    <div style={{ marginBottom: "1rem", padding: "0.75rem 1rem", background: "var(--cream)", borderRadius: "4px", fontSize: "0.8rem", color: "var(--ink)", lineHeight: 1.6 }}>
+                      <span style={{ fontSize: "0.65rem", textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--muted)", display: "block", marginBottom: "0.3rem" }}>Preview</span>
+                      {previewTemplateBody()}
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div style={{ marginBottom: "1rem" }}>
+                  <label style={labelStyle}>Message *</label>
+                  <textarea
+                    value={waBody}
+                    onChange={(e) => setWaBody(e.target.value)}
+                    rows={6}
+                    maxLength={1600}
+                    placeholder="Type your WhatsApp message..."
+                    style={{ ...inputStyle, resize: "vertical", fontFamily: "var(--font-sans), sans-serif" }}
+                  />
+                  <div style={{ fontSize: "0.7rem", color: "var(--muted)", marginTop: "0.3rem", textAlign: "right" }}>
+                    {waBody.length}/1600
+                  </div>
+                  <div style={{ fontSize: "0.7rem", color: "var(--red-soft)", marginTop: "0.3rem", lineHeight: 1.5 }}>
+                    Free-form only delivers if the recipient messaged you within the last 24 hours. Otherwise use a template.
+                  </div>
+                </div>
+              )}
+
               <button
                 type="submit"
-                disabled={waSending || !waPhone.trim() || !waBody.trim()}
+                disabled={waSending || !waPhone.trim()}
                 className="flex items-center justify-center"
-                style={{ ...btnStyle, width: "100%", opacity: (waSending || !waPhone.trim() || !waBody.trim()) ? 0.6 : 1 }}
+                style={{ ...btnStyle, width: "100%", opacity: (waSending || !waPhone.trim()) ? 0.6 : 1 }}
               >
                 <Send size={15} />
                 {waSending ? "Sending..." : "Send WhatsApp"}

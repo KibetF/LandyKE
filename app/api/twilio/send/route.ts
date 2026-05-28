@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
   const user = await verifyAdmin();
   if (!user) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
-  let payload: { to?: unknown; body?: unknown };
+  let payload: { to?: unknown; body?: unknown; contentSid?: unknown; contentVariables?: unknown };
   try {
     payload = await request.json();
   } catch {
@@ -28,12 +28,23 @@ export async function POST(request: NextRequest) {
 
   const to = typeof payload.to === "string" ? payload.to.trim() : "";
   const body = typeof payload.body === "string" ? payload.body : "";
+  const contentSid = typeof payload.contentSid === "string" ? payload.contentSid.trim() : "";
+  const contentVariables =
+    payload.contentVariables && typeof payload.contentVariables === "object"
+      ? (payload.contentVariables as Record<string, string>)
+      : undefined;
 
   if (!to) return NextResponse.json({ error: "Phone number is required" }, { status: 400 });
-  if (!body.trim()) return NextResponse.json({ error: "Message body is required" }, { status: 400 });
-  if (body.length > 1600) return NextResponse.json({ error: "Message exceeds 1600 characters" }, { status: 400 });
 
-  const result = await sendWhatsApp(to, body);
+  const isTemplate = contentSid.length > 0;
+  if (!isTemplate) {
+    if (!body.trim()) return NextResponse.json({ error: "Message body is required" }, { status: 400 });
+    if (body.length > 1600) return NextResponse.json({ error: "Message exceeds 1600 characters" }, { status: 400 });
+  }
+
+  const result = isTemplate
+    ? await sendWhatsApp({ to, contentSid, contentVariables })
+    : await sendWhatsApp({ to, body });
   console.log("[twilio-send] result", JSON.stringify({
     success: result.success,
     sid: result.messageSid,
@@ -84,13 +95,16 @@ export async function POST(request: NextRequest) {
       error_message: twilioErrorMessage || result.error || null,
       from_number: sender,
       to_number: result.normalizedTo ?? to,
-      body,
+      body: isTemplate ? `[template ${contentSid}]` : body,
       num_media: 0,
       media_urls: [],
       media_content_types: [],
       sent_by_user_id: user.id,
       raw_payload: {
         initiated_by: user.email,
+        kind: isTemplate ? "template" : "freeform",
+        content_sid: isTemplate ? contentSid : null,
+        content_variables: isTemplate ? (contentVariables ?? null) : null,
         twilio_error_code: twilioErrorCode,
         initial_status: result.status,
         final_status: finalStatus,
