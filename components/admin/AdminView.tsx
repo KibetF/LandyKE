@@ -895,6 +895,9 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
     const firstName = selectedLandlord.full_name.split(" ")[0];
     const dateStr = new Date().toLocaleDateString("en-KE", { day: "numeric", month: "long", year: "numeric" });
     const total = todayPayments.reduce((sum, p) => sum + Number(p.amount), 0);
+    const monthToDate = payments
+      .filter((p) => p.status === "paid" && (p.paid_date || "").startsWith(today.slice(0, 7)))
+      .reduce((sum, p) => sum + Number(p.amount), 0);
 
     let msg = `*LandyKE Daily Summary — ${dateStr}*\n\n`;
     msg += `Hi ${firstName}, here are today's payments:\n\n`;
@@ -904,7 +907,8 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
       const prop = p.tenants?.properties?.name ? ` · ${p.tenants.properties.name}` : "";
       msg += `✅ ${name}${unit}${prop} — *KES ${Number(p.amount).toLocaleString()}*\n`;
     });
-    msg += `\n*Total: KES ${total.toLocaleString()}*\n`;
+    msg += `\n*Today's total: KES ${total.toLocaleString()}*\n`;
+    msg += `*Month to date: KES ${monthToDate.toLocaleString()}*\n`;
     msg += `${todayPayments.length} payment${todayPayments.length !== 1 ? "s" : ""} received today.\n\n— LandyKE`;
 
     const phone = selectedLandlord.phone?.replace(/\D/g, "");
