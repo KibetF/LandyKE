@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { generateReceiptNumber } from "@/lib/pdf/generate-receipt";
 import { sendTenantReceiptSMS, sendTenantReminderWhatsApp } from "@/lib/sms/send-sms";
+import { getWhatsAppSender, type SendWhatsAppResult } from "@/lib/sms/twilio-client";
 
 async function verifyAdmin() {
   const supabase = await createClient();
@@ -11,6 +12,39 @@ async function verifyAdmin() {
   const adminEmail = process.env.ADMIN_EMAIL;
   if (!adminEmail || user.email !== adminEmail) return null;
   return user;
+}
+
+/** Best-effort audit log of an outbound WhatsApp send to landyke.whatsapp_messages. */
+async function logOutbound(
+  admin: ReturnType<typeof createAdminClient>,
+  userId: string,
+  result: SendWhatsAppResult,
+  to: string,
+  body: string,
+  raw: Record<string, unknown>
+) {
+  try {
+    const { error } = await admin
+      .schema("landyke")
+      .from("whatsapp_messages")
+      .insert({
+        message_sid: result.messageSid ?? null,
+        direction: "outbound",
+        status: result.success ? result.status || "sent" : "failed",
+        error_message: result.error ?? null,
+        from_number: getWhatsAppSender() || "",
+        to_number: result.normalizedTo ?? to,
+        body,
+        num_media: 0,
+        media_urls: [],
+        media_content_types: [],
+        sent_by_user_id: userId,
+        raw_payload: raw,
+      });
+    if (error) console.error("[admin/sms] audit insert failed", error.message);
+  } catch (e) {
+    console.error("[admin/sms] audit log error", (e as { message?: string })?.message);
+  }
 }
 
 export async function POST(request: NextRequest) {
@@ -67,6 +101,20 @@ export async function POST(request: NextRequest) {
       receiptNumber
     );
 
+    await logOutbound(
+      adminClient,
+      user.id,
+      result,
+      tenant.phone,
+      `Receipt ${receiptNumber} · KES ${Number(payment.amount).toLocaleString("en-KE")}`,
+      {
+        kind: "receipt",
+        initiated_by: user.email,
+        content_sid: process.env.TWILIO_RECEIPT_TEMPLATE_SID ?? null,
+        receipt_number: receiptNumber,
+      }
+    );
+
     if (!result.success) return NextResponse.json({ error: result.error }, { status: 500 });
     return NextResponse.json({
       success: true,
@@ -118,6 +166,22 @@ export async function POST(request: NextRequest) {
       monthLabel,
       property?.name || "your property",
       t.unit_number
+    );
+
+    await logOutbound(
+      adminClient,
+      user.id,
+      result,
+      t.phone,
+      `Reminder · ${charge} KES ${amt.toLocaleString("en-KE")} · ${monthLabel}`,
+      {
+        kind: "reminder",
+        initiated_by: user.email,
+        content_sid: process.env.TWILIO_REMINDER_TEMPLATE_SID ?? null,
+        charge_type: charge,
+        amount: amt,
+        month: monthLabel,
+      }
     );
 
     if (!result.success) return NextResponse.json({ error: result.error }, { status: 500 });
