@@ -42,3 +42,9 @@ next-env.d.ts
 
 # MCP config
 .mcp.json
+
+# Claude Code local settings (machine-specific; skills are tracked)
+.claude/settings.local.json
+
+# stray photos dropped at repo root
+/IMG_*.jpg
