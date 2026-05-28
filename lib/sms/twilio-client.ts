@@ -1,5 +1,5 @@
 import twilio from "twilio";
-import { normalizePhone } from "./phone";
+import { normalizePhone, isValidPhone } from "./phone";
 
 export { normalizePhone };
 
@@ -38,6 +38,9 @@ export type SendWhatsAppOptions = {
 export async function sendWhatsApp(opts: SendWhatsAppOptions): Promise<SendWhatsAppResult> {
   try {
     const normalizedTo = normalizePhone(opts.to);
+    if (!isValidPhone(normalizedTo)) {
+      return { success: false, error: "Invalid phone number", normalizedTo };
+    }
     const from = getWhatsAppSender();
     if (!from) return { success: false, error: "TWILIO_WHATSAPP_FROM not configured" };
 

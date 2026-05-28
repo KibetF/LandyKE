@@ -881,29 +881,6 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
     setSmsStatus(null);
   }
 
-  async function sendReceiptSMS() {
-    if (!receiptPayment) return;
-    setSmsSending(true);
-    setSmsStatus(null);
-    try {
-      const res = await fetch("/api/admin/sms", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type: "receipt", paymentId: receiptPayment.id, channel: "sms" }),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setSmsStatus({ type: "success", text: data.message || "SMS sent successfully" });
-      } else {
-        setSmsStatus({ type: "error", text: data.error || "Failed to send SMS" });
-      }
-    } catch {
-      setSmsStatus({ type: "error", text: "Network error — could not send SMS" });
-    } finally {
-      setSmsSending(false);
-    }
-  }
-
   function sendDailySummaryToLandlord() {
     if (!selectedLandlord) return;
 
@@ -952,7 +929,7 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
       const res = await fetch("/api/admin/sms", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type: "receipt", paymentId: receiptPayment.id, channel: "whatsapp" }),
+        body: JSON.stringify({ type: "receipt", paymentId: receiptPayment.id }),
       });
       const data = await res.json();
       if (res.ok) {
@@ -1856,14 +1833,6 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
                 style={{ ...btnStyle, flex: 1, justifyContent: "center", gap: "0.4rem", background: "#25D366", color: "#fff", opacity: smsSending ? 0.7 : 1 }}
               >
                 <Send size={14} /> {smsSending ? "Sending..." : "WhatsApp"}
-              </button>
-              <button
-                onClick={sendReceiptSMS}
-                disabled={smsSending}
-                className="flex items-center"
-                style={{ ...btnStyle, flex: 1, justifyContent: "center", gap: "0.4rem", background: "var(--gold)", color: "#fff", opacity: smsSending ? 0.7 : 1 }}
-              >
-                <Send size={14} /> {smsSending ? "Sending..." : "SMS"}
               </button>
             </div>
           </div>

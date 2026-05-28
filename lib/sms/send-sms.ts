@@ -1,15 +1,13 @@
-/** Normalize Kenyan numbers to E.164 (+2547xxxxxxxx) */
-function normalizePhone(phone: string): string {
-  const d = phone.replace(/\D/g, "");
-  if (d.startsWith("254")) return `+${d}`;
-  if (d.startsWith("0")) return `+254${d.slice(1)}`;
-  if (d.startsWith("7") || d.startsWith("1")) return `+254${d}`;
-  return `+${d}`;
-}
+import { sendWhatsApp, type SendWhatsAppResult } from "./twilio-client";
 
 /**
- * Send a payment receipt message to a tenant.
- * TODO: Re-enable once Twilio/WhatsApp verification is complete.
+ * Send a payment receipt to a tenant over WhatsApp.
+ *
+ * Receipts go to tenants who usually haven't messaged us in the last 24h, so
+ * this must use an approved WhatsApp template (free-form would fail with error
+ * 63016). Set TWILIO_RECEIPT_TEMPLATE_SID to the approved template's content
+ * SID. The template body must use these variables in order:
+ *   {{1}} tenant name · {{2}} amount (KES) · {{3}} property · {{4}} unit · {{5}} receipt no.
  */
 export async function sendTenantReceiptSMS(
   tenantName: string,
@@ -17,36 +15,27 @@ export async function sendTenantReceiptSMS(
   amount: number,
   propertyName: string,
   unitNumber: string | null,
-  receiptNumber: string,
-  _channel: "whatsapp" | "sms" = "whatsapp"
-): Promise<{ success: boolean; error?: string }> {
+  receiptNumber: string
+): Promise<SendWhatsAppResult> {
   if (!phone) return { success: false, error: "Tenant has no phone number" };
 
-  const to = normalizePhone(phone);
-  console.log(`[MSG] Would send receipt to ${to} for ${receiptNumber} (messaging disabled pending provider setup)`);
+  const contentSid = process.env.TWILIO_RECEIPT_TEMPLATE_SID;
+  if (!contentSid) {
+    return {
+      success: false,
+      error: "Receipt WhatsApp template not configured (TWILIO_RECEIPT_TEMPLATE_SID)",
+    };
+  }
 
-  return { success: false, error: "Messaging temporarily disabled — provider setup in progress" };
-}
-
-/**
- * Send a daily payment summary to a landlord.
- * TODO: Re-enable once Twilio/WhatsApp verification is complete.
- */
-export async function sendDailySummary(
-  landlordPhone: string,
-  landlordName: string,
-  payments: Array<{
-    tenantName: string;
-    amount: number;
-    propertyName: string;
-    unitNumber: string | null;
-  }>,
-  _channel: "whatsapp" | "sms" = "whatsapp"
-): Promise<{ success: boolean; error?: string }> {
-  if (!payments.length) return { success: false, error: "No payments today" };
-
-  const to = normalizePhone(landlordPhone);
-  console.log(`[MSG] Would send daily summary to ${to} for ${landlordName} (messaging disabled pending provider setup)`);
-
-  return { success: false, error: "Messaging temporarily disabled — provider setup in progress" };
+  return sendWhatsApp({
+    to: phone,
+    contentSid,
+    contentVariables: {
+      "1": tenantName,
+      "2": amount.toLocaleString("en-KE"),
+      "3": propertyName,
+      "4": unitNumber ?? "—",
+      "5": receiptNumber,
+    },
+  });
 }

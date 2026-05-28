@@ -45,13 +45,10 @@ export async function POST(request: NextRequest) {
   const result = isTemplate
     ? await sendWhatsApp({ to, contentSid, contentVariables })
     : await sendWhatsApp({ to, body });
-  console.log("[twilio-send] result", JSON.stringify({
-    success: result.success,
-    sid: result.messageSid,
-    status: result.status,
-    to: result.normalizedTo,
-    error: result.error,
-  }));
+
+  if (!result.success && result.error === "Invalid phone number") {
+    return NextResponse.json({ error: result.error }, { status: 400 });
+  }
 
   // Poll Twilio once after a short delay to see if status advanced
   let finalStatus = result.status;
@@ -68,12 +65,6 @@ export async function POST(request: NextRequest) {
         finalStatus = fetched.status;
         twilioErrorCode = fetched.errorCode ?? null;
         twilioErrorMessage = fetched.errorMessage ?? null;
-        console.log("[twilio-send] fetched", JSON.stringify({
-          sid: result.messageSid,
-          status: finalStatus,
-          errorCode: twilioErrorCode,
-          errorMessage: twilioErrorMessage,
-        }));
       }
     } catch (e) {
       console.error("[twilio-send] fetch follow-up failed", e);
@@ -81,10 +72,6 @@ export async function POST(request: NextRequest) {
   }
 
   // Audit log — service-role insert
-  console.log("[twilio-send] about to log to db", JSON.stringify({
-    hasServiceKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
-    hasSupabaseUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
-  }));
   try {
     const admin = createAdminClient();
     const sender = getWhatsAppSender() || "";
@@ -110,22 +97,12 @@ export async function POST(request: NextRequest) {
         final_status: finalStatus,
       },
     };
-    const { data, error: logError, status: logStatus } = await admin
+    const { error: logError } = await admin
       .schema("landyke")
       .from("whatsapp_messages")
-      .insert(insertPayload)
-      .select()
-      .single();
+      .insert(insertPayload);
     if (logError) {
-      console.error("[twilio-send] insert failed", JSON.stringify({
-        message: logError.message,
-        details: logError.details,
-        hint: logError.hint,
-        code: logError.code,
-        status: logStatus,
-      }));
-    } else {
-      console.log("[twilio-send] inserted", JSON.stringify({ id: data?.id, status: data?.status }));
+      console.error("[twilio-send] audit insert failed", logError.message);
     }
   } catch (e) {
     const err = e as { message?: string; stack?: string };
