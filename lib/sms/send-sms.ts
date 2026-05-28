@@ -1,4 +1,5 @@
 import { sendWhatsApp, type SendWhatsAppResult } from "./twilio-client";
+import { formatDate } from "@/lib/pdf/generate-receipt";
 
 /**
  * Send a payment receipt to a tenant over WhatsApp.
@@ -7,12 +8,14 @@ import { sendWhatsApp, type SendWhatsAppResult } from "./twilio-client";
  * this must use an approved WhatsApp template (free-form would fail with error
  * 63016). Set TWILIO_RECEIPT_TEMPLATE_SID to the approved template's content
  * SID. The template body must use these variables in order:
- *   {{1}} tenant name · {{2}} amount (KES) · {{3}} property · {{4}} unit · {{5}} receipt no.
+ *   {{1}} tenant name · {{2}} amount (KES) · {{3}} paid date · {{4}} property ·
+ *   {{5}} unit · {{6}} receipt no.
  */
 export async function sendTenantReceiptSMS(
   tenantName: string,
   phone: string | null,
   amount: number,
+  paidDate: string,
   propertyName: string,
   unitNumber: string | null,
   receiptNumber: string
@@ -33,9 +36,52 @@ export async function sendTenantReceiptSMS(
     contentVariables: {
       "1": tenantName,
       "2": amount.toLocaleString("en-KE"),
-      "3": propertyName,
-      "4": unitNumber ?? "—",
-      "5": receiptNumber,
+      "3": formatDate(paidDate),
+      "4": propertyName,
+      "5": unitNumber ?? "—",
+      "6": receiptNumber,
+    },
+  });
+}
+
+/**
+ * Send a payment reminder to a tenant over WhatsApp.
+ *
+ * Business-initiated, so it requires a Meta-approved template. Set
+ * TWILIO_REMINDER_TEMPLATE_SID to the approved template's content SID.
+ * The template body must use these variables in order:
+ *   {{1}} tenant name · {{2}} charge type · {{3}} amount (KES) · {{4}} month ·
+ *   {{5}} property · {{6}} unit.
+ */
+export async function sendTenantReminderWhatsApp(
+  tenantName: string,
+  phone: string | null,
+  chargeType: string,
+  amount: number,
+  monthLabel: string,
+  propertyName: string,
+  unitNumber: string | null
+): Promise<SendWhatsAppResult> {
+  if (!phone) return { success: false, error: "Tenant has no phone number" };
+
+  const contentSid = process.env.TWILIO_REMINDER_TEMPLATE_SID;
+  if (!contentSid) {
+    return {
+      success: false,
+      error: "Reminder WhatsApp template not configured (TWILIO_REMINDER_TEMPLATE_SID)",
+    };
+  }
+
+  return sendWhatsApp({
+    to: phone,
+    contentSid,
+    contentVariables: {
+      "1": tenantName,
+      "2": chargeType,
+      "3": amount.toLocaleString("en-KE"),
+      "4": monthLabel,
+      "5": propertyName,
+      "6": unitNumber ?? "—",
     },
   });
 }

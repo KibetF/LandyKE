@@ -29,7 +29,7 @@ function getPeriodCovered(dueDate: string | null, paidDate: string): string {
   return d.toLocaleDateString("en-KE", { month: "long", year: "numeric" });
 }
 
-function formatDate(dateStr: string): string {
+export function formatDate(dateStr: string): string {
   const d = new Date(dateStr + "T00:00:00");
   return d.toLocaleDateString("en-KE", { day: "numeric", month: "short", year: "numeric" });
 }

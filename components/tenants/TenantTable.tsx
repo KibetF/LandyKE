@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Send, MessageCircle, X } from "lucide-react";
+import { Send, MessageCircle, X, Bell } from "lucide-react";
 import StatusPill from "@/components/ui/StatusPill";
 import Pagination from "@/components/ui/Pagination";
 import { normalizePhone } from "@/lib/sms/phone";
@@ -57,6 +57,67 @@ export default function TenantTable({ tenants, properties, currentPage = 1, tota
   const [waBody, setWaBody] = useState("");
   const [waSending, setWaSending] = useState(false);
   const [waMsg, setWaMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
+  // Payment reminder modal state
+  const [remTarget, setRemTarget] = useState<
+    { id: string; name: string; phone: string | null; property: string; unit: string | null } | null
+  >(null);
+  const [remCharge, setRemCharge] = useState("Rent");
+  const [remAmount, setRemAmount] = useState("");
+  const [remMonth, setRemMonth] = useState("");
+  const [remSending, setRemSending] = useState(false);
+  const [remMsg, setRemMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
+  function openReminder(tenant: TenantData) {
+    setRemTarget({
+      id: tenant.id,
+      name: tenant.full_name,
+      phone: tenant.phone,
+      property: tenant.properties?.name || "—",
+      unit: tenant.unit_number,
+    });
+    setRemCharge("Rent");
+    setRemAmount(tenant.rent_amount ? String(Number(tenant.rent_amount)) : "");
+    const d = new Date();
+    setRemMonth(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`);
+    setRemMsg(null);
+  }
+
+  function closeReminder() {
+    setRemTarget(null);
+    setRemSending(false);
+    setRemMsg(null);
+  }
+
+  async function sendReminder(e: React.FormEvent) {
+    e.preventDefault();
+    if (!remTarget || !remTarget.phone) return;
+    setRemSending(true);
+    setRemMsg(null);
+    try {
+      const res = await fetch("/api/admin/sms", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "reminder",
+          tenantId: remTarget.id,
+          chargeType: remCharge.trim() || "Rent",
+          amount: Number(remAmount),
+          month: remMonth,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setRemMsg({ type: "error", text: data.error || "Failed to send reminder" });
+      } else {
+        setRemMsg({ type: "success", text: data.message || "Reminder sent" });
+        setTimeout(() => closeReminder(), 1500);
+      }
+    } catch {
+      setRemMsg({ type: "error", text: "Network error" });
+    }
+    setRemSending(false);
+  }
 
   function openWhatsApp(tenant: TenantData) {
     if (!tenant.phone) return;
@@ -331,13 +392,20 @@ export default function TenantTable({ tenants, properties, currentPage = 1, tota
                   {/* Name + property */}
                   <div>
                     <h4
+                      onClick={() => openReminder(tenant)}
+                      title={`Send payment reminder to ${tenant.full_name}`}
                       style={{
                         fontSize: "0.85rem",
                         fontWeight: 500,
                         marginBottom: "0.15rem",
+                        cursor: "pointer",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "0.3rem",
                       }}
                     >
                       {tenant.full_name}
+                      <Bell size={11} style={{ color: "var(--muted)" }} />
                     </h4>
                     <span
                       style={{ fontSize: "0.7rem", color: "var(--muted)" }}
@@ -591,6 +659,187 @@ export default function TenantTable({ tenants, properties, currentPage = 1, tota
                 >
                   <Send size={14} />
                   {waSending ? "Sending..." : "Send"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* === PAYMENT REMINDER MODAL === */}
+      {remTarget && (
+        <div
+          onClick={closeReminder}
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.4)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1000,
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: "var(--white)",
+              borderRadius: "8px",
+              padding: "1.5rem",
+              width: "calc(100% - 2rem)",
+              maxWidth: "500px",
+              maxHeight: "90vh",
+              overflowY: "auto",
+              margin: "1rem",
+            }}
+          >
+            <div className="flex justify-between items-center" style={{ marginBottom: "1rem" }}>
+              <div className="flex items-center" style={{ gap: "0.5rem" }}>
+                <Bell size={18} style={{ color: "var(--gold)" }} />
+                <h3 className="font-serif" style={{ fontSize: "1.1rem", fontWeight: 600 }}>
+                  Payment Reminder — {remTarget.name}
+                </h3>
+              </div>
+              <button onClick={closeReminder} style={{ background: "none", border: "none", cursor: "pointer" }}>
+                <X size={18} style={{ color: "var(--muted)" }} />
+              </button>
+            </div>
+
+            <div style={{ fontSize: "0.75rem", color: "var(--muted)", marginBottom: "1rem" }}>
+              {remTarget.property}
+              {remTarget.unit ? ` · Unit ${remTarget.unit}` : ""}
+              {" · "}
+              {remTarget.phone ? (
+                <span style={{ color: "var(--ink)", fontFamily: "monospace" }}>{normalizePhone(remTarget.phone)}</span>
+              ) : (
+                <span style={{ color: "var(--red-soft)" }}>No phone number on file</span>
+              )}
+            </div>
+
+            <form onSubmit={sendReminder}>
+              {remMsg && (
+                <div
+                  style={{
+                    padding: "0.6rem 0.8rem",
+                    borderRadius: "4px",
+                    marginBottom: "1rem",
+                    fontSize: "0.75rem",
+                    background: remMsg.type === "success" ? "var(--green-light)" : "var(--red-light)",
+                    color: remMsg.type === "success" ? "var(--green)" : "var(--red-soft)",
+                  }}
+                >
+                  {remMsg.text}
+                </div>
+              )}
+
+              <div className="flex" style={{ gap: "0.75rem", marginBottom: "1rem" }}>
+                <div style={{ flex: 1 }}>
+                  <label style={{ fontSize: "0.7rem", color: "var(--muted)", display: "block", marginBottom: "0.3rem" }}>
+                    Charge
+                  </label>
+                  <input
+                    type="text"
+                    value={remCharge}
+                    onChange={(e) => setRemCharge(e.target.value)}
+                    placeholder="e.g. Rent, Water"
+                    style={{
+                      width: "100%",
+                      padding: "0.6rem 0.8rem",
+                      border: "1px solid var(--warm)",
+                      borderRadius: "4px",
+                      fontSize: "0.85rem",
+                      fontFamily: "var(--font-sans), sans-serif",
+                      color: "var(--ink)",
+                      outline: "none",
+                    }}
+                  />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label style={{ fontSize: "0.7rem", color: "var(--muted)", display: "block", marginBottom: "0.3rem" }}>
+                    Amount (KES)
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    required
+                    value={remAmount}
+                    onChange={(e) => setRemAmount(e.target.value)}
+                    placeholder="500"
+                    style={{
+                      width: "100%",
+                      padding: "0.6rem 0.8rem",
+                      border: "1px solid var(--warm)",
+                      borderRadius: "4px",
+                      fontSize: "0.85rem",
+                      fontFamily: "var(--font-sans), sans-serif",
+                      color: "var(--ink)",
+                      outline: "none",
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ marginBottom: "1rem" }}>
+                <label style={{ fontSize: "0.7rem", color: "var(--muted)", display: "block", marginBottom: "0.3rem" }}>
+                  Month due
+                </label>
+                <input
+                  type="month"
+                  required
+                  value={remMonth}
+                  onChange={(e) => setRemMonth(e.target.value)}
+                  style={{
+                    width: "100%",
+                    padding: "0.6rem 0.8rem",
+                    border: "1px solid var(--warm)",
+                    borderRadius: "4px",
+                    fontSize: "0.85rem",
+                    fontFamily: "var(--font-sans), sans-serif",
+                    color: "var(--ink)",
+                    outline: "none",
+                  }}
+                />
+              </div>
+
+              <div className="flex" style={{ gap: "0.5rem" }}>
+                <button
+                  type="button"
+                  onClick={closeReminder}
+                  style={{
+                    flex: 1,
+                    background: "var(--cream)",
+                    color: "var(--ink)",
+                    border: "1px solid var(--warm)",
+                    padding: "0.7rem",
+                    fontSize: "0.85rem",
+                    borderRadius: "4px",
+                    cursor: "pointer",
+                    fontFamily: "var(--font-sans), sans-serif",
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={remSending || !remTarget.phone || !remAmount || !remMonth}
+                  className="flex items-center justify-center"
+                  style={{
+                    flex: 1,
+                    gap: "0.4rem",
+                    background: "#25D366",
+                    color: "#ffffff",
+                    border: "none",
+                    padding: "0.7rem",
+                    fontSize: "0.85rem",
+                    borderRadius: "4px",
+                    cursor: remSending || !remTarget.phone || !remAmount || !remMonth ? "not-allowed" : "pointer",
+                    opacity: remSending || !remTarget.phone || !remAmount || !remMonth ? 0.6 : 1,
+                    fontFamily: "var(--font-sans), sans-serif",
+                    fontWeight: 500,
+                  }}
+                >
+                  <Send size={14} />
+                  {remSending ? "Sending..." : "Send reminder"}
                 </button>
               </div>
             </form>
