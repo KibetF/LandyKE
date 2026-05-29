@@ -10,6 +10,10 @@ import { formatDate } from "@/lib/pdf/generate-receipt";
  * SID. The template body must use these variables in order:
  *   {{1}} tenant name · {{2}} amount (KES) · {{3}} paid date · {{4}} property ·
  *   {{5}} unit · {{6}} receipt no.
+ *
+ * When `mediaPath` is supplied it is passed as {{7}} — the media URL path for
+ * the twilio/media template (everything after /public/, e.g.
+ * "receipts/LK-RCP-….pdf"). This attaches the PDF at the top of the message.
  */
 export async function sendTenantReceiptSMS(
   tenantName: string,
@@ -18,7 +22,8 @@ export async function sendTenantReceiptSMS(
   paidDate: string,
   propertyName: string,
   unitNumber: string | null,
-  receiptNumber: string
+  receiptNumber: string,
+  mediaPath?: string | null
 ): Promise<SendWhatsAppResult> {
   if (!phone) return { success: false, error: "Tenant has no phone number" };
 
@@ -30,18 +35,21 @@ export async function sendTenantReceiptSMS(
     };
   }
 
-  return sendWhatsApp({
-    to: phone,
-    contentSid,
-    contentVariables: {
-      "1": tenantName,
-      "2": amount.toLocaleString("en-KE"),
-      "3": formatDate(paidDate),
-      "4": propertyName,
-      "5": unitNumber ?? "—",
-      "6": receiptNumber,
-    },
-  });
+  const contentVariables: Record<string, string> = {
+    "1": tenantName,
+    "2": amount.toLocaleString("en-KE"),
+    "3": formatDate(paidDate),
+    "4": propertyName,
+    "5": unitNumber ?? "—",
+    "6": receiptNumber,
+  };
+  // {{7}} = media URL path for the twilio/media template. Harmless on the legacy
+  // text template (Twilio ignores variables the template doesn't reference);
+  // once TWILIO_RECEIPT_TEMPLATE_SID points to the approved media template, this
+  // renders the PDF at the top of the message.
+  if (mediaPath) contentVariables["7"] = mediaPath;
+
+  return sendWhatsApp({ to: phone, contentSid, contentVariables });
 }
 
 /**

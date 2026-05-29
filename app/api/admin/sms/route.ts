@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { generateReceiptNumber } from "@/lib/pdf/generate-receipt";
+import { generateReceiptNumber, type ReceiptData } from "@/lib/pdf/generate-receipt";
+import { uploadReceiptPdf } from "@/lib/receipts/upload";
 import { sendTenantReceiptSMS, sendTenantReminderWhatsApp } from "@/lib/sms/send-sms";
 import { getWhatsAppSender, type SendWhatsAppResult } from "@/lib/sms/twilio-client";
+
+// jsPDF + Buffer (server-side receipt PDF generation) require the Node runtime.
+export const runtime = "nodejs";
 
 async function verifyAdmin() {
   const supabase = await createClient();
@@ -21,7 +25,8 @@ async function logOutbound(
   result: SendWhatsAppResult,
   to: string,
   body: string,
-  raw: Record<string, unknown>
+  raw: Record<string, unknown>,
+  mediaUrls: string[] = []
 ) {
   try {
     const { error } = await admin
@@ -35,9 +40,9 @@ async function logOutbound(
         from_number: getWhatsAppSender() || "",
         to_number: result.normalizedTo ?? to,
         body,
-        num_media: 0,
-        media_urls: [],
-        media_content_types: [],
+        num_media: mediaUrls.length,
+        media_urls: mediaUrls,
+        media_content_types: mediaUrls.map(() => "application/pdf"),
         sent_by_user_id: userId,
         raw_payload: raw,
       });
@@ -86,19 +91,35 @@ export async function POST(request: NextRequest) {
     if (!tenant) return NextResponse.json({ error: "Tenant not found" }, { status: 404 });
     if (!tenant.phone) return NextResponse.json({ error: "Tenant has no phone number on file" }, { status: 400 });
 
-    const receiptNumber = generateReceiptNumber(
-      payment.id,
-      payment.paid_date || new Date().toISOString().slice(0, 10)
-    );
+    const paidDate = payment.paid_date || new Date().toISOString().slice(0, 10);
+    const propertyName = tenant.properties?.name || "your property";
+    const receiptNumber = generateReceiptNumber(payment.id, paidDate);
+
+    // Generate + upload the PDF, then attach it as {{7}}. Non-fatal: if the
+    // upload fails we still send a text-only receipt.
+    const receiptData: ReceiptData = {
+      receiptNumber,
+      tenantName: tenant.full_name,
+      propertyName,
+      propertyLocation: tenant.properties?.location ?? null,
+      unitNumber: tenant.unit_number,
+      amount: Number(payment.amount),
+      paidDate,
+      dueDate: payment.due_date ?? null,
+      paymentMethod: payment.method ?? null,
+      notes: payment.notes ?? null,
+    };
+    const uploaded = await uploadReceiptPdf(adminClient, receiptNumber, receiptData);
 
     const result = await sendTenantReceiptSMS(
       tenant.full_name,
       tenant.phone,
       Number(payment.amount),
-      payment.paid_date || new Date().toISOString().slice(0, 10),
-      tenant.properties?.name || "your property",
+      paidDate,
+      propertyName,
       tenant.unit_number,
-      receiptNumber
+      receiptNumber,
+      uploaded?.path ?? null
     );
 
     await logOutbound(
@@ -112,7 +133,9 @@ export async function POST(request: NextRequest) {
         initiated_by: user.email,
         content_sid: process.env.TWILIO_RECEIPT_TEMPLATE_SID ?? null,
         receipt_number: receiptNumber,
-      }
+        media_url: uploaded?.publicUrl ?? null,
+      },
+      uploaded ? [uploaded.publicUrl] : []
     );
 
     if (!result.success) return NextResponse.json({ error: result.error }, { status: 500 });

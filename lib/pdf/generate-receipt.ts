@@ -321,3 +321,8 @@ export function generateReceiptBlob(data: ReceiptData): Blob {
   const doc = buildReceipt(data);
   return doc.output("blob");
 }
+
+export function generateReceiptBuffer(data: ReceiptData): Buffer {
+  const doc = buildReceipt(data);
+  return Buffer.from(doc.output("arraybuffer"));
+}
