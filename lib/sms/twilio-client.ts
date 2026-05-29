@@ -50,10 +50,18 @@ export async function sendWhatsApp(opts: SendWhatsAppOptions): Promise<SendWhats
       body?: string;
       contentSid?: string;
       contentVariables?: string;
+      statusCallback?: string;
     } = {
       from: `whatsapp:${from}`,
       to: `whatsapp:${normalizedTo}`,
     };
+
+    // Ask Twilio to POST delivery updates (sent/delivered/read/failed) to our
+    // webhook. Purely additive — if the callback is unreachable the message
+    // still sends; Twilio just retries the callback separately.
+    if (process.env.PUBLIC_APP_URL) {
+      params.statusCallback = `${process.env.PUBLIC_APP_URL}/api/twilio/status`;
+    }
 
     if (opts.contentSid) {
       params.contentSid = opts.contentSid;
