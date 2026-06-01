@@ -952,7 +952,7 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
       const name = p.tenants?.full_name || "Unknown";
       const unit = p.tenants?.unit_number ? ` (Unit ${p.tenants.unit_number})` : "";
       const prop = p.tenants?.properties?.name ? ` · ${p.tenants.properties.name}` : "";
-      msg += `✅ ${name}${unit}${prop} — *KES ${Number(p.amount).toLocaleString()}*\n`;
+      msg += `✓ ${name}${unit}${prop} — *KES ${Number(p.amount).toLocaleString()}*\n`;
     });
     msg += `\n*Today's total: KES ${total.toLocaleString()}*\n`;
     msg += `*Month to date: KES ${monthToDate.toLocaleString()}*\n`;
