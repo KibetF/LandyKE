@@ -23,7 +23,7 @@ export default async function AdminPage() {
   const { data: landlords } = await adminClient
     .schema("landyke")
     .from("landlords")
-    .select("id, full_name, email, phone, created_at")
+    .select("id, full_name, email, phone, created_at, carryover_amount, carryover_as_of")
     .order("created_at", { ascending: false });
 
   return <AdminView landlords={landlords || []} />;

@@ -19,7 +19,7 @@ export async function GET() {
   const { data: landlords, error } = await supabase
     .schema("landyke")
     .from("landlords")
-    .select("id, full_name, email, phone, created_at")
+    .select("id, full_name, email, phone, created_at, carryover_amount, carryover_as_of")
     .order("created_at", { ascending: false });
 
   if (error) {

@@ -43,6 +43,8 @@ interface Landlord {
   email: string;
   phone: string | null;
   created_at: string;
+  carryover_amount: number;
+  carryover_as_of: string | null;
 }
 
 interface Property {
@@ -268,6 +270,9 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
 
   // Form states
   const [accountForm, setAccountForm] = useState({ full_name: "", email: "", phone: "", password: "" });
+  const [editingCarryoverId, setEditingCarryoverId] = useState<string | null>(null);
+  const [carryoverForm, setCarryoverForm] = useState({ amount: "", asOf: "" });
+  const [carryoverSaving, setCarryoverSaving] = useState(false);
   const [propertyForm, setPropertyForm] = useState({ name: "", location: "", total_units: "", collection_start_month: "" });
   const [tenantForm, setTenantForm] = useState({ property_id: "", full_name: "", email: "", phone: "", rent_amount: "", unit_number: "", unit_type: "" });
   const [paymentPropertyFilter, setPaymentPropertyFilter] = useState("");
@@ -581,6 +586,41 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
       setMessage({ type: "error", text: "Network error" });
     } finally {
       setLoading(false);
+    }
+  }
+
+  function startEditingCarryover(l: Landlord) {
+    setEditingCarryoverId(l.id);
+    setCarryoverForm({
+      amount: l.carryover_amount ? String(l.carryover_amount) : "",
+      asOf: l.carryover_as_of || "",
+    });
+  }
+
+  async function saveCarryover(landlordId: string) {
+    setCarryoverSaving(true);
+    setMessage(null);
+    try {
+      const amount = carryoverForm.amount === "" ? 0 : Number(carryoverForm.amount);
+      const asOf = carryoverForm.asOf === "" ? null : carryoverForm.asOf;
+      const res = await fetch(`/api/admin/landlords/${landlordId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ carryover_amount: amount, carryover_as_of: asOf }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setMessage({ type: "error", text: data.error || "Failed to save" });
+      } else {
+        setLandlords((prev) => prev.map((l) => (l.id === landlordId ? data.landlord : l)));
+        if (selectedLandlord?.id === landlordId) setSelectedLandlord(data.landlord);
+        setEditingCarryoverId(null);
+        setMessage({ type: "success", text: "Opening balance updated" });
+      }
+    } catch {
+      setMessage({ type: "error", text: "Network error" });
+    } finally {
+      setCarryoverSaving(false);
     }
   }
 
@@ -899,6 +939,13 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
       .filter((p) => p.status === "paid" && (p.paid_date || "").startsWith(today.slice(0, 7)))
       .reduce((sum, p) => sum + Number(p.amount), 0);
 
+    const carryover = Number(selectedLandlord.carryover_amount || 0);
+    const cutoff = selectedLandlord.carryover_as_of;
+    const sinceCutoff = payments
+      .filter((p) => p.status === "paid" && (!cutoff || (p.paid_date != null && p.paid_date > cutoff)))
+      .reduce((sum, p) => sum + Number(p.amount), 0);
+    const cumulative = carryover + sinceCutoff;
+
     let msg = `*LandyKE Daily Summary — ${dateStr}*\n\n`;
     msg += `Hi ${firstName}, here are today's payments:\n\n`;
     todayPayments.forEach((p) => {
@@ -909,6 +956,9 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
     });
     msg += `\n*Today's total: KES ${total.toLocaleString()}*\n`;
     msg += `*Month to date: KES ${monthToDate.toLocaleString()}*\n`;
+    if (carryover > 0 || cutoff) {
+      msg += `*Total received to date: KES ${cumulative.toLocaleString()}*\n`;
+    }
     msg += `${todayPayments.length} payment${todayPayments.length !== 1 ? "s" : ""} received today.\n\n— LandyKE`;
 
     const phone = selectedLandlord.phone?.replace(/\D/g, "");
@@ -1304,7 +1354,10 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
                   <span style={{ fontSize: "0.85rem" }}>No landlords yet</span>
                 </div>
               ) : (
-                landlords.map((l, i) => (
+                landlords.map((l, i) => {
+                  const isEditing = editingCarryoverId === l.id;
+                  const hasCarryover = Number(l.carryover_amount || 0) > 0 || l.carryover_as_of;
+                  return (
                   <div key={l.id} className="row-hover" style={{ padding: "1rem 1.5rem", borderBottom: i < landlords.length - 1 ? "1px solid var(--warm)" : "none" }}>
                     <div className="flex justify-between items-center">
                       <div>
@@ -1312,13 +1365,76 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
                         <span style={{ fontSize: "0.7rem", color: "var(--muted)" }}>
                           {l.email}{l.phone ? ` · ${l.phone}` : ""}
                         </span>
+                        {hasCarryover && !isEditing && (
+                          <div style={{ fontSize: "0.7rem", color: "var(--muted)", marginTop: "0.25rem" }}>
+                            Opening balance: KES {Number(l.carryover_amount || 0).toLocaleString()}
+                            {l.carryover_as_of ? ` as of ${l.carryover_as_of}` : ""}
+                          </div>
+                        )}
                       </div>
-                      <span style={{ fontSize: "0.65rem", color: "var(--muted)" }}>
-                        {new Date(l.created_at).toLocaleDateString("en-KE", { day: "numeric", month: "short", year: "numeric" })}
-                      </span>
+                      <div className="flex items-center" style={{ gap: "0.75rem" }}>
+                        <span style={{ fontSize: "0.65rem", color: "var(--muted)" }}>
+                          {new Date(l.created_at).toLocaleDateString("en-KE", { day: "numeric", month: "short", year: "numeric" })}
+                        </span>
+                        {!isEditing && (
+                          <button
+                            type="button"
+                            onClick={() => startEditingCarryover(l)}
+                            style={{ fontSize: "0.7rem", color: "var(--gold)", background: "none", border: "none", cursor: "pointer", padding: 0 }}
+                          >
+                            {hasCarryover ? "Edit balance" : "Set opening balance"}
+                          </button>
+                        )}
+                      </div>
                     </div>
+                    {isEditing && (
+                      <div style={{ marginTop: "0.75rem", padding: "0.75rem", background: "var(--cream)", borderRadius: "6px" }}>
+                        <div className="flex" style={{ gap: "0.5rem", marginBottom: "0.5rem" }}>
+                          <div style={{ flex: 1 }}>
+                            <label style={{ ...labelStyle, fontSize: "0.7rem" }}>Opening balance (KES)</label>
+                            <input
+                              type="number"
+                              min="0"
+                              step="1"
+                              value={carryoverForm.amount}
+                              onChange={(e) => setCarryoverForm((f) => ({ ...f, amount: e.target.value }))}
+                              placeholder="0"
+                              style={inputStyle}
+                            />
+                          </div>
+                          <div style={{ flex: 1 }}>
+                            <label style={{ ...labelStyle, fontSize: "0.7rem" }}>As of date</label>
+                            <input
+                              type="date"
+                              value={carryoverForm.asOf}
+                              onChange={(e) => setCarryoverForm((f) => ({ ...f, asOf: e.target.value }))}
+                              style={inputStyle}
+                            />
+                          </div>
+                        </div>
+                        <div className="flex" style={{ gap: "0.5rem", justifyContent: "flex-end" }}>
+                          <button
+                            type="button"
+                            onClick={() => setEditingCarryoverId(null)}
+                            disabled={carryoverSaving}
+                            style={{ fontSize: "0.75rem", padding: "0.4rem 0.8rem", background: "transparent", border: "1px solid var(--warm)", borderRadius: "4px", cursor: "pointer" }}
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => saveCarryover(l.id)}
+                            disabled={carryoverSaving}
+                            style={{ ...btnStyle, fontSize: "0.75rem", padding: "0.4rem 0.8rem", opacity: carryoverSaving ? 0.6 : 1, cursor: carryoverSaving ? "not-allowed" : "pointer" }}
+                          >
+                            {carryoverSaving ? "Saving..." : "Save"}
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                ))
+                  );
+                })
               )}
             </div>
           </div>
