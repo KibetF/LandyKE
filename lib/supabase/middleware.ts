@@ -65,37 +65,19 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // Role-aware redirect: block caretakers from landlord/admin routes
-  if (isLandlordProtected && user) {
-    const { data: roleData } = await supabase
-      .schema("landyke")
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", user.id)
-      .single();
-
-    if (roleData?.role === "caretaker") {
-      const url = request.nextUrl.clone();
-      url.pathname = "/caretaker/dashboard";
-      return NextResponse.redirect(url);
-    }
-  }
-
+  // Post-login role-aware redirect. Only fires on /login itself —
+  // landlord/admin pages don't need a per-request role check because the
+  // portal layout already redirects users without a landlord row to /unauthorized.
   if (request.nextUrl.pathname === "/login" && user) {
-    // Check role to determine redirect target
     const { data: roleData } = await supabase
       .schema("landyke")
       .from("user_roles")
       .select("role")
       .eq("user_id", user.id)
-      .single();
+      .maybeSingle();
 
     const url = request.nextUrl.clone();
-    if (roleData?.role === "caretaker") {
-      url.pathname = "/caretaker/dashboard";
-    } else {
-      url.pathname = "/dashboard";
-    }
+    url.pathname = roleData?.role === "caretaker" ? "/caretaker/dashboard" : "/dashboard";
     return NextResponse.redirect(url);
   }
 
