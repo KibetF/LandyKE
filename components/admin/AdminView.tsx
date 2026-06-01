@@ -81,6 +81,7 @@ interface Payment {
   notes: string | null;
   status: string;
   payment_type?: string;
+  from_carryover: boolean;
   tenants?: { full_name: string; property_id: string; unit_number?: string | null; phone?: string | null; properties?: { name: string; location?: string | null } };
 }
 
@@ -277,7 +278,7 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
   const [tenantForm, setTenantForm] = useState({ property_id: "", full_name: "", email: "", phone: "", rent_amount: "", unit_number: "", unit_type: "" });
   const [paymentPropertyFilter, setPaymentPropertyFilter] = useState("");
   const [paymentMonthFilter, setPaymentMonthFilter] = useState(new Date().toISOString().slice(0, 7));
-  const [paymentForm, setPaymentForm] = useState({ tenant_id: "", amount: "", paid_date: "", due_date: "", rent_period: new Date().toISOString().slice(0, 7), method: "M-Pesa", notes: "", status: "paid" });
+  const [paymentForm, setPaymentForm] = useState({ tenant_id: "", amount: "", paid_date: "", due_date: "", rent_period: new Date().toISOString().slice(0, 7), method: "M-Pesa", notes: "", status: "paid", from_carryover: false });
 
   // Edit modals
   const [editingProperty, setEditingProperty] = useState<Property | null>(null);
@@ -700,7 +701,7 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
         if (data.payment.status === "paid") {
           openReceiptPreview(data.payment);
         }
-        setPaymentForm({ tenant_id: "", amount: "", paid_date: "", due_date: "", rent_period: new Date().toISOString().slice(0, 7), method: "M-Pesa", notes: "", status: "paid" });
+        setPaymentForm({ tenant_id: "", amount: "", paid_date: "", due_date: "", rent_period: new Date().toISOString().slice(0, 7), method: "M-Pesa", notes: "", status: "paid", from_carryover: false });
       }
     } catch {
       setMessage({ type: "error", text: "Network error" });
@@ -925,7 +926,7 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
     if (!selectedLandlord) return;
 
     const today = new Date().toISOString().slice(0, 10);
-    const todayPayments = payments.filter((p) => p.status === "paid" && p.paid_date === today);
+    const todayPayments = payments.filter((p) => p.status === "paid" && p.paid_date === today && !p.from_carryover);
 
     if (todayPayments.length === 0) {
       setMessage({ type: "error", text: "No payments recorded today — nothing to send" });
@@ -936,13 +937,13 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
     const dateStr = new Date().toLocaleDateString("en-KE", { day: "numeric", month: "long", year: "numeric" });
     const total = todayPayments.reduce((sum, p) => sum + Number(p.amount), 0);
     const monthToDate = payments
-      .filter((p) => p.status === "paid" && (p.paid_date || "").startsWith(today.slice(0, 7)))
+      .filter((p) => p.status === "paid" && !p.from_carryover && (p.paid_date || "").startsWith(today.slice(0, 7)))
       .reduce((sum, p) => sum + Number(p.amount), 0);
 
     const carryover = Number(selectedLandlord.carryover_amount || 0);
     const cutoff = selectedLandlord.carryover_as_of;
     const sinceCutoff = payments
-      .filter((p) => p.status === "paid" && (!cutoff || (p.paid_date != null && p.paid_date > cutoff)))
+      .filter((p) => p.status === "paid" && !p.from_carryover && (!cutoff || (p.paid_date != null && p.paid_date > cutoff)))
       .reduce((sum, p) => sum + Number(p.amount), 0);
     const cumulative = carryover + sinceCutoff;
 
@@ -1799,6 +1800,21 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
                       <input type="text" value={paymentForm.notes} onChange={(e) => setPaymentForm((f) => ({ ...f, notes: e.target.value }))} placeholder="e.g. Covers Feb arrears" style={inputStyle} />
                     </div>
                   </div>
+                  {(Number(selectedLandlord?.carryover_amount || 0) > 0 || selectedLandlord?.carryover_as_of) && (
+                    <label className="flex items-center" style={{ gap: "0.5rem", marginBottom: "1.5rem", padding: "0.6rem 0.75rem", background: "var(--cream)", borderRadius: "6px", fontSize: "0.8rem", cursor: "pointer" }}>
+                      <input
+                        type="checkbox"
+                        checked={paymentForm.from_carryover}
+                        onChange={(e) => setPaymentForm((f) => ({ ...f, from_carryover: e.target.checked }))}
+                      />
+                      <span>
+                        From opening balance (no new bank inflow)
+                        <span style={{ display: "block", fontSize: "0.7rem", color: "var(--muted)", marginTop: "0.15rem" }}>
+                          Use when this rent was paid before LandyKE — money is already in the opening balance.
+                        </span>
+                      </span>
+                    </label>
+                  )}
                   <button type="submit" disabled={loading} className="flex items-center justify-center" style={{ ...btnStyle, width: "100%", opacity: loading ? 0.6 : 1 }}>
                     <CreditCard size={16} />
                     {loading ? "Recording..." : "Record Payment"}

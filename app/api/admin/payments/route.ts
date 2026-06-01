@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
   if (!user) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const body = await request.json();
-  const { tenant_id, landlord_id, amount, paid_date, due_date, notes, status, rent_period, payment_type } = body;
+  const { tenant_id, landlord_id, amount, paid_date, due_date, notes, status, rent_period, payment_type, from_carryover } = body;
 
   if (!tenant_id || !landlord_id || !amount || !status) {
     return NextResponse.json({ error: "tenant_id, landlord_id, amount, and status are required" }, { status: 400 });
@@ -61,6 +61,7 @@ export async function POST(request: NextRequest) {
       status,
       rent_period: resolvedPeriod,
       payment_type: payment_type || undefined,
+      from_carryover: from_carryover === true,
     })
     .select("*, tenants(full_name, property_id, unit_number, phone, properties(name, location))")
     .single();
