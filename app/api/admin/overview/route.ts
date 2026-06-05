@@ -35,7 +35,11 @@ export async function GET() {
     adminClient.schema("landyke").from("payments").select("id, amount, paid_date, status, tenant_id, landlord_id").gte("paid_date", monthStart).lte("paid_date", monthEnd),
   ]);
 
-  const landlords = landlordRes.data || [];
+  // Exclude the admin/owner's own landlord row (kept only so the admin can
+  // pass the portal gate) from client-facing counts and the landlord list.
+  const allLandlords = landlordRes.data || [];
+  const adminEmail = process.env.ADMIN_EMAIL;
+  const landlords = allLandlords.filter((l) => l.email !== adminEmail);
   const properties = propertyRes.data || [];
   const tenants = tenantRes.data || [];
   const payments = paymentRes.data || [];

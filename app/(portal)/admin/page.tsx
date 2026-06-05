@@ -18,12 +18,14 @@ export default async function AdminPage() {
     redirect("/dashboard");
   }
 
-  // Fetch all landlords using admin client (bypasses RLS)
+  // Fetch all client landlords using admin client (bypasses RLS).
+  // Exclude the admin/owner's own row (kept only so admin passes the portal gate).
   const adminClient = createAdminClient();
   const { data: landlords } = await adminClient
     .schema("landyke")
     .from("landlords")
     .select("id, full_name, email, phone, created_at, carryover_amount, carryover_as_of")
+    .neq("email", adminEmail)
     .order("created_at", { ascending: false });
 
   return <AdminView landlords={landlords || []} />;
