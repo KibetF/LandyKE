@@ -471,20 +471,22 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
 
   function downloadAdminRentStatement() {
     if (!reportData) return;
-    const totalRevenue = reportData.incomeData.reduce((s, d) => s + d.collected, 0);
-    const totalExpected = reportData.incomeData.reduce((s, d) => s + d.expected, 0);
-    const collectionRate = totalExpected > 0 ? Math.round((totalRevenue / totalExpected) * 100) : 0;
+    // Headline totals reflect the SELECTED MONTH (from propertyBreakdown),
+    // matching the on-screen Total row — not the 6-month income trend sum.
     const totals = reportData.propertyBreakdown.reduce((acc, p) => ({
       receivedInAccount: acc.receivedInAccount + (p.receivedInAccount || 0),
       paidToExternal: acc.paidToExternal + (p.paidToExternal || 0),
-    }), { receivedInAccount: 0, paidToExternal: 0 });
+      collected: acc.collected + p.collected,
+      expected: acc.expected + p.expected,
+    }), { receivedInAccount: 0, paidToExternal: 0, collected: 0, expected: 0 });
+    const collectionRate = totals.expected > 0 ? Math.round((totals.collected / totals.expected) * 100) : 0;
     generateRentStatement({
       month: formatMonthLabel(reportMonth),
       incomeData: reportData.incomeData,
       arrearsData: reportData.arrearsData,
       collectionRate,
-      totalCollected: totalRevenue,
-      totalExpected,
+      totalCollected: totals.collected,
+      totalExpected: totals.expected,
       receivedInAccount: totals.receivedInAccount,
       paidToExternal: totals.paidToExternal,
     });
@@ -502,18 +504,20 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
 
   function downloadAdminTenantPayment() {
     if (!reportData) return;
-    const totalRevenue = reportData.incomeData.reduce((s, d) => s + d.collected, 0);
-    const totalExpected = reportData.incomeData.reduce((s, d) => s + d.expected, 0);
-    const collectionRate = totalExpected > 0 ? Math.round((totalRevenue / totalExpected) * 100) : 0;
+    // Headline totals reflect the SELECTED MONTH (from propertyBreakdown),
+    // matching the on-screen Total row — not the 6-month income trend sum.
     const totals = reportData.propertyBreakdown.reduce((acc, p) => ({
       receivedInAccount: acc.receivedInAccount + (p.receivedInAccount || 0),
       paidToExternal: acc.paidToExternal + (p.paidToExternal || 0),
-    }), { receivedInAccount: 0, paidToExternal: 0 });
+      collected: acc.collected + p.collected,
+      expected: acc.expected + p.expected,
+    }), { receivedInAccount: 0, paidToExternal: 0, collected: 0, expected: 0 });
+    const collectionRate = totals.expected > 0 ? Math.round((totals.collected / totals.expected) * 100) : 0;
     generateTenantPaymentReport({
       month: formatMonthLabel(reportMonth),
       tenants: reportData.tenantStatusData,
-      totalCollected: totalRevenue,
-      totalExpected,
+      totalCollected: totals.collected,
+      totalExpected: totals.expected,
       collectionRate,
       receivedInAccount: totals.receivedInAccount,
       paidToExternal: totals.paidToExternal,

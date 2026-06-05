@@ -64,7 +64,20 @@ export async function GET(request: NextRequest) {
     if (propStart && propStart > selectedMonth) return false;
     return true;
   });
-  const totalExpected = tenantsForMonth.reduce((s: number, t: { rent_amount: number }) => s + Number(t.rent_amount), 0);
+
+  // Expected rent for a given month: only tenants/properties actually
+  // collecting that month (created on/before month end, collection started).
+  function expectedForMonth(key: string): number {
+    const end = getMonthEnd(key);
+    return activeTenants
+      .filter((t) => {
+        if (t.created_at && t.created_at > end) return false;
+        const propStart = propStartMap.get(t.property_id);
+        if (propStart && propStart > key) return false;
+        return true;
+      })
+      .reduce((s: number, t: { rent_amount: number }) => s + Number(t.rent_amount), 0);
+  }
 
   // Income by month
   const months = getMonthRange(selectedMonth, 6);
@@ -74,7 +87,7 @@ export async function GET(request: NextRequest) {
     const collected = allPayments
       .filter((p) => p.paid_date && p.paid_date >= start && p.paid_date <= end && p.status === "paid")
       .reduce((s, p) => s + Number(p.amount), 0);
-    return { month: getShortMonth(key), collected, expected: totalExpected };
+    return { month: getShortMonth(key), collected, expected: expectedForMonth(key) };
   });
 
   // Occupancy
@@ -91,7 +104,8 @@ export async function GET(request: NextRequest) {
     const collected = allPayments
       .filter((p) => p.paid_date && p.paid_date >= start && p.paid_date <= end && p.status === "paid")
       .reduce((s, p) => s + Number(p.amount), 0);
-    const rate = totalExpected > 0 ? Math.round((collected / totalExpected) * 100) : 0;
+    const monthExpected = expectedForMonth(key);
+    const rate = monthExpected > 0 ? Math.round((collected / monthExpected) * 100) : 0;
     return { month: formatMonthKey(key).split(" ")[0], rate };
   });
 
