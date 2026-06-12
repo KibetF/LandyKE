@@ -143,8 +143,7 @@ export default function TenantMaintenance({ tenantId, propertyId, unitNumber, re
                   fontFamily: "var(--font-sans), sans-serif",
                   fontSize: "0.85rem",
                   color: "var(--ink)",
-                  outline: "none",
-                  background: "var(--cream)",
+                      background: "var(--cream)",
                   resize: "vertical",
                 }}
                 placeholder="e.g., The kitchen sink is leaking under the counter..."
@@ -169,8 +168,7 @@ export default function TenantMaintenance({ tenantId, propertyId, unitNumber, re
                   fontFamily: "var(--font-sans), sans-serif",
                   fontSize: "0.85rem",
                   color: "var(--ink)",
-                  outline: "none",
-                  background: "var(--cream)",
+                      background: "var(--cream)",
                 }}
               >
                 <option value="low">Low — not urgent</option>

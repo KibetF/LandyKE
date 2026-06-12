@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
+import useSWR from "swr";
 import { Banknote, Plus, X, Check, AlertCircle, Eye, Trash2, Pencil, RotateCcw } from "lucide-react";
 
 interface Property {
@@ -53,6 +54,7 @@ const cardStyle = {
   background: "var(--white)",
   borderRadius: "8px",
   border: "1px solid rgba(200,150,62,0.08)",
+  boxShadow: "var(--shadow-sm)",
   overflow: "hidden" as const,
 };
 
@@ -64,7 +66,6 @@ const inputStyle = {
   fontSize: "0.85rem",
   fontFamily: "var(--font-sans), sans-serif",
   color: "var(--ink)",
-  outline: "none",
   background: "var(--white)",
 } as const;
 
@@ -99,7 +100,6 @@ const statusColors: Record<string, { bg: string; color: string; label: string }>
 };
 
 export default function DepositsManagement({ properties, tenants, selectedLandlordId }: DepositsManagementProps) {
-  const [deposits, setDeposits] = useState<Deposit[]>([]);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
@@ -132,15 +132,12 @@ export default function DepositsManagement({ properties, tenants, selectedLandlo
   const [editDate, setEditDate] = useState("");
   const [editNotes, setEditNotes] = useState("");
 
-  const fetchDeposits = useCallback(async () => {
-    const res = await fetch(`/api/admin/deposits?landlord_id=${selectedLandlordId}`);
-    const data = await res.json();
-    if (data.deposits) setDeposits(data.deposits);
-  }, [selectedLandlordId]);
-
-  useEffect(() => {
-    fetchDeposits();
-  }, [fetchDeposits]);
+  const { data: depositsData, mutate: mutateDeposits } = useSWR<{ deposits: Deposit[] }>(
+    `/api/admin/deposits?landlord_id=${selectedLandlordId}`,
+    (url: string) => fetch(url).then((r) => r.json()),
+    { revalidateOnFocus: false, dedupingInterval: 30_000 }
+  );
+  const deposits = depositsData?.deposits ?? [];
 
   async function handleRecordDeposit(e: React.FormEvent) {
     e.preventDefault();
@@ -171,7 +168,7 @@ export default function DepositsManagement({ properties, tenants, selectedLandlo
       setFormAmount("");
       setFormDate(new Date().toISOString().split("T")[0]);
       setFormNotes("");
-      fetchDeposits();
+      mutateDeposits();
     } else {
       const err = await res.json();
       setMessage({ type: "error", text: err.error || "Failed to record deposit" });
@@ -203,7 +200,7 @@ export default function DepositsManagement({ properties, tenants, selectedLandlo
       const statusLabel = returnStatus === "returned" ? "returned" : returnStatus === "partially_refunded" ? "partially refunded" : "forfeited";
       setMessage({ type: "success", text: `Deposit ${statusLabel} successfully` });
       setReturnDeposit(null);
-      fetchDeposits();
+      mutateDeposits();
     } else {
       const err = await res.json();
       setMessage({ type: "error", text: err.error || "Failed to process return" });
@@ -232,7 +229,7 @@ export default function DepositsManagement({ properties, tenants, selectedLandlo
     if (res.ok) {
       setMessage({ type: "success", text: "Deposit updated" });
       setEditDeposit(null);
-      fetchDeposits();
+      mutateDeposits();
     } else {
       const err = await res.json();
       setMessage({ type: "error", text: err.error || "Failed to update" });
@@ -252,7 +249,7 @@ export default function DepositsManagement({ properties, tenants, selectedLandlo
 
     if (res.ok) {
       setMessage({ type: "success", text: "Deposit deleted" });
-      fetchDeposits();
+      mutateDeposits();
     } else {
       setMessage({ type: "error", text: "Failed to delete deposit" });
     }
@@ -275,17 +272,18 @@ export default function DepositsManagement({ properties, tenants, selectedLandlo
     setEditNotes(deposit.notes || "");
   }
 
-  // When return status changes, adjust amounts
-  useEffect(() => {
+  // When the return action changes, pre-fill the amounts accordingly
+  function handleReturnStatusChange(status: "returned" | "partially_refunded" | "forfeited") {
+    setReturnStatus(status);
     if (!returnDeposit) return;
-    if (returnStatus === "forfeited") {
+    if (status === "forfeited") {
       setReturnAmount("0");
       setReturnDeductions(String(returnDeposit.amount));
-    } else if (returnStatus === "returned") {
+    } else if (status === "returned") {
       setReturnAmount(String(returnDeposit.amount));
       setReturnDeductions("0");
     }
-  }, [returnStatus, returnDeposit]);
+  }
 
   // Auto-calculate deductions when return amount changes
   function handleReturnAmountChange(val: string) {
@@ -610,7 +608,7 @@ export default function DepositsManagement({ properties, tenants, selectedLandlo
                 <label style={labelStyle}>Action *</label>
                 <select
                   value={returnStatus}
-                  onChange={(e) => setReturnStatus(e.target.value as "returned" | "partially_refunded" | "forfeited")}
+                  onChange={(e) => handleReturnStatusChange(e.target.value as "returned" | "partially_refunded" | "forfeited")}
                   style={inputStyle}
                 >
                   <option value="returned">Full Return</option>

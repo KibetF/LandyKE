@@ -1,3 +1,4 @@
+import Link from "next/link";
 import ScrollReveal from "@/components/ui/ScrollReveal";
 
 export default function ServicesHero() {
@@ -52,7 +53,7 @@ export default function ServicesHero() {
             We&apos;re the infrastructure layer inside your building. From internet
             to maintenance, we handle everything so you don&apos;t have to.
           </p>
-          <a
+          <Link
             href="/#contact"
             className="no-underline uppercase"
             style={{
@@ -72,7 +73,7 @@ export default function ServicesHero() {
             }}
           >
             Get Started
-          </a>
+          </Link>
         </ScrollReveal>
       </div>
     </section>

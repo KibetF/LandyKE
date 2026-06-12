@@ -133,6 +133,7 @@ export default function Sidebar({ userName, isAdmin }: SidebarProps) {
               <Link
                 key={item.label}
                 href={item.href}
+                aria-current={isActive ? "page" : undefined}
                 className={`flex items-center no-underline ${isActive ? "" : "sidebar-link"}`}
                 style={{
                   gap: "0.75rem",
@@ -146,6 +147,7 @@ export default function Sidebar({ userName, isAdmin }: SidebarProps) {
                   transition: "all 0.2s",
                   letterSpacing: "0.03em",
                   background: isActive ? "rgba(200,150,62,0.12)" : "transparent",
+                  boxShadow: isActive ? "inset 2px 0 0 var(--gold)" : "none",
                 }}
               >
                 <Icon size={18} />
@@ -216,6 +218,7 @@ export default function Sidebar({ userName, isAdmin }: SidebarProps) {
             <Link
               key={item.label}
               href={item.href}
+              aria-current={isActive ? "page" : undefined}
               className="flex flex-col items-center no-underline"
               style={{
                 gap: "0.2rem",
@@ -285,6 +288,7 @@ export default function Sidebar({ userName, isAdmin }: SidebarProps) {
                   key={item.label}
                   href={item.href}
                   onClick={() => setShowMore(false)}
+                  aria-current={isActive ? "page" : undefined}
                   className="flex items-center no-underline"
                   style={{
                     gap: "0.75rem",

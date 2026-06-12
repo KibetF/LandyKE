@@ -2,6 +2,7 @@
 
 import { Suspense, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { Loader2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
 function SetupPasswordForm() {
@@ -61,7 +62,7 @@ function SetupPasswordForm() {
       style={{
         background: "var(--white)",
         borderRadius: "8px",
-        boxShadow: "0 40px 80px rgba(15,14,11,0.08)",
+        boxShadow: "var(--shadow-lg)",
         padding: "3rem",
         width: "100%",
         maxWidth: "420px",
@@ -127,8 +128,7 @@ function SetupPasswordForm() {
                 fontFamily: "var(--font-sans), sans-serif",
                 fontSize: "0.85rem",
                 color: "var(--ink)",
-                outline: "none",
-                background: "var(--cream)",
+                  background: "var(--cream)",
               }}
               placeholder="••••••••"
             />
@@ -160,8 +160,7 @@ function SetupPasswordForm() {
                 fontFamily: "var(--font-sans), sans-serif",
                 fontSize: "0.85rem",
                 color: "var(--ink)",
-                outline: "none",
-                background: "var(--cream)",
+                  background: "var(--cream)",
               }}
               placeholder="••••••••"
             />
@@ -202,7 +201,14 @@ function SetupPasswordForm() {
               opacity: loading ? 0.7 : 1,
             }}
           >
-            {loading ? "Setting password..." : "Set Password & Continue"}
+            {loading ? (
+            <span className="flex items-center justify-center" style={{ gap: "0.5rem" }}>
+              <Loader2 size={14} style={{ animation: "spin 0.8s linear infinite" }} />
+              Setting password...
+            </span>
+          ) : (
+            "Set Password & Continue"
+          )}
           </button>
         </form>
       )}

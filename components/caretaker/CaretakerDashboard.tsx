@@ -101,7 +101,6 @@ export default function CaretakerDashboard({
     border: "1px solid var(--warm)",
     borderRadius: "4px",
     fontSize: "0.85rem",
-    outline: "none",
     background: "var(--white)",
     fontFamily: "var(--font-sans), sans-serif",
     color: "var(--ink)",

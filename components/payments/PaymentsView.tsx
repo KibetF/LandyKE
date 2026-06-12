@@ -140,7 +140,6 @@ export default function PaymentsView({
             color: "var(--ink)",
             borderRadius: "4px",
             cursor: "pointer",
-            outline: "none",
           }}
         >
           <option value="all">All Months</option>
@@ -163,7 +162,6 @@ export default function PaymentsView({
             color: "var(--ink)",
             borderRadius: "4px",
             cursor: "pointer",
-            outline: "none",
           }}
         >
           <option value="all">All Status</option>

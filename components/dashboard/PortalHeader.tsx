@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
+import useSWR from "swr";
 import { Search, Bell } from "lucide-react";
 import { useRouter } from "next/navigation";
 
@@ -36,7 +37,6 @@ function timeAgo(dateStr: string) {
 export default function PortalHeader() {
   const router = useRouter();
   const [showNotifications, setShowNotifications] = useState(false);
-  const [notifications, setNotifications] = useState<Notification[]>([]);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLDivElement>(null);
 
@@ -45,16 +45,15 @@ export default function PortalHeader() {
   const [showSearch, setShowSearch] = useState(false);
   const debounceRef = useRef<NodeJS.Timeout>(undefined);
 
-  const unreadCount = notifications.filter((n) => !n.is_read).length;
+  // SWR dedupes across page navigations (the header remounts on every route)
+  const { data: notifData, mutate: mutateNotifications } = useSWR<{ notifications: Notification[] }>(
+    "/api/notifications",
+    (url: string) => fetch(url).then((r) => r.json()),
+    { revalidateOnFocus: false, dedupingInterval: 60_000 }
+  );
+  const notifications = notifData?.notifications ?? [];
 
-  useEffect(() => {
-    fetch("/api/notifications")
-      .then((r) => r.json())
-      .then((data) => {
-        if (data.notifications) setNotifications(data.notifications);
-      })
-      .catch(() => {});
-  }, []);
+  const unreadCount = notifications.filter((n) => !n.is_read).length;
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -94,7 +93,10 @@ export default function PortalHeader() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ mark_all: true }),
     });
-    setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
+    mutateNotifications(
+      (cur) => ({ notifications: (cur?.notifications ?? []).map((n) => ({ ...n, is_read: true })) }),
+      { revalidate: false }
+    );
   }
 
   async function markOneRead(id: string) {
@@ -103,8 +105,13 @@ export default function PortalHeader() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ notification_id: id }),
     });
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, is_read: true } : n))
+    mutateNotifications(
+      (cur) => ({
+        notifications: (cur?.notifications ?? []).map((n) =>
+          n.id === id ? { ...n, is_read: true } : n
+        ),
+      }),
+      { revalidate: false }
     );
   }
 
@@ -134,7 +141,7 @@ export default function PortalHeader() {
               background: "var(--white)",
               border: "1px solid var(--warm)",
               borderRadius: "8px",
-              boxShadow: "0 8px 24px rgba(0,0,0,0.1)",
+              boxShadow: "var(--shadow-md)",
               zIndex: 100,
               overflow: "hidden",
               maxHeight: "400px",
@@ -240,7 +247,13 @@ export default function PortalHeader() {
                 </span>
               )}
             </div>
-            {notifications.length === 0 ? (
+            {!notifData ? (
+              <div style={{ padding: "1rem 1.2rem", display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                {[...Array(3)].map((_, i) => (
+                  <div key={i} className="skeleton-shimmer" style={{ height: "2.4rem", borderRadius: "6px" }} />
+                ))}
+              </div>
+            ) : notifications.length === 0 ? (
               <div style={{ padding: "2rem 1.2rem", textAlign: "center", fontSize: "0.8rem", color: "var(--muted)" }}>
                 No notifications yet
               </div>

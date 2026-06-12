@@ -35,7 +35,6 @@ export default function MonthSelector() {
         color: "var(--ink)",
         borderRadius: "4px",
         cursor: "pointer",
-        outline: "none",
       }}
     >
       {months.map((m) => (

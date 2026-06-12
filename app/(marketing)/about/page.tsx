@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Shield, Eye, Handshake, TrendingUp, MapPin, Building2 } from "lucide-react";
 import Footer from "@/components/marketing/Footer";
 import TeamAvatar from "@/components/marketing/TeamAvatar";
@@ -538,7 +539,7 @@ export default function AboutPage() {
           </em>
         </h2>
         <div className="flex justify-center" style={{ gap: "1rem" }}>
-          <a
+          <Link
             href="/#contact"
             className="no-underline uppercase"
             style={{
@@ -557,8 +558,8 @@ export default function AboutPage() {
             }}
           >
             Get In Touch
-          </a>
-          <a
+          </Link>
+          <Link
             href="/services"
             className="no-underline uppercase"
             style={{
@@ -577,7 +578,7 @@ export default function AboutPage() {
             }}
           >
             Our Services
-          </a>
+          </Link>
         </div>
       </div>
 

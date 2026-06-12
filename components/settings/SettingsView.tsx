@@ -38,7 +38,6 @@ const inputStyle = {
   fontFamily: "var(--font-sans), sans-serif",
   background: "var(--cream)",
   color: "var(--ink)",
-  outline: "none",
   transition: "border-color 0.2s",
 } as const;
 

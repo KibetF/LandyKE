@@ -107,6 +107,7 @@ export default function CaretakerNav({ caretakerName, propertyNames }: Caretaker
               <Link
                 key={item.label}
                 href={item.href}
+                aria-current={isActive ? "page" : undefined}
                 className={`flex items-center no-underline ${isActive ? "" : "sidebar-link"}`}
                 style={{
                   gap: "0.65rem",
@@ -118,6 +119,7 @@ export default function CaretakerNav({ caretakerName, propertyNames }: Caretaker
                   transition: "all 0.2s",
                   letterSpacing: "0.03em",
                   background: isActive ? "rgba(200,150,62,0.12)" : "transparent",
+                  boxShadow: isActive ? "inset 2px 0 0 var(--gold)" : "none",
                 }}
               >
                 <Icon size={17} />

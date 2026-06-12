@@ -48,9 +48,17 @@ export interface UnitStatus {
   paymentId: string | null;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+interface CaretakerTenantRow {
+  id: string;
+  full_name: string;
+  unit_number: string | null;
+  rent_amount: number | string | null;
+  // Supabase may return the joined properties as object or array
+  properties?: { name: string } | { name: string }[] | null;
+}
+
 export function computeUnitStatus(
-  tenants: any[],
+  tenants: CaretakerTenantRow[],
   payments: { id: string; tenant_id: string; status: string }[]
 ): UnitStatus[] {
   const paidTenantIds = new Set(payments.map((p) => p.tenant_id));

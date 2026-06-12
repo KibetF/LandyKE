@@ -56,7 +56,6 @@ const selectStyle = {
   color: "var(--ink)",
   borderRadius: "4px",
   cursor: "pointer",
-  outline: "none",
 } as const;
 
 const inputStyle = {
@@ -68,7 +67,6 @@ const inputStyle = {
   fontFamily: "var(--font-sans), sans-serif",
   background: "var(--white)",
   color: "var(--ink)",
-  outline: "none",
 } as const;
 
 const labelStyle = {

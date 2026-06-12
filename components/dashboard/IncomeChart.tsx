@@ -1,16 +1,15 @@
 "use client";
 
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-} from "recharts";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { BarChart3 } from "lucide-react";
+import Skeleton from "@/components/ui/Skeleton";
 import type { MonthlyIncome } from "@/types";
+
+const IncomeBarChart = dynamic(
+  () => import("@/components/ui/charts").then((m) => m.IncomeBarChart),
+  { ssr: false, loading: () => <Skeleton height="100%" /> }
+);
 
 interface IncomeChartProps {
   data: MonthlyIncome[];
@@ -68,44 +67,7 @@ export default function IncomeChart({ data }: IncomeChartProps) {
             </span>
           </div>
         ) : (
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={data} barGap={2} barCategoryGap="20%">
-              <XAxis
-                dataKey="month"
-                tickLine={false}
-                axisLine={false}
-                tick={{
-                  fontSize: 10,
-                  fill: "#7a7468",
-                  letterSpacing: "0.05em",
-                }}
-              />
-              <YAxis hide />
-              <Tooltip
-                formatter={(value) =>
-                  `KES ${(Number(value) / 1000).toFixed(0)}k`
-                }
-                contentStyle={{
-                  background: "var(--white)",
-                  border: "1px solid var(--warm)",
-                  borderRadius: "4px",
-                  fontSize: "0.75rem",
-                }}
-              />
-              <Bar
-                dataKey="expected"
-                fill="#ede6d6"
-                radius={[3, 3, 0, 0]}
-                name="Expected"
-              />
-              <Bar
-                dataKey="collected"
-                fill="#c8963e"
-                radius={[3, 3, 0, 0]}
-                name="Collected"
-              />
-            </BarChart>
-          </ResponsiveContainer>
+          <IncomeBarChart data={data} />
         )}
       </div>
     </div>

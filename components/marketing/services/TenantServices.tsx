@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Wifi, Sparkles, Zap, Droplets, Package } from "lucide-react";
 import ScrollReveal from "@/components/ui/ScrollReveal";
 
@@ -163,9 +164,9 @@ export default function TenantServices() {
             <p style={noteStyle}>
               Prices may vary by property. All plans include 24/7 support.
             </p>
-            <a href="/#contact" className="no-underline" style={ctaLinkStyle}>
+            <Link href="/#contact" className="no-underline" style={ctaLinkStyle}>
               Get Connected &rarr;
-            </a>
+            </Link>
           </div>
         </ScrollReveal>
 
@@ -217,9 +218,9 @@ export default function TenantServices() {
               </div>
             </div>
 
-            <a href="/#contact" className="no-underline" style={ctaLinkStyle}>
+            <Link href="/#contact" className="no-underline" style={ctaLinkStyle}>
               Book Cleaning &rarr;
-            </a>
+            </Link>
           </div>
         </ScrollReveal>
 
@@ -273,9 +274,9 @@ export default function TenantServices() {
               </p>
             </div>
 
-            <a href="/#contact" className="no-underline" style={ctaLinkStyle}>
+            <Link href="/#contact" className="no-underline" style={ctaLinkStyle}>
               Learn More &rarr;
-            </a>
+            </Link>
           </div>
         </ScrollReveal>
       </div>
@@ -319,9 +320,9 @@ export default function TenantServices() {
               <span style={priceStyle}>KSh 80/jerrycan</span>
             </div>
           </div>
-          <a href="/#contact" className="no-underline" style={ctaLinkStyle}>
+          <Link href="/#contact" className="no-underline" style={ctaLinkStyle}>
             Order Now &rarr;
-          </a>
+          </Link>
         </div>
       </ScrollReveal>
 
@@ -421,7 +422,7 @@ export default function TenantServices() {
             </span>
           </div>
 
-          <a
+          <Link
             href="/#contact"
             className="no-underline uppercase"
             style={{
@@ -441,7 +442,7 @@ export default function TenantServices() {
             }}
           >
             Get the Bundle
-          </a>
+          </Link>
         </div>
       </ScrollReveal>
     </div>

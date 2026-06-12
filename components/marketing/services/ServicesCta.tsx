@@ -1,3 +1,4 @@
+import Link from "next/link";
 import ScrollReveal from "@/components/ui/ScrollReveal";
 
 export default function ServicesCta() {
@@ -47,7 +48,7 @@ export default function ServicesCta() {
           className="flex justify-center flex-wrap"
           style={{ gap: "1rem" }}
         >
-          <a
+          <Link
             href="/#contact"
             className="no-underline uppercase"
             style={{
@@ -67,8 +68,8 @@ export default function ServicesCta() {
             }}
           >
             I&apos;m a Tenant
-          </a>
-          <a
+          </Link>
+          <Link
             href="/#contact"
             className="no-underline uppercase"
             style={{
@@ -88,7 +89,7 @@ export default function ServicesCta() {
             }}
           >
             I&apos;m a Property Owner
-          </a>
+          </Link>
         </div>
       </ScrollReveal>
     </section>

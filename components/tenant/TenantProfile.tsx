@@ -149,8 +149,7 @@ export default function TenantProfile({ tenant }: Props) {
                   fontFamily: "var(--font-sans), sans-serif",
                   fontSize: "0.85rem",
                   color: "var(--ink)",
-                  outline: "none",
-                  background: "var(--cream)",
+                      background: "var(--cream)",
                 }}
                 placeholder="0712 345 678"
               />
@@ -175,8 +174,7 @@ export default function TenantProfile({ tenant }: Props) {
                   fontFamily: "var(--font-sans), sans-serif",
                   fontSize: "0.85rem",
                   color: "var(--ink)",
-                  outline: "none",
-                  background: "var(--cream)",
+                      background: "var(--cream)",
                 }}
                 placeholder="you@example.com"
               />

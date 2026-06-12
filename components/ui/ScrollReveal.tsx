@@ -13,12 +13,8 @@ export default function ScrollReveal({ children, delay = 0, className = "" }: Sc
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (prefersReduced) {
-      setVisible(true);
-      return;
-    }
-
+    // Reduced motion is handled in CSS: the prefers-reduced-motion media
+    // query in globals.css forces .scroll-reveal fully visible.
     const el = ref.current;
     if (!el) return;
 

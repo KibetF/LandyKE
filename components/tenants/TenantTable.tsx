@@ -228,7 +228,6 @@ export default function TenantTable({ tenants, properties, currentPage = 1, tota
             color: "var(--ink)",
             borderRadius: "4px",
             cursor: "pointer",
-            outline: "none",
           }}
         >
           <option value="all">All Properties</option>
@@ -496,8 +495,7 @@ export default function TenantTable({ tenants, properties, currentPage = 1, tota
                             fontSize: "0.7rem",
                             border: "1px solid var(--warm)",
                             borderRadius: "3px",
-                            outline: "none",
-                            background: "var(--cream)",
+                                          background: "var(--cream)",
                             fontFamily: "var(--font-sans), sans-serif",
                           }}
                         />
@@ -611,8 +609,7 @@ export default function TenantTable({ tenants, properties, currentPage = 1, tota
                     fontSize: "0.85rem",
                     fontFamily: "var(--font-sans), sans-serif",
                     color: "var(--ink)",
-                    outline: "none",
-                    resize: "vertical",
+                          resize: "vertical",
                   }}
                 />
                 <div style={{ fontSize: "0.7rem", color: "var(--muted)", marginTop: "0.3rem", textAlign: "right" }}>
@@ -750,8 +747,7 @@ export default function TenantTable({ tenants, properties, currentPage = 1, tota
                       fontSize: "0.85rem",
                       fontFamily: "var(--font-sans), sans-serif",
                       color: "var(--ink)",
-                      outline: "none",
-                    }}
+                            }}
                   />
                 </div>
                 <div style={{ flex: 1 }}>
@@ -773,8 +769,7 @@ export default function TenantTable({ tenants, properties, currentPage = 1, tota
                       fontSize: "0.85rem",
                       fontFamily: "var(--font-sans), sans-serif",
                       color: "var(--ink)",
-                      outline: "none",
-                    }}
+                            }}
                   />
                 </div>
               </div>
@@ -796,8 +791,7 @@ export default function TenantTable({ tenants, properties, currentPage = 1, tota
                     fontSize: "0.85rem",
                     fontFamily: "var(--font-sans), sans-serif",
                     color: "var(--ink)",
-                    outline: "none",
-                  }}
+                        }}
                 />
               </div>
 

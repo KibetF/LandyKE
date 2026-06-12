@@ -14,7 +14,7 @@ export default function UnauthorizedPage() {
         style={{
           background: "var(--white)",
           borderRadius: "8px",
-          boxShadow: "0 40px 80px rgba(15,14,11,0.08)",
+          boxShadow: "var(--shadow-lg)",
           padding: "3rem",
           width: "100%",
           maxWidth: "420px",

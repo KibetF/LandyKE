@@ -8,12 +8,6 @@ export function useCountUp(target: number, duration = 1500) {
   const ref = useRef<HTMLElement>(null);
 
   useEffect(() => {
-    const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (prefersReduced) {
-      setCount(target);
-      return;
-    }
-
     const el = ref.current;
     if (!el) return;
 
@@ -29,15 +23,20 @@ export function useCountUp(target: number, duration = 1500) {
 
     observer.observe(el);
     return () => observer.disconnect();
-  }, [target, started]);
+  }, [started]);
 
   useEffect(() => {
     if (!started) return;
 
     let start: number | null = null;
     let raf: number;
+    const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
     const step = (timestamp: number) => {
+      if (prefersReduced) {
+        setCount(target);
+        return;
+      }
       if (!start) start = timestamp;
       const progress = Math.min((timestamp - start) / duration, 1);
       const eased = 1 - Math.pow(1 - progress, 3);

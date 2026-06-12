@@ -1,20 +1,20 @@
 "use client";
 
-import { useState, useEffect, useCallback, Fragment } from "react";
+import { useState, Fragment } from "react";
+import useSWR from "swr";
 import { ChevronUp, Eye, Download, Send, FileText, BarChart3, Users } from "lucide-react";
-import { generateTenantPaymentReport } from "@/lib/pdf/generate-report";
-import {
-  PieChart,
-  Pie,
-  Cell,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-} from "recharts";
+import dynamic from "next/dynamic";
+import Skeleton from "@/components/ui/Skeleton";
+
+const chartLoading = () => <Skeleton height="100%" />;
+const IncomeBarChart = dynamic(
+  () => import("@/components/ui/charts").then((m) => m.IncomeBarChart),
+  { ssr: false, loading: chartLoading }
+);
+const DonutChart = dynamic(
+  () => import("@/components/ui/charts").then((m) => m.DonutChart),
+  { ssr: false, loading: chartLoading }
+);
 
 interface PropertyBreakdown {
   name: string;
@@ -51,6 +51,7 @@ const cardStyle = {
   background: "var(--white)",
   borderRadius: "8px",
   border: "1px solid rgba(200,150,62,0.08)",
+  boxShadow: "var(--shadow-sm)",
   overflow: "hidden" as const,
 };
 
@@ -61,26 +62,23 @@ function formatMonthLabel(key: string) {
 }
 
 export default function LandlordReports({ selectedMonth }: { selectedMonth: string }) {
-  const [reportData, setReportData] = useState<ReportData | null>(null);
-  const [loading, setLoading] = useState(true);
   const [expandedProperty, setExpandedProperty] = useState<string | null>(null);
 
-  const fetchReport = useCallback(async (month: string) => {
-    setLoading(true);
-    try {
-      const res = await fetch(`/api/landlord/reports?month=${month}`);
-      const data = await res.json();
-      if (res.ok) setReportData(data);
-    } catch { /* ignore */ }
-    setLoading(false);
-  }, []);
+  // Cached per month — switching months back and forth doesn't refetch
+  const { data: reportData, isLoading: loading } = useSWR<ReportData>(
+    `/api/landlord/reports?month=${selectedMonth}`,
+    (url: string) =>
+      fetch(url).then(async (r) => {
+        const data = await r.json();
+        if (!r.ok) throw new Error(data?.error || "Failed to load report");
+        return data;
+      }),
+    { revalidateOnFocus: false, dedupingInterval: 30_000, keepPreviousData: true }
+  );
 
-  useEffect(() => {
-    fetchReport(selectedMonth);
-  }, [selectedMonth, fetchReport]);
-
-  function downloadAllTenantPayments() {
+  async function downloadAllTenantPayments() {
     if (!reportData) return;
+    const { generateTenantPaymentReport } = await import("@/lib/pdf/generate-report");
     const totalRevenue = reportData.incomeData.reduce((s, d) => s + d.collected, 0);
     const totalExpected = reportData.incomeData.reduce((s, d) => s + d.expected, 0);
     const collectionRate = totalExpected > 0 ? Math.round((totalRevenue / totalExpected) * 100) : 0;
@@ -99,8 +97,9 @@ export default function LandlordReports({ selectedMonth }: { selectedMonth: stri
     });
   }
 
-  function downloadPropertyReport(propertyName: string) {
+  async function downloadPropertyReport(propertyName: string) {
     if (!reportData) return;
+    const { generateTenantPaymentReport } = await import("@/lib/pdf/generate-report");
     const propertyTenants = reportData.tenantStatusData.filter((t) => t.property === propertyName);
     const propBreakdown = reportData.propertyBreakdown.find((p) => p.name === propertyName);
     generateTenantPaymentReport({
@@ -212,17 +211,10 @@ export default function LandlordReports({ selectedMonth }: { selectedMonth: stri
                 <span style={{ fontSize: "0.85rem" }}>No data</span>
               </div>
             ) : (
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie data={collectionData} cx="50%" cy="50%" innerRadius={50} outerRadius={75} paddingAngle={3} dataKey="value">
-                    {collectionData.map((_, i) => (
-                      <Cell key={i} fill={collectionColors[i]} />
-                    ))}
-                  </Pie>
-                  <Tooltip formatter={(value) => `KES ${Number(value).toLocaleString()}`} contentStyle={{ fontSize: "0.75rem", borderRadius: "4px" }} />
-                  <Legend wrapperStyle={{ fontSize: "0.75rem" }} />
-                </PieChart>
-              </ResponsiveContainer>
+              <DonutChart
+                data={collectionData.map((d, i) => ({ ...d, color: collectionColors[i] }))}
+                tooltipFormatter={(value) => `KES ${value.toLocaleString()}`}
+              />
             )}
           </div>
         </div>
@@ -238,17 +230,13 @@ export default function LandlordReports({ selectedMonth }: { selectedMonth: stri
                 <span style={{ fontSize: "0.85rem" }}>No tenants</span>
               </div>
             ) : (
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie data={statusData} cx="50%" cy="50%" innerRadius={50} outerRadius={75} paddingAngle={3} dataKey="value">
-                    {statusData.map((entry, i) => (
-                      <Cell key={i} fill={entry.name === "Paid" ? statusColors[0] : entry.name === "Pending" ? statusColors[1] : statusColors[2]} />
-                    ))}
-                  </Pie>
-                  <Tooltip formatter={(value) => `${value} tenants`} contentStyle={{ fontSize: "0.75rem", borderRadius: "4px" }} />
-                  <Legend wrapperStyle={{ fontSize: "0.75rem" }} />
-                </PieChart>
-              </ResponsiveContainer>
+              <DonutChart
+                data={statusData.map((entry) => ({
+                  ...entry,
+                  color: entry.name === "Paid" ? statusColors[0] : entry.name === "Pending" ? statusColors[1] : statusColors[2],
+                }))}
+                tooltipFormatter={(value) => `${value} tenants`}
+              />
             )}
           </div>
         </div>
@@ -517,18 +505,7 @@ export default function LandlordReports({ selectedMonth }: { selectedMonth: stri
               <span style={{ fontSize: "0.85rem" }}>No income data available</span>
             </div>
           ) : (
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={reportData.incomeData} barGap={2} barCategoryGap="20%">
-                <XAxis dataKey="month" tickLine={false} axisLine={false} tick={{ fontSize: 10, fill: "#7a7468" }} />
-                <YAxis hide />
-                <Tooltip
-                  formatter={(value) => `KES ${(Number(value) / 1000).toFixed(0)}k`}
-                  contentStyle={{ background: "var(--white)", border: "1px solid var(--warm)", borderRadius: "4px", fontSize: "0.75rem" }}
-                />
-                <Bar dataKey="expected" fill="#ede6d6" radius={[3, 3, 0, 0]} name="Expected" />
-                <Bar dataKey="collected" fill="#c8963e" radius={[3, 3, 0, 0]} name="Collected" />
-              </BarChart>
-            </ResponsiveContainer>
+            <IncomeBarChart data={reportData.incomeData} />
           )}
         </div>
       </div>

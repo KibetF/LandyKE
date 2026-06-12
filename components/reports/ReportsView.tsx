@@ -1,16 +1,14 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-} from "recharts";
+import dynamic from "next/dynamic";
+import Skeleton from "@/components/ui/Skeleton";
+
+const IncomeBarChart = dynamic(
+  () => import("@/components/ui/charts").then((m) => m.IncomeBarChart),
+  { ssr: false, loading: () => <Skeleton height="100%" /> }
+);
 import { Download, FileText, BarChart3, Users, AlertTriangle } from "lucide-react";
-import { generateRentStatement, generatePropertySummary, generateTenantPaymentReport } from "@/lib/pdf/generate-report";
 import { getAvailableMonths } from "@/lib/queries";
 import WhatsAppShareButton from "@/components/ui/WhatsAppShareButton";
 
@@ -93,7 +91,8 @@ export default function ReportsView({
     URL.revokeObjectURL(url);
   }
 
-  function downloadRentStatement() {
+  async function downloadRentStatement() {
+    const { generateRentStatement } = await import("@/lib/pdf/generate-report");
     generateRentStatement({
       month: formatLabel(selectedMonth),
       incomeData,
@@ -104,7 +103,8 @@ export default function ReportsView({
     });
   }
 
-  function downloadPropertySummary() {
+  async function downloadPropertySummary() {
+    const { generatePropertySummary } = await import("@/lib/pdf/generate-report");
     generatePropertySummary({
       month: formatLabel(selectedMonth),
       occupancyData,
@@ -113,7 +113,8 @@ export default function ReportsView({
     });
   }
 
-  function downloadTenantPaymentReport() {
+  async function downloadTenantPaymentReport() {
+    const { generateTenantPaymentReport } = await import("@/lib/pdf/generate-report");
     generateTenantPaymentReport({
       month: formatLabel(selectedMonth),
       tenants: tenantStatusData,
@@ -222,7 +223,6 @@ export default function ReportsView({
               color: "var(--ink)",
               borderRadius: "4px",
               cursor: "pointer",
-              outline: "none",
             }}
           >
             {months.map((m) => (
@@ -273,18 +273,7 @@ export default function ReportsView({
               <span style={{ fontSize: "0.85rem" }}>No income data available</span>
             </div>
           ) : (
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={incomeData} barGap={2} barCategoryGap="20%">
-                <XAxis dataKey="month" tickLine={false} axisLine={false} tick={{ fontSize: 10, fill: "#7a7468" }} />
-                <YAxis hide />
-                <Tooltip
-                  formatter={(value) => `KES ${(Number(value) / 1000).toFixed(0)}k`}
-                  contentStyle={{ background: "var(--white)", border: "1px solid var(--warm)", borderRadius: "4px", fontSize: "0.75rem" }}
-                />
-                <Bar dataKey="expected" fill="#ede6d6" radius={[3, 3, 0, 0]} name="Expected" />
-                <Bar dataKey="collected" fill="#c8963e" radius={[3, 3, 0, 0]} name="Collected" />
-              </BarChart>
-            </ResponsiveContainer>
+            <IncomeBarChart data={incomeData} />
           )}
         </div>
       </div>

@@ -2,15 +2,34 @@
 
 import { useState, useEffect, useCallback, Fragment } from "react";
 import {
-  UserPlus, Users, Check, AlertCircle, Home, CreditCard,
+  UserPlus, Users, Home, CreditCard,
   Building2, Plus, ChevronDown, ChevronUp, Pencil, Trash2, X,
   LayoutDashboard, FileText, Send, Download, BarChart3, AlertTriangle, Eye, Wifi, Banknote, MessageCircle,
 } from "lucide-react";
+import dynamic from "next/dynamic";
 import { normalizePhone } from "@/lib/sms/phone";
-import WifiManagement from "@/components/admin/WifiManagement";
-import DepositsManagement from "@/components/admin/DepositsManagement";
-import { generateRentStatement, generatePropertySummary, generateTenantPaymentReport } from "@/lib/pdf/generate-report";
-import { generateReceipt, generateReceiptBlob, generateReceiptNumber, type ReceiptData } from "@/lib/pdf/generate-receipt";
+import Skeleton from "@/components/ui/Skeleton";
+import Message from "@/components/ui/Message";
+
+// Code-split: recharts and the tab-specific managers only load when rendered.
+const chartLoading = () => <Skeleton height="100%" />;
+const AdminIncomeBarChart = dynamic(
+  () => import("@/components/ui/charts").then((m) => m.IncomeBarChart),
+  { ssr: false, loading: chartLoading }
+);
+const AdminDonutChart = dynamic(
+  () => import("@/components/ui/charts").then((m) => m.DonutChart),
+  { ssr: false, loading: chartLoading }
+);
+const WifiManagement = dynamic(() => import("@/components/admin/WifiManagement"), {
+  loading: () => <Skeleton height="200px" />,
+});
+const DepositsManagement = dynamic(() => import("@/components/admin/DepositsManagement"), {
+  loading: () => <Skeleton height="200px" />,
+});
+// jspdf is heavy — the PDF generators are loaded on demand inside the
+// download handlers (await import) instead of statically.
+import type { ReceiptData } from "@/lib/pdf/generate-receipt";
 import { getAvailableMonths, formatMonthKey, periodOf } from "@/lib/queries";
 
 function getRentPeriodOptions() {
@@ -24,66 +43,21 @@ function getRentPeriodOptions() {
   }
   return [...future.reverse(), ...months];
 }
+
+import type {
+  Landlord,
+  LandlordOverview,
+  Payment,
+  Property,
+  Tenant,
+} from "@/components/admin/types";
 import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-  Legend,
-} from "recharts";
-
-interface Landlord {
-  id: string;
-  full_name: string;
-  email: string;
-  phone: string | null;
-  created_at: string;
-  carryover_amount: number;
-  carryover_as_of: string | null;
-}
-
-interface Property {
-  id: string;
-  name: string;
-  location: string | null;
-  total_units: number;
-  landlord_id: string;
-  collection_start_month: string | null;
-}
-
-interface Tenant {
-  id: string;
-  full_name: string;
-  email: string | null;
-  phone: string | null;
-  rent_amount: number;
-  status: string;
-  property_id: string;
-  landlord_id: string;
-  unit_number: string | null;
-  unit_type: string | null;
-  properties?: { name: string };
-}
-
-interface Payment {
-  id: string;
-  tenant_id: string;
-  landlord_id: string;
-  amount: number;
-  paid_date: string | null;
-  due_date: string | null;
-  rent_period: string | null;
-  notes: string | null;
-  status: string;
-  payment_type?: string;
-  from_carryover: boolean;
-  tenants?: { full_name: string; property_id: string; unit_number?: string | null; phone?: string | null; properties?: { name: string; location?: string | null } };
-}
+  useAdminOverview,
+  useAdminPayments,
+  useAdminProperties,
+  useAdminReport,
+  useAdminTenants,
+} from "@/hooks/useAdminData";
 
 interface AdminViewProps {
   landlords: Landlord[];
@@ -99,74 +73,13 @@ interface WhatsAppTemplate {
   language: string;
 }
 
-interface PropertyBreakdown {
-  name: string;
-  location: string | null;
-  totalTenants: number;
-  tenantsPaid: number;
-  collected: number;
-  expected: number;
-  receivedInAccount?: number;
-  paidToExternal?: number;
-  rate: number;
-}
-
-interface AdminReportData {
-  incomeData: { month: string; collected: number; expected: number }[];
-  occupancyData: { name: string; total: number; occupied: number; rate: number }[];
-  collectionRates: { month: string; rate: number }[];
-  arrearsData: { tenant: string; property: string; unit: string; amount: number; days: number }[];
-  tenantStatusData: { name: string; property: string; unit?: string; amount: number; date: string; status: "paid" | "pending" | "overdue"; notes?: string }[];
-  propertyBreakdown: PropertyBreakdown[];
-  selectedMonth: string;
-}
-
-interface OverviewProperty {
-  id: string;
-  name: string;
-  location: string | null;
-  totalUnits: number;
-  occupiedUnits: number;
-  occupancyRate: number;
-  tenantsPaid: number;
-  totalTenants: number;
-  collected: number;
-  expected: number;
-}
-
-interface LandlordOverview {
-  id: string;
-  name: string;
-  email: string;
-  totalProperties: number;
-  totalUnits: number;
-  activeTenants: number;
-  totalCollected: number;
-  totalExpected: number;
-  collectionRate: number;
-  properties: OverviewProperty[];
-}
-
-interface OverviewData {
-  totals: {
-    landlords: number;
-    properties: number;
-    units: number;
-    activeTenants: number;
-    collected: number;
-    occupancyRate: number;
-  };
-  landlordOverviews: LandlordOverview[];
-  incomeChart: { month: string; collected: number; expected: number }[];
-  currentMonth: string;
-}
-
 const UNIT_TYPES = ["Studio", "1 Bedroom", "2 Bedroom", "3 Bedroom", "4 Bedroom", "Bedsitter", "Shop", "Office"];
 
 const cardStyle = {
   background: "var(--white)",
   borderRadius: "8px",
   border: "1px solid rgba(200,150,62,0.08)",
+  boxShadow: "var(--shadow-sm)",
   overflow: "hidden" as const,
 };
 
@@ -178,7 +91,6 @@ const inputStyle = {
   fontSize: "0.85rem",
   fontFamily: "var(--font-sans), sans-serif",
   color: "var(--ink)",
-  outline: "none",
   background: "var(--white)",
 } as const;
 
@@ -226,48 +138,25 @@ const modalStyle: React.CSSProperties = {
   margin: "1rem",
 };
 
-function Message({ message }: { message: { type: "success" | "error"; text: string } | null }) {
-  if (!message) return null;
-  return (
-    <div
-      className="flex items-center"
-      style={{
-        gap: "0.5rem",
-        padding: "0.75rem 1rem",
-        borderRadius: "4px",
-        marginBottom: "1rem",
-        fontSize: "0.8rem",
-        background: message.type === "success" ? "var(--green-light)" : "var(--red-light)",
-        color: message.type === "success" ? "var(--green)" : "var(--red-soft)",
-      }}
-    >
-      {message.type === "success" ? <Check size={14} /> : <AlertCircle size={14} />}
-      {message.text}
-    </div>
-  );
-}
-
 export default function AdminView({ landlords: initialLandlords }: AdminViewProps) {
   const [tab, setTab] = useState<Tab>("overview");
   const [landlords, setLandlords] = useState(initialLandlords);
   const [selectedLandlord, setSelectedLandlord] = useState<Landlord | null>(null);
 
   // Overview state
-  const [overviewData, setOverviewData] = useState<OverviewData | null>(null);
-  const [overviewLoading, setOverviewLoading] = useState(true);
+  const { overviewData, overviewLoading, revalidateOverview } = useAdminOverview();
   const [expandedLandlord, setExpandedLandlord] = useState<string | null>(null);
 
   // Reports state
   const [reportLandlord, setReportLandlord] = useState<Landlord | null>(null);
   const [reportMonth, setReportMonth] = useState(new Date().toISOString().slice(0, 7));
-  const [reportData, setReportData] = useState<AdminReportData | null>(null);
+  const { reportData, reportLoading } = useAdminReport(reportLandlord?.id ?? null, reportMonth);
   const [expandedProperty, setExpandedProperty] = useState<string | null>(null);
-  const [reportLoading, setReportLoading] = useState(false);
 
-  // Data states
-  const [properties, setProperties] = useState<Property[]>([]);
-  const [tenants, setTenants] = useState<Tenant[]>([]);
-  const [payments, setPayments] = useState<Payment[]>([]);
+  // Per-landlord data, cached by SWR (instant on tab/landlord revisits)
+  const { properties, setProperties } = useAdminProperties(selectedLandlord?.id ?? null);
+  const { tenants, setTenants, revalidateTenants } = useAdminTenants(selectedLandlord?.id ?? null);
+  const { payments, setPayments, revalidatePayments } = useAdminPayments(selectedLandlord?.id ?? null);
 
   // Form states
   const [accountForm, setAccountForm] = useState({ full_name: "", email: "", phone: "", password: "" });
@@ -387,46 +276,6 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
     setWaSending(false);
   }
 
-  const fetchProperties = useCallback(async (landlordId: string) => {
-    const res = await fetch(`/api/admin/properties?landlord_id=${landlordId}`);
-    const data = await res.json();
-    if (data.properties) setProperties(data.properties);
-  }, []);
-
-  const fetchTenants = useCallback(async (landlordId: string) => {
-    const res = await fetch(`/api/admin/tenants?landlord_id=${landlordId}`);
-    const data = await res.json();
-    if (data.tenants) setTenants(data.tenants);
-  }, []);
-
-  const fetchPayments = useCallback(async (landlordId: string) => {
-    const res = await fetch(`/api/admin/payments?landlord_id=${landlordId}`);
-    const data = await res.json();
-    if (data.payments) setPayments(data.payments);
-  }, []);
-
-  useEffect(() => {
-    if (selectedLandlord) {
-      fetchProperties(selectedLandlord.id);
-      fetchTenants(selectedLandlord.id);
-      fetchPayments(selectedLandlord.id);
-    }
-  }, [selectedLandlord, fetchProperties, fetchTenants, fetchPayments]);
-
-  const fetchOverview = useCallback(async () => {
-    setOverviewLoading(true);
-    try {
-      const res = await fetch("/api/admin/overview");
-      const data = await res.json();
-      if (res.ok) setOverviewData(data);
-    } catch { /* ignore */ }
-    setOverviewLoading(false);
-  }, []);
-
-  useEffect(() => {
-    fetchOverview();
-  }, [fetchOverview]);
-
   function sendWhatsAppReport(landlord: LandlordOverview) {
     const month = new Date().toLocaleDateString("en-KE", { month: "long", year: "numeric" });
     let msg = `*LandyKE Report — ${month}*\n\n`;
@@ -447,29 +296,13 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
     window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, "_blank");
   }
 
-  const fetchReport = useCallback(async (landlordId: string, month: string) => {
-    setReportLoading(true);
-    try {
-      const res = await fetch(`/api/admin/reports?landlord_id=${landlordId}&month=${month}`);
-      const data = await res.json();
-      if (res.ok) setReportData(data);
-    } catch { /* ignore */ }
-    setReportLoading(false);
-  }, []);
-
-  useEffect(() => {
-    if (reportLandlord) {
-      fetchReport(reportLandlord.id, reportMonth);
-    }
-  }, [reportLandlord, reportMonth, fetchReport]);
-
   function formatMonthLabel(key: string) {
     const [year, month] = key.split("-");
     const d = new Date(Number(year), Number(month) - 1);
     return d.toLocaleDateString("en-KE", { month: "long", year: "numeric" });
   }
 
-  function downloadAdminRentStatement() {
+  async function downloadAdminRentStatement() {
     if (!reportData) return;
     // Headline totals reflect the SELECTED MONTH (from propertyBreakdown),
     // matching the on-screen Total row — not the 6-month income trend sum.
@@ -480,6 +313,7 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
       expected: acc.expected + p.expected,
     }), { receivedInAccount: 0, paidToExternal: 0, collected: 0, expected: 0 });
     const collectionRate = totals.expected > 0 ? Math.round((totals.collected / totals.expected) * 100) : 0;
+    const { generateRentStatement } = await import("@/lib/pdf/generate-report");
     generateRentStatement({
       month: formatMonthLabel(reportMonth),
       incomeData: reportData.incomeData,
@@ -492,8 +326,9 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
     });
   }
 
-  function downloadAdminPropertySummary() {
+  async function downloadAdminPropertySummary() {
     if (!reportData) return;
+    const { generatePropertySummary } = await import("@/lib/pdf/generate-report");
     generatePropertySummary({
       month: formatMonthLabel(reportMonth),
       occupancyData: reportData.occupancyData,
@@ -502,7 +337,7 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
     });
   }
 
-  function downloadAdminTenantPayment() {
+  async function downloadAdminTenantPayment() {
     if (!reportData) return;
     // Headline totals reflect the SELECTED MONTH (from propertyBreakdown),
     // matching the on-screen Total row — not the 6-month income trend sum.
@@ -513,6 +348,7 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
       expected: acc.expected + p.expected,
     }), { receivedInAccount: 0, paidToExternal: 0, collected: 0, expected: 0 });
     const collectionRate = totals.expected > 0 ? Math.round((totals.collected / totals.expected) * 100) : 0;
+    const { generateTenantPaymentReport } = await import("@/lib/pdf/generate-report");
     generateTenantPaymentReport({
       month: formatMonthLabel(reportMonth),
       tenants: reportData.tenantStatusData,
@@ -524,10 +360,11 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
     });
   }
 
-  function downloadPropertyReport(propertyName: string) {
+  async function downloadPropertyReport(propertyName: string) {
     if (!reportData) return;
     const propertyTenants = reportData.tenantStatusData.filter((t) => t.property === propertyName);
     const propBreakdown = reportData.propertyBreakdown.find((p) => p.name === propertyName);
+    const { generateTenantPaymentReport } = await import("@/lib/pdf/generate-report");
     generateTenantPaymentReport({
       month: `${formatMonthLabel(reportMonth)} — ${propertyName}`,
       tenants: propertyTenants,
@@ -647,6 +484,7 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
         setMessage({ type: "success", text: `${propertyForm.name} added` });
         setProperties((prev) => [data.property, ...prev]);
         setPropertyForm({ name: "", location: "", total_units: "", collection_start_month: "" });
+        revalidateOverview();
       }
     } catch {
       setMessage({ type: "error", text: "Network error" });
@@ -673,6 +511,7 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
         setMessage({ type: "success", text: `${tenantForm.full_name} added` });
         setTenants((prev) => [data.tenant, ...prev]);
         setTenantForm({ property_id: "", full_name: "", email: "", phone: "", rent_amount: "", unit_number: "", unit_type: "" });
+        revalidateOverview();
       }
     } catch {
       setMessage({ type: "error", text: "Network error" });
@@ -706,6 +545,7 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
           openReceiptPreview(data.payment);
         }
         setPaymentForm({ tenant_id: "", amount: "", paid_date: "", due_date: "", rent_period: new Date().toISOString().slice(0, 7), method: "M-Pesa", notes: "", status: "paid", from_carryover: false });
+        revalidateOverview();
       }
     } catch {
       setMessage({ type: "error", text: "Network error" });
@@ -731,6 +571,7 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
         setProperties((prev) => prev.map((p) => p.id === editingProperty.id ? data.property : p));
         setEditingProperty(null);
         setMessage({ type: "success", text: "Property updated" });
+        revalidateOverview();
       } else {
         setMessage({ type: "error", text: data.error });
       }
@@ -756,6 +597,7 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
         setTenants((prev) => prev.map((t) => t.id === editingTenant.id ? data.tenant : t));
         setEditingTenant(null);
         setMessage({ type: "success", text: "Tenant updated" });
+        revalidateOverview();
       } else {
         setMessage({ type: "error", text: data.error });
       }
@@ -788,6 +630,7 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
         setPayments((prev) => prev.map((p) => p.id === editingPayment.id ? data.payment : p));
         setEditingPayment(null);
         setMessage({ type: "success", text: "Payment updated" });
+        revalidateOverview();
       } else {
         setMessage({ type: "error", text: data.error });
       }
@@ -812,10 +655,10 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
       if (res.ok) {
         setProperties((prev) => prev.filter((p) => p.id !== id));
         setMessage({ type: "success", text: `${name} deleted` });
-        if (selectedLandlord) {
-          fetchTenants(selectedLandlord.id);
-          fetchPayments(selectedLandlord.id);
-        }
+        // cascading delete removes linked tenants/payments server-side
+        revalidateTenants();
+        revalidatePayments();
+        revalidateOverview();
       } else {
         const data = await res.json();
         setMessage({ type: "error", text: data.error });
@@ -839,7 +682,8 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
       if (res.ok) {
         setTenants((prev) => prev.filter((t) => t.id !== id));
         setMessage({ type: "success", text: `${name} deleted` });
-        if (selectedLandlord) fetchPayments(selectedLandlord.id);
+        revalidatePayments();
+        revalidateOverview();
       } else {
         const data = await res.json();
         setMessage({ type: "error", text: data.error });
@@ -863,6 +707,7 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
       if (res.ok) {
         setPayments((prev) => prev.filter((p) => p.id !== id));
         setMessage({ type: "success", text: "Payment deleted" });
+        revalidateOverview();
       } else {
         const data = await res.json();
         setMessage({ type: "error", text: data.error });
@@ -895,7 +740,8 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
     setEditingTenant(t);
   }
 
-  function buildReceiptData(p: Payment): ReceiptData {
+  async function buildReceiptData(p: Payment): Promise<ReceiptData> {
+    const { generateReceiptNumber } = await import("@/lib/pdf/generate-receipt");
     const receiptNumber = generateReceiptNumber(p.id, p.paid_date || new Date().toISOString().slice(0, 10));
     return {
       receiptNumber,
@@ -911,8 +757,9 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
     };
   }
 
-  function openReceiptPreview(p: Payment) {
-    const data = buildReceiptData(p);
+  async function openReceiptPreview(p: Payment) {
+    const data = await buildReceiptData(p);
+    const { generateReceiptBlob } = await import("@/lib/pdf/generate-receipt");
     const blob = generateReceiptBlob(data);
     const url = URL.createObjectURL(blob);
     setReceiptPayment(p);
@@ -974,9 +821,10 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
     window.open(url, "_blank");
   }
 
-  function downloadReceipt() {
+  async function downloadReceipt() {
     if (!receiptPayment) return;
-    const data = buildReceiptData(receiptPayment);
+    const data = await buildReceiptData(receiptPayment);
+    const { generateReceipt } = await import("@/lib/pdf/generate-receipt");
     generateReceipt(data);
   }
 
@@ -1122,18 +970,7 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
                   </h3>
                 </div>
                 <div style={{ padding: "1.5rem", height: "220px" }}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={overviewData.incomeChart} barGap={2} barCategoryGap="20%">
-                      <XAxis dataKey="month" tickLine={false} axisLine={false} tick={{ fontSize: 10, fill: "#7a7468" }} />
-                      <YAxis hide />
-                      <Tooltip
-                        formatter={(value) => `KES ${(Number(value) / 1000).toFixed(0)}k`}
-                        contentStyle={{ background: "var(--white)", border: "1px solid var(--warm)", borderRadius: "4px", fontSize: "0.75rem" }}
-                      />
-                      <Bar dataKey="expected" fill="#ede6d6" radius={[3, 3, 0, 0]} name="Expected" />
-                      <Bar dataKey="collected" fill="#c8963e" radius={[3, 3, 0, 0]} name="Collected" />
-                    </BarChart>
-                  </ResponsiveContainer>
+                  <AdminIncomeBarChart data={overviewData.incomeChart} />
                 </div>
               </div>
             )}
@@ -1291,9 +1128,6 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
               onChange={(e) => {
                 const l = landlords.find((l) => l.id === e.target.value) || null;
                 setSelectedLandlord(l);
-                setProperties([]);
-                setTenants([]);
-                setPayments([]);
                 setPaymentPropertyFilter("");
                 setMessage(null);
               }}
@@ -2010,7 +1844,6 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
                   onChange={(e) => {
                     const l = landlords.find((l) => l.id === e.target.value) || null;
                     setReportLandlord(l);
-                    setReportData(null);
                   }}
                   style={{ ...inputStyle, paddingRight: "2rem", appearance: "none" }}
                 >
@@ -2128,17 +1961,10 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
                             <span style={{ fontSize: "0.85rem" }}>No data</span>
                           </div>
                         ) : (
-                          <ResponsiveContainer width="100%" height="100%">
-                            <PieChart>
-                              <Pie data={collectionData} cx="50%" cy="50%" innerRadius={50} outerRadius={75} paddingAngle={3} dataKey="value">
-                                {collectionData.map((_, i) => (
-                                  <Cell key={i} fill={collectionColors[i]} />
-                                ))}
-                              </Pie>
-                              <Tooltip formatter={(value) => `KES ${Number(value).toLocaleString()}`} contentStyle={{ fontSize: "0.75rem", borderRadius: "4px" }} />
-                              <Legend wrapperStyle={{ fontSize: "0.75rem" }} />
-                            </PieChart>
-                          </ResponsiveContainer>
+                          <AdminDonutChart
+                            data={collectionData.map((d, i) => ({ ...d, color: collectionColors[i] }))}
+                            tooltipFormatter={(value) => `KES ${value.toLocaleString()}`}
+                          />
                         )}
                       </div>
                     </div>
@@ -2153,17 +1979,13 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
                             <span style={{ fontSize: "0.85rem" }}>No tenants</span>
                           </div>
                         ) : (
-                          <ResponsiveContainer width="100%" height="100%">
-                            <PieChart>
-                              <Pie data={statusData} cx="50%" cy="50%" innerRadius={50} outerRadius={75} paddingAngle={3} dataKey="value">
-                                {statusData.map((entry, i) => (
-                                  <Cell key={i} fill={entry.name === "Paid" ? statusColors[0] : entry.name === "Pending" ? statusColors[1] : statusColors[2]} />
-                                ))}
-                              </Pie>
-                              <Tooltip formatter={(value) => `${value} tenants`} contentStyle={{ fontSize: "0.75rem", borderRadius: "4px" }} />
-                              <Legend wrapperStyle={{ fontSize: "0.75rem" }} />
-                            </PieChart>
-                          </ResponsiveContainer>
+                          <AdminDonutChart
+                            data={statusData.map((entry) => ({
+                              ...entry,
+                              color: entry.name === "Paid" ? statusColors[0] : entry.name === "Pending" ? statusColors[1] : statusColors[2],
+                            }))}
+                            tooltipFormatter={(value) => `${value} tenants`}
+                          />
                         )}
                       </div>
                     </div>
@@ -2389,18 +2211,7 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
                       <span style={{ fontSize: "0.85rem" }}>No income data available</span>
                     </div>
                   ) : (
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={reportData.incomeData} barGap={2} barCategoryGap="20%">
-                        <XAxis dataKey="month" tickLine={false} axisLine={false} tick={{ fontSize: 10, fill: "#7a7468" }} />
-                        <YAxis hide />
-                        <Tooltip
-                          formatter={(value) => `KES ${(Number(value) / 1000).toFixed(0)}k`}
-                          contentStyle={{ background: "var(--white)", border: "1px solid var(--warm)", borderRadius: "4px", fontSize: "0.75rem" }}
-                        />
-                        <Bar dataKey="expected" fill="#ede6d6" radius={[3, 3, 0, 0]} name="Expected" />
-                        <Bar dataKey="collected" fill="#c8963e" radius={[3, 3, 0, 0]} name="Collected" />
-                      </BarChart>
-                    </ResponsiveContainer>
+                    <AdminIncomeBarChart data={reportData.incomeData} />
                   )}
                 </div>
               </div>

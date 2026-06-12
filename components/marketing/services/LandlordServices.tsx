@@ -1,3 +1,4 @@
+import Link from "next/link";
 import {
   Building2,
   Wrench,
@@ -241,9 +242,9 @@ export default function LandlordServices() {
                       </div>
                     ))}
                   </div>
-                  <a href="/#contact" className="no-underline" style={ctaLinkStyle}>
+                  <Link href="/#contact" className="no-underline" style={ctaLinkStyle}>
                     Choose {pkg.name} &rarr;
-                  </a>
+                  </Link>
                 </div>
               </ScrollReveal>
             ))}
@@ -299,9 +300,9 @@ export default function LandlordServices() {
           <p style={noteStyle}>
             Material and parts costs billed separately at cost + 10%.
           </p>
-          <a href="/#contact" className="no-underline" style={ctaLinkStyle}>
+          <Link href="/#contact" className="no-underline" style={ctaLinkStyle}>
             Protect Your Property &rarr;
-          </a>
+          </Link>
         </div>
       </ScrollReveal>
 
@@ -375,9 +376,9 @@ export default function LandlordServices() {
               </p>
             </div>
 
-            <a href="/#contact" className="no-underline" style={ctaLinkStyle}>
+            <Link href="/#contact" className="no-underline" style={ctaLinkStyle}>
               Request Assessment &rarr;
-            </a>
+            </Link>
           </div>
         </ScrollReveal>
 
@@ -425,9 +426,9 @@ export default function LandlordServices() {
             <p style={noteStyle}>
               Placement fee only charged on successful move-in.
             </p>
-            <a href="/#contact" className="no-underline" style={ctaLinkStyle}>
+            <Link href="/#contact" className="no-underline" style={ctaLinkStyle}>
               Fill My Vacancy &rarr;
-            </a>
+            </Link>
           </div>
         </ScrollReveal>
 
@@ -478,9 +479,9 @@ export default function LandlordServices() {
               </div>
             </div>
 
-            <a href="/#contact" className="no-underline" style={ctaLinkStyle}>
+            <Link href="/#contact" className="no-underline" style={ctaLinkStyle}>
               Get Legal Support &rarr;
-            </a>
+            </Link>
           </div>
         </ScrollReveal>
       </div>
@@ -573,7 +574,7 @@ export default function LandlordServices() {
             Save KSh 4,000+/year vs &agrave; la carte
           </p>
 
-          <a
+          <Link
             href="/#contact"
             className="no-underline uppercase"
             style={{
@@ -593,7 +594,7 @@ export default function LandlordServices() {
             }}
           >
             Become a Partner
-          </a>
+          </Link>
         </div>
       </ScrollReveal>
     </div>

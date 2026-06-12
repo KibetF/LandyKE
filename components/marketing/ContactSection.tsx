@@ -19,7 +19,6 @@ const fieldInputStyle = {
   fontFamily: "var(--font-sans), sans-serif",
   background: "#fdf8f4",
   color: "var(--ink)",
-  outline: "none",
   transition: "border-color 0.2s, box-shadow 0.2s",
 } as const;
 

@@ -1,7 +1,11 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
+import useSWR from "swr";
 import { Wifi, Building2, Users, Check, AlertCircle, Plus, X } from "lucide-react";
+
+const fetcher = (url: string) => fetch(url).then((r) => r.json());
+const swrOptions = { revalidateOnFocus: false, dedupingInterval: 30_000 };
 
 interface WifiPlan {
   id: string;
@@ -59,6 +63,7 @@ const cardStyle = {
   background: "var(--white)",
   borderRadius: "8px",
   border: "1px solid rgba(200,150,62,0.08)",
+  boxShadow: "var(--shadow-sm)",
   overflow: "hidden" as const,
 };
 
@@ -70,7 +75,6 @@ const inputStyle = {
   fontSize: "0.85rem",
   fontFamily: "var(--font-sans), sans-serif",
   color: "var(--ink)",
-  outline: "none",
   background: "var(--white)",
 } as const;
 
@@ -104,10 +108,7 @@ const statusColors: Record<string, { bg: string; color: string }> = {
 };
 
 export default function WifiManagement({ properties, tenants, selectedLandlordId }: WifiManagementProps) {
-  const [wifiPlans, setWifiPlans] = useState<WifiPlan[]>([]);
   const [selectedProperty, setSelectedProperty] = useState("");
-  const [propertyPlans, setPropertyPlans] = useState<PropertyWifiPlan[]>([]);
-  const [subscriptions, setSubscriptions] = useState<WifiSubscription[]>([]);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
@@ -120,50 +121,39 @@ export default function WifiManagement({ properties, tenants, selectedLandlordId
   const [assignTenantId, setAssignTenantId] = useState("");
   const [assignPlanId, setAssignPlanId] = useState("");
 
-  const fetchWifiPlans = useCallback(async () => {
-    const res = await fetch("/api/admin/wifi-plans");
-    const data = await res.json();
-    if (data.plans) setWifiPlans(data.plans);
-  }, []);
+  const { data: wifiPlansData } = useSWR<{ plans: WifiPlan[] }>(
+    "/api/admin/wifi-plans",
+    fetcher,
+    swrOptions
+  );
+  const wifiPlans = wifiPlansData?.plans ?? [];
 
-  const fetchPropertyPlans = useCallback(async (propertyId: string) => {
-    const res = await fetch(`/api/admin/property-wifi?property_id=${propertyId}`);
-    const data = await res.json();
-    if (data.plans) {
-      setPropertyPlans(data.plans);
-      // Init form state
-      const prices: Record<string, string> = {};
-      const enabled: Record<string, boolean> = {};
-      data.plans.forEach((pp: PropertyWifiPlan) => {
-        prices[pp.wifi_plan_id] = String(pp.price);
-        enabled[pp.wifi_plan_id] = pp.is_available;
-      });
-      setPlanPrices(prices);
-      setPlanEnabled(enabled);
+  const { data: propertyPlansData, mutate: mutatePropertyPlans } = useSWR<{ plans: PropertyWifiPlan[] }>(
+    selectedProperty ? `/api/admin/property-wifi?property_id=${selectedProperty}` : null,
+    fetcher,
+    {
+      ...swrOptions,
+      onSuccess: (data) => {
+        // Seed the price/enabled form inputs from the saved config
+        const prices: Record<string, string> = {};
+        const enabled: Record<string, boolean> = {};
+        (data.plans ?? []).forEach((pp) => {
+          prices[pp.wifi_plan_id] = String(pp.price);
+          enabled[pp.wifi_plan_id] = pp.is_available;
+        });
+        setPlanPrices(prices);
+        setPlanEnabled(enabled);
+      },
     }
-  }, []);
+  );
+  const propertyPlans = propertyPlansData?.plans ?? [];
 
-  const fetchSubscriptions = useCallback(async (propertyId: string) => {
-    const res = await fetch(`/api/admin/wifi-subscriptions?property_id=${propertyId}`);
-    const data = await res.json();
-    if (data.subscriptions) setSubscriptions(data.subscriptions);
-  }, []);
-
-  useEffect(() => {
-    fetchWifiPlans();
-  }, [fetchWifiPlans]);
-
-  useEffect(() => {
-    if (selectedProperty) {
-      fetchPropertyPlans(selectedProperty);
-      fetchSubscriptions(selectedProperty);
-    } else {
-      setPropertyPlans([]);
-      setSubscriptions([]);
-      setPlanPrices({});
-      setPlanEnabled({});
-    }
-  }, [selectedProperty, fetchPropertyPlans, fetchSubscriptions]);
+  const { data: subscriptionsData, mutate: mutateSubscriptions } = useSWR<{ subscriptions: WifiSubscription[] }>(
+    selectedProperty ? `/api/admin/wifi-subscriptions?property_id=${selectedProperty}` : null,
+    fetcher,
+    swrOptions
+  );
+  const subscriptions = subscriptionsData?.subscriptions ?? [];
 
   async function savePropertyPlan(plan: WifiPlan) {
     setLoading(true);
@@ -182,7 +172,7 @@ export default function WifiManagement({ properties, tenants, selectedLandlordId
       });
       if (res.ok) {
         setMessage({ type: "success", text: `${plan.name} plan updated` });
-        fetchPropertyPlans(selectedProperty);
+        mutatePropertyPlans();
       } else {
         const err = await res.json();
         setMessage({ type: "error", text: err.error || "Failed to update" });
@@ -196,7 +186,7 @@ export default function WifiManagement({ properties, tenants, selectedLandlordId
       });
       if (res.ok) {
         setMessage({ type: "success", text: `${plan.name} plan enabled` });
-        fetchPropertyPlans(selectedProperty);
+        mutatePropertyPlans();
       } else {
         const err = await res.json();
         setMessage({ type: "error", text: err.error || "Failed to enable" });
@@ -228,7 +218,7 @@ export default function WifiManagement({ properties, tenants, selectedLandlordId
       setAssignModalOpen(false);
       setAssignTenantId("");
       setAssignPlanId("");
-      fetchSubscriptions(selectedProperty);
+      mutateSubscriptions();
     } else {
       const err = await res.json();
       setMessage({ type: "error", text: err.error || "Failed to assign" });
@@ -245,7 +235,7 @@ export default function WifiManagement({ properties, tenants, selectedLandlordId
     });
     if (res.ok) {
       setMessage({ type: "success", text: `Subscription ${status}` });
-      fetchSubscriptions(selectedProperty);
+      mutateSubscriptions();
     } else {
       setMessage({ type: "error", text: "Failed to update subscription" });
     }
