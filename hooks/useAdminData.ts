@@ -7,6 +7,7 @@ import type {
   Payment,
   Property,
   Tenant,
+  TenantSearchResult,
 } from "@/components/admin/types";
 
 async function fetcher<T>(url: string): Promise<T> {
@@ -96,5 +97,32 @@ export function useAdminPayments(landlordId: string | null) {
     setPayments: (updater: (prev: Payment[]) => Payment[]) =>
       mutate((cur) => ({ payments: updater(cur?.payments ?? []) }), { revalidate: false }),
     revalidatePayments: () => mutate(),
+  };
+}
+
+// Cross-client tenant lookup: search by name, then load one tenant's full
+// payment history (spans all landlords, admin-scoped).
+export function useTenantSearch(q: string) {
+  const query = q.trim();
+  const { data, isLoading } = useSWR<{ tenants: TenantSearchResult[] }>(
+    query.length >= 2 ? `/api/admin/tenant-search?q=${encodeURIComponent(query)}` : null,
+    fetcher,
+    swrOptions
+  );
+  return {
+    results: data?.tenants ?? [],
+    searching: isLoading,
+  };
+}
+
+export function useTenantPaymentsAdmin(tenantId: string | null) {
+  const { data, isLoading } = useSWR<{ payments: Payment[] }>(
+    tenantId ? `/api/admin/payments?tenant_id=${tenantId}` : null,
+    fetcher,
+    swrOptions
+  );
+  return {
+    tenantPayments: data?.payments ?? [],
+    tenantPaymentsLoading: isLoading,
   };
 }

@@ -48,6 +48,18 @@ export interface Payment {
   tenants?: { full_name: string; property_id: string; unit_number?: string | null; phone?: string | null; properties?: { name: string; location?: string | null } };
 }
 
+export interface TenantSearchResult {
+  id: string;
+  full_name: string;
+  phone: string | null;
+  unit_number: string | null;
+  status: string;
+  property_id: string;
+  landlord_id: string;
+  properties?: { name: string } | null;
+  landlords?: { full_name: string } | null;
+}
+
 export interface PropertyBreakdown {
   name: string;
   location: string | null;

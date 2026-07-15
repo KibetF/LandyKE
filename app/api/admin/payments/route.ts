@@ -17,15 +17,21 @@ export async function GET(request: NextRequest) {
   if (!user) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const landlordId = request.nextUrl.searchParams.get("landlord_id");
-  if (!landlordId) return NextResponse.json({ error: "landlord_id required" }, { status: 400 });
+  const tenantId = request.nextUrl.searchParams.get("tenant_id");
+  if (!landlordId && !tenantId) {
+    return NextResponse.json({ error: "landlord_id or tenant_id required" }, { status: 400 });
+  }
 
   const adminClient = createAdminClient();
-  const { data, error } = await adminClient
+  let query = adminClient
     .schema("landyke")
     .from("payments")
-    .select("*, tenants(full_name, property_id, unit_number, phone, properties(name, location))")
-    .eq("landlord_id", landlordId)
-    .order("paid_date", { ascending: false });
+    .select("*, tenants(full_name, property_id, unit_number, phone, properties(name, location))");
+  // tenant_id lookup is cross-landlord (admin-scoped); landlord_id keeps the
+  // per-client list behaviour.
+  if (tenantId) query = query.eq("tenant_id", tenantId);
+  else if (landlordId) query = query.eq("landlord_id", landlordId);
+  const { data, error } = await query.order("paid_date", { ascending: false });
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ payments: data || [] });

@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect, useCallback, Fragment } from "react";
+import { useState, useEffect, useCallback, useRef, Fragment } from "react";
 import {
   UserPlus, Users, Home, CreditCard,
   Building2, Plus, ChevronDown, ChevronUp, Pencil, Trash2, X,
-  LayoutDashboard, FileText, Send, Download, BarChart3, AlertTriangle, Eye, Wifi, Banknote, MessageCircle,
+  LayoutDashboard, FileText, Send, Download, BarChart3, AlertTriangle, Eye, Wifi, Banknote, MessageCircle, Search,
 } from "lucide-react";
 import dynamic from "next/dynamic";
 import { normalizePhone } from "@/lib/sms/phone";
@@ -50,6 +50,7 @@ import type {
   Payment,
   Property,
   Tenant,
+  TenantSearchResult,
 } from "@/components/admin/types";
 import {
   useAdminOverview,
@@ -57,6 +58,8 @@ import {
   useAdminProperties,
   useAdminReport,
   useAdminTenants,
+  useTenantSearch,
+  useTenantPaymentsAdmin,
 } from "@/hooks/useAdminData";
 
 interface AdminViewProps {
@@ -158,6 +161,16 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
   const { tenants, setTenants, revalidateTenants } = useAdminTenants(selectedLandlord?.id ?? null);
   const { payments, setPayments, revalidatePayments } = useAdminPayments(selectedLandlord?.id ?? null);
 
+  // Cross-client tenant search → payment-history modal
+  const [tenantSearchInput, setTenantSearchInput] = useState("");
+  const [tenantSearchQuery, setTenantSearchQuery] = useState("");
+  const [showTenantSearch, setShowTenantSearch] = useState(false);
+  const [selectedTenantForHistory, setSelectedTenantForHistory] = useState<TenantSearchResult | null>(null);
+  const tenantSearchRef = useRef<HTMLDivElement>(null);
+  const tenantSearchDebounce = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const { results: tenantSearchResults, searching: tenantSearching } = useTenantSearch(tenantSearchQuery);
+  const { tenantPayments, tenantPaymentsLoading } = useTenantPaymentsAdmin(selectedTenantForHistory?.id ?? null);
+
   // Form states
   const [accountForm, setAccountForm] = useState({ full_name: "", email: "", phone: "", password: "" });
   const [editingCarryoverId, setEditingCarryoverId] = useState<string | null>(null);
@@ -210,6 +223,24 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
   useEffect(() => {
     if (tab === "messages" && waTemplates.length === 0) fetchTemplates();
   }, [tab, waTemplates.length, fetchTemplates]);
+
+  // Debounce the tenant-search input into the SWR query key
+  const handleTenantSearch = useCallback((value: string) => {
+    setTenantSearchInput(value);
+    setShowTenantSearch(true);
+    if (tenantSearchDebounce.current) clearTimeout(tenantSearchDebounce.current);
+    tenantSearchDebounce.current = setTimeout(() => setTenantSearchQuery(value), 300);
+  }, []);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (tenantSearchRef.current && !tenantSearchRef.current.contains(e.target as Node)) {
+        setShowTenantSearch(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const selectedTemplate = waTemplates.find((t) => t.sid === waSelectedSid) || null;
 
@@ -541,11 +572,16 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
       } else {
         setMessage({ type: "success", text: "Payment recorded" });
         setPayments((prev) => [data.payment, ...prev]);
+        // Snap the month filter to the recorded payment's period so the row is
+        // never hidden by a mismatched filter (e.g. arrears for a past month).
+        const newPeriod = periodOf(data.payment) || data.payment.paid_date?.slice(0, 7) || data.payment.due_date?.slice(0, 7);
+        if (newPeriod) setPaymentMonthFilter(newPeriod);
         if (data.payment.status === "paid") {
           openReceiptPreview(data.payment);
         }
         setPaymentForm({ tenant_id: "", amount: "", paid_date: "", due_date: "", rent_period: new Date().toISOString().slice(0, 7), method: "M-Pesa", notes: "", status: "paid", from_carryover: false });
         revalidateOverview();
+        revalidatePayments();
       }
     } catch {
       setMessage({ type: "error", text: "Network error" });
@@ -897,6 +933,51 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
         <p style={{ fontSize: "0.8rem", color: "var(--muted)", marginTop: "0.2rem" }}>
           Manage landlord accounts, properties, tenants, and payments
         </p>
+      </div>
+
+      {/* Global tenant search — cross-client, opens a payment-history modal */}
+      <div ref={tenantSearchRef} style={{ position: "relative", marginBottom: "1.5rem", maxWidth: "420px" }}>
+        <div className="flex items-center" style={{ gap: "0.5rem", ...inputStyle, padding: "0.6rem 0.9rem" }}>
+          <Search size={16} style={{ color: "var(--muted)", flexShrink: 0 }} />
+          <input
+            type="text"
+            placeholder="Search a tenant by name…"
+            value={tenantSearchInput}
+            onChange={(e) => handleTenantSearch(e.target.value)}
+            onFocus={() => setShowTenantSearch(true)}
+            style={{ border: "none", outline: "none", background: "transparent", width: "100%", fontSize: "0.85rem", color: "var(--ink)", fontFamily: "var(--font-sans), sans-serif" }}
+          />
+        </div>
+
+        {showTenantSearch && tenantSearchInput.trim().length >= 2 && (
+          <div
+            style={{
+              position: "absolute", top: "100%", left: 0, right: 0, marginTop: "0.4rem",
+              background: "var(--white)", border: "1px solid var(--warm)", borderRadius: "8px",
+              boxShadow: "var(--shadow-md)", zIndex: 100, overflow: "hidden", maxHeight: "360px", overflowY: "auto",
+            }}
+          >
+            {tenantSearching ? (
+              <div style={{ padding: "1rem", textAlign: "center", fontSize: "0.8rem", color: "var(--muted)" }}>Searching…</div>
+            ) : tenantSearchResults.length === 0 ? (
+              <div style={{ padding: "1rem", textAlign: "center", fontSize: "0.8rem", color: "var(--muted)" }}>No tenants found</div>
+            ) : (
+              tenantSearchResults.map((t) => (
+                <div
+                  key={t.id}
+                  onClick={() => { setSelectedTenantForHistory(t); setShowTenantSearch(false); }}
+                  className="row-hover"
+                  style={{ padding: "0.7rem 1rem", cursor: "pointer", borderBottom: "1px solid var(--warm)" }}
+                >
+                  <div style={{ fontSize: "0.85rem", fontWeight: 500 }}>{t.full_name}</div>
+                  <div style={{ fontSize: "0.7rem", color: "var(--muted)" }}>
+                    {t.properties?.name || "—"}{t.unit_number ? ` · Unit ${t.unit_number}` : ""} · {t.landlords?.full_name || "—"}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        )}
       </div>
 
       {/* Tabs */}
@@ -2649,6 +2730,93 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
           </div>
         </div>
       )}
+
+      {/* === TENANT PAYMENT HISTORY MODAL (cross-client search) === */}
+      {selectedTenantForHistory && (() => {
+        const t = selectedTenantForHistory;
+        const collected = tenantPayments
+          .filter((p) => p.status === "paid" && !p.from_carryover)
+          .reduce((sum, p) => sum + Number(p.amount), 0);
+        const lastPaid = tenantPayments
+          .filter((p) => p.paid_date)
+          .map((p) => p.paid_date!)
+          .sort()
+          .pop();
+        return (
+          <div style={modalOverlayStyle} onClick={() => setSelectedTenantForHistory(null)}>
+            <div style={{ ...modalStyle, maxWidth: "640px" }} onClick={(e) => e.stopPropagation()}>
+              <div className="flex justify-between items-start" style={{ marginBottom: "1rem" }}>
+                <div>
+                  <h3 className="font-serif" style={{ fontSize: "1.2rem", fontWeight: 600 }}>{t.full_name}</h3>
+                  <p style={{ fontSize: "0.75rem", color: "var(--muted)", marginTop: "0.2rem" }}>
+                    {t.properties?.name || "—"}{t.unit_number ? ` · Unit ${t.unit_number}` : ""} · {t.landlords?.full_name || "—"}
+                    {t.phone ? ` · ${t.phone}` : ""}
+                  </p>
+                </div>
+                <button onClick={() => setSelectedTenantForHistory(null)} style={{ background: "none", border: "none", cursor: "pointer" }}>
+                  <X size={18} style={{ color: "var(--muted)" }} />
+                </button>
+              </div>
+
+              {/* Summary tiles */}
+              <div className="flex" style={{ gap: "0.75rem", marginBottom: "1.25rem", flexWrap: "wrap" }}>
+                <div style={{ flex: "1 1 140px", background: "var(--cream)", borderRadius: "6px", padding: "0.8rem 1rem" }}>
+                  <div style={{ fontSize: "0.65rem", textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--muted)" }}>Total Collected</div>
+                  <div className="font-serif" style={{ fontSize: "1.1rem", fontWeight: 600, color: "var(--green)" }}>KES {collected.toLocaleString()}</div>
+                </div>
+                <div style={{ flex: "1 1 100px", background: "var(--cream)", borderRadius: "6px", padding: "0.8rem 1rem" }}>
+                  <div style={{ fontSize: "0.65rem", textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--muted)" }}>Payments</div>
+                  <div className="font-serif" style={{ fontSize: "1.1rem", fontWeight: 600 }}>{tenantPayments.length}</div>
+                </div>
+                <div style={{ flex: "1 1 140px", background: "var(--cream)", borderRadius: "6px", padding: "0.8rem 1rem" }}>
+                  <div style={{ fontSize: "0.65rem", textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--muted)" }}>Last Payment</div>
+                  <div className="font-serif" style={{ fontSize: "1.1rem", fontWeight: 600 }}>
+                    {lastPaid ? new Date(lastPaid).toLocaleDateString("en-KE", { day: "numeric", month: "short", year: "numeric" }) : "—"}
+                  </div>
+                </div>
+              </div>
+
+              {/* Payment list */}
+              {tenantPaymentsLoading ? (
+                <Skeleton height="120px" />
+              ) : tenantPayments.length === 0 ? (
+                <div style={{ padding: "1.5rem", textAlign: "center", fontSize: "0.85rem", color: "var(--muted)" }}>No payments recorded</div>
+              ) : (
+                <div style={{ border: "1px solid var(--warm)", borderRadius: "6px", overflow: "hidden" }}>
+                  {tenantPayments.map((p, i) => (
+                    <div key={p.id} className="row-hover" style={{ padding: "0.8rem 1rem", borderBottom: i < tenantPayments.length - 1 ? "1px solid var(--warm)" : "none" }}>
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <div style={{ fontSize: "0.82rem", fontWeight: 500 }}>
+                            {p.from_carryover && (
+                              <span style={{ fontSize: "0.55rem", fontWeight: 600, background: "rgba(107,94,94,0.12)", color: "#6b5e5e", padding: "0.15rem 0.4rem", borderRadius: "3px", marginRight: "0.4rem", verticalAlign: "middle", textTransform: "uppercase", letterSpacing: "0.05em" }}>Carryover</span>
+                            )}
+                            {p.notes || "Payment"}
+                          </div>
+                          <span style={{ fontSize: "0.7rem", color: "var(--muted)" }}>
+                            paid {(p.paid_date || p.due_date) ? new Date(p.paid_date || p.due_date!).toLocaleDateString("en-KE", { day: "numeric", month: "short", year: "numeric" }) : "—"}
+                            {p.rent_period && (p.payment_type === "rent" || !p.payment_type) ? (
+                              <> · for <strong style={{ color: "var(--ink)" }}>{formatMonthKey(p.rent_period)}</strong></>
+                            ) : null}
+                          </span>
+                        </div>
+                        <div className="text-right">
+                          <span className="font-serif" style={{ fontSize: "0.88rem", fontWeight: 600, color: p.status === "paid" ? "var(--green)" : p.status === "overdue" ? "var(--rust)" : "var(--ink)" }}>
+                            KES {Number(p.amount).toLocaleString()}
+                          </span>
+                          <span className="block status-pill" style={{ fontSize: "0.55rem", marginTop: "0.2rem", display: "inline-block", background: p.status === "paid" ? "var(--green-light)" : p.status === "overdue" ? "var(--red-light)" : "var(--amber-light)", color: p.status === "paid" ? "var(--green)" : p.status === "overdue" ? "var(--red-soft)" : "var(--gold)" }}>
+                            {p.status === "vacated_unpaid" ? "vacated - unpaid" : p.status}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      })()}
     </>
   );
 }
