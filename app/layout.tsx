@@ -33,6 +33,7 @@ export const metadata: Metadata = {
       "Professional property management in Eldoret, Kenya. Rent collection, tenant management, maintenance coordination, and full financial reporting.",
   },
   verification: {
+    google: "D3lW2vUBFVFF36o79Z8wEsHSFZ9grJR0hy4iVXv1y88",
     other: {
       "facebook-domain-verification": "xjqdxxf672xpl53xm4tgbdzxasbzgp",
     },
