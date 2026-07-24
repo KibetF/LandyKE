@@ -1666,13 +1666,17 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
                           .filter((p) =>
                             p.tenant_id === paymentForm.tenant_id &&
                             p.status === "paid" &&
+                            (p.payment_type || "rent") === "rent" &&
                             periodOf(p) === paymentForm.rent_period
                           )
                           .reduce((s, p) => s + Number(p.amount), 0);
                         const newTotal = existingForPeriod + enteredAmount;
                         let hint = "";
                         let color = "var(--muted)";
-                        if (newTotal > rent) {
+                        if (rent > 0 && existingForPeriod >= rent) {
+                          hint = `Already fully paid — KES ${existingForPeriod.toLocaleString("en-KE")} of KES ${rent.toLocaleString("en-KE")} recorded, this payment will be blocked`;
+                          color = "var(--red-soft)";
+                        } else if (newTotal > rent) {
                           hint = `Surplus — KES ${(newTotal - rent).toLocaleString("en-KE")} credit after this payment`;
                           color = "var(--green)";
                         } else if (newTotal < rent) {

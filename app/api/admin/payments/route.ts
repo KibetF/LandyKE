@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createNotification } from "@/lib/notifications";
+import { resolveRentPeriod, assertRentPeriodNotFullyPaid } from "@/lib/payments";
 
 async function verifyAdmin() {
   const supabase = await createClient();
@@ -48,12 +49,21 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "tenant_id, landlord_id, amount, and status are required" }, { status: 400 });
   }
 
-  let resolvedPeriod: string | null = rent_period || null;
-  if (!resolvedPeriod && paid_date) {
-    resolvedPeriod = String(paid_date).slice(0, 7);
-  }
+  const resolvedPeriod = resolveRentPeriod(rent_period, paid_date);
 
   const adminClient = createAdminClient();
+
+  if (status === "paid") {
+    const blockedReason = await assertRentPeriodNotFullyPaid(adminClient, {
+      tenantId: tenant_id,
+      rentPeriod: resolvedPeriod,
+      paymentType: payment_type,
+    });
+    if (blockedReason) {
+      return NextResponse.json({ error: blockedReason }, { status: 409 });
+    }
+  }
+
   const { data, error } = await adminClient
     .schema("landyke")
     .from("payments")
@@ -103,6 +113,28 @@ export async function PATCH(request: NextRequest) {
   }
 
   const adminClient = createAdminClient();
+
+  if (status === "paid") {
+    const { data: existing } = await adminClient
+      .schema("landyke")
+      .from("payments")
+      .select("tenant_id, rent_period, payment_type")
+      .eq("id", payment_id)
+      .single();
+    const effectivePeriod = resolveRentPeriod(rent_period !== undefined ? rent_period : existing?.rent_period, paid_date);
+    if (existing) {
+      const blockedReason = await assertRentPeriodNotFullyPaid(adminClient, {
+        tenantId: existing.tenant_id,
+        rentPeriod: effectivePeriod,
+        paymentType: existing.payment_type,
+        excludePaymentId: payment_id,
+      });
+      if (blockedReason) {
+        return NextResponse.json({ error: blockedReason }, { status: 409 });
+      }
+    }
+  }
+
   const updateData: Record<string, string | number | null> = { status };
   if (status === "paid" && paid_date) {
     updateData.paid_date = paid_date;

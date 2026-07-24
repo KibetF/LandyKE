@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createNotification } from "@/lib/notifications";
+import { resolveRentPeriod, assertRentPeriodNotFullyPaid } from "@/lib/payments";
 
 export async function POST(request: NextRequest) {
   // 1. Verify authenticated user
@@ -76,7 +77,18 @@ export async function POST(request: NextRequest) {
     notes = `M-Pesa · ${mpesa_reference}`;
   }
 
-  // 7. Insert payment
+  // 7. Reject if this tenant's rent for the period is already fully paid
+  const resolvedPeriod = resolveRentPeriod(undefined, paid_date);
+  const blockedReason = await assertRentPeriodNotFullyPaid(adminClient, {
+    tenantId: tenant_id,
+    rentPeriod: resolvedPeriod,
+    paymentType: "rent",
+  });
+  if (blockedReason) {
+    return NextResponse.json({ error: blockedReason }, { status: 409 });
+  }
+
+  // 8. Insert payment
   const { data: payment, error } = await adminClient
     .schema("landyke")
     .from("payments")
@@ -88,6 +100,8 @@ export async function POST(request: NextRequest) {
       status: "paid",
       notes,
       marked_by: user.id,
+      rent_period: resolvedPeriod,
+      payment_type: "rent",
     })
     .select()
     .single();
@@ -96,7 +110,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
 
-  // 8. Create notification for the landlord
+  // 9. Create notification for the landlord
   const propertyName = props?.name || "";
   await createNotification(
     adminClient,
