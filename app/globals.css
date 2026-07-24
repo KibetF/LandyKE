@@ -68,12 +68,6 @@ body {
   background: var(--gold);
 }
 
-/* Float animation for hero card */
-@keyframes floatCard {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-12px); }
-}
-
 /* Spin animation for loaders */
 @keyframes spin {
   from { transform: rotate(0deg); }
@@ -84,12 +78,6 @@ body {
 @keyframes fadeSlideUp {
   from { opacity: 0; transform: translateY(20px); }
   to { opacity: 1; transform: translateY(0); }
-}
-
-/* Pulse animation for LIVE badge */
-@keyframes pulse {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.5; transform: scale(1.5); }
 }
 
 /* Visible keyboard focus everywhere (replaces scattered outline: none) */
@@ -473,11 +461,49 @@ body {
   padding: 5rem 5rem;
 }
 
-/* Stats belt grid */
-.stats-belt-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 0;
+/* Stats strip — a quiet, single-line credential strip (no animated counters) */
+.stats-strip {
+  background: var(--ink);
+  border-top: 1px solid var(--gold);
+  border-bottom: 1px solid var(--gold);
+  padding: 2rem 5rem;
+  display: flex;
+  justify-content: center;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 2.5rem;
+}
+.stats-strip-item {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  position: relative;
+  padding-right: 2.5rem;
+}
+.stats-strip-item:last-child {
+  padding-right: 0;
+}
+.stats-strip-item:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--gold);
+}
+.stats-strip-num {
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: var(--gold);
+  line-height: 1;
+}
+.stats-strip-label {
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  color: rgba(245, 240, 232, 0.55);
 }
 
 /* Steps grid (How it Works) */
@@ -573,6 +599,253 @@ body {
   }
 }
 
+/* Service directory panel — a lobby directory board / ledger, not a card grid */
+.directory-panel {
+  background: var(--ink);
+  border-radius: var(--radius-lg);
+  padding: 3.5rem 4rem;
+}
+.directory-header {
+  max-width: 640px;
+  margin-bottom: 3rem;
+}
+.directory-tag {
+  font-size: 0.7rem;
+  letter-spacing: 0.2em;
+  color: var(--gold-light);
+  font-weight: 500;
+  margin-bottom: 1rem;
+}
+.directory-heading {
+  font-size: clamp(1.9rem, 3vw, 2.4rem);
+  font-weight: 300;
+  line-height: 1.15;
+  color: var(--cream);
+  margin-bottom: 1rem;
+}
+.directory-subtext {
+  font-size: 0.9rem;
+  line-height: 1.7;
+  color: rgba(245, 240, 232, 0.55);
+  font-weight: 300;
+}
+.directory-group + .directory-group {
+  margin-top: 2.5rem;
+  padding-top: 2rem;
+  border-top: 1px solid rgba(200, 150, 62, 0.25);
+}
+.directory-group-label {
+  font-size: 0.68rem;
+  letter-spacing: 0.16em;
+  color: var(--gold-light);
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+}
+.directory-row {
+  display: block;
+  padding: 1.1rem 0;
+  border-bottom: 1px solid rgba(245, 240, 232, 0.08);
+  color: inherit;
+  transition: background 0.25s;
+}
+.directory-row:last-child {
+  border-bottom: none;
+}
+.directory-row:hover {
+  background: rgba(245, 240, 232, 0.03);
+}
+.directory-row-title {
+  display: flex;
+  align-items: baseline;
+  gap: 0.85rem;
+}
+.directory-code {
+  flex-shrink: 0;
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  color: var(--gold);
+  border: 1px solid rgba(200, 150, 62, 0.4);
+  border-radius: var(--radius-sm);
+  padding: 2px 6px;
+}
+.directory-name {
+  flex-shrink: 0;
+  font-size: 1.15rem;
+  font-weight: 500;
+  color: var(--cream);
+  white-space: nowrap;
+}
+.directory-dots {
+  flex: 1;
+  border-bottom: 2px dotted rgba(245, 240, 232, 0.22);
+  transform: translateY(-6px);
+  transition: border-color 0.3s;
+}
+.directory-row:hover .directory-dots {
+  border-color: var(--gold);
+}
+.directory-arrow {
+  flex-shrink: 0;
+  color: var(--gold);
+  opacity: 0;
+  transform: translate(-4px, 2px);
+  transition: opacity 0.25s, transform 0.25s;
+}
+.directory-row:hover .directory-arrow {
+  opacity: 1;
+  transform: translate(0, 2px);
+}
+.directory-desc {
+  font-size: 0.82rem;
+  line-height: 1.65;
+  color: rgba(245, 240, 232, 0.5);
+  font-weight: 300;
+  margin-top: 0.45rem;
+  margin-left: 3.2rem;
+  max-width: 620px;
+}
+
+/* Hero statement card — a resting ledger document, not a floating live-data widget */
+.hero-statement {
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  padding: 2.25rem 2.25rem 2.25rem 2.75rem;
+  width: 100%;
+  max-width: 480px;
+  position: relative;
+  transform: rotate(-1deg);
+}
+.hero-statement::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 14px;
+  bottom: 14px;
+  width: 3px;
+  background: var(--rust);
+  border-radius: 2px;
+}
+.hero-statement-label {
+  font-size: 0.65rem;
+  letter-spacing: 0.18em;
+  color: var(--gold);
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+}
+.hero-statement-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--warm);
+}
+.ledger-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  padding: 0.5rem 0;
+}
+.ledger-row-label {
+  font-size: 0.8rem;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.ledger-dots {
+  flex: 1;
+  border-bottom: 2px dotted rgba(15, 14, 11, 0.15);
+  transform: translateY(-4px);
+}
+.ledger-row-value {
+  font-family: var(--font-serif), serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--ink);
+  white-space: nowrap;
+}
+.ledger-row.payoff {
+  margin-top: 0.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--warm);
+}
+.ledger-row.payoff .ledger-row-label {
+  font-weight: 500;
+  color: var(--ink);
+}
+.ledger-row.payoff .ledger-row-value {
+  font-size: 1.5rem;
+  color: var(--gold);
+}
+.hero-tenant-list {
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--warm);
+}
+.hero-tenant-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  padding: 0.4rem 0;
+}
+.hero-tenant-name {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--ink);
+  white-space: nowrap;
+}
+.hero-tenant-property {
+  font-size: 0.7rem;
+  font-weight: 400;
+  color: var(--muted);
+}
+.hero-tenant-dots {
+  flex: 1;
+  border-bottom: 2px dotted rgba(15, 14, 11, 0.12);
+  transform: translateY(-3px);
+}
+.hero-tenant-status {
+  font-size: 0.65rem;
+  letter-spacing: 0.08em;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.hero-tenant-status.paid {
+  color: var(--green);
+}
+.hero-tenant-status.pending {
+  color: var(--gold);
+}
+
+@media (max-width: 640px) {
+  .hero-statement {
+    transform: none;
+    padding: 1.75rem 1.75rem 1.75rem 2.1rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .directory-panel {
+    padding: 2.5rem 1.5rem;
+  }
+  .directory-dots {
+    display: none;
+  }
+  .directory-row-title {
+    justify-content: space-between;
+  }
+  .directory-name {
+    white-space: normal;
+  }
+  .directory-desc {
+    margin-left: 0;
+  }
+  .directory-arrow {
+    opacity: 1;
+    transform: none;
+  }
+}
+
 @media (max-width: 768px) {
   .marketing-section {
     padding: 4rem 1.5rem;
@@ -609,10 +882,10 @@ body {
     padding: 3rem 1.5rem !important;
   }
 
-  /* Stats belt 2x2 */
-  .stats-belt-grid {
-    grid-template-columns: repeat(2, 1fr) !important;
-    padding: 2rem 1.5rem !important;
+  /* Stats strip on mobile */
+  .stats-strip {
+    padding: 1.75rem 1.5rem !important;
+    gap: 1.5rem 2rem !important;
   }
 
   /* Trust section */
@@ -721,9 +994,6 @@ body {
 
 /* Small mobile */
 @media (max-width: 480px) {
-  .stats-belt-grid {
-    grid-template-columns: 1fr !important;
-  }
   .cta-band .flex {
     flex-direction: column;
   }

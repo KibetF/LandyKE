@@ -29,11 +29,9 @@ export default function CtaBand() {
             lineHeight: 1.15,
           }}
         >
-          Ready to stop worrying about your properties?
+          Hand over the keys.
           <br />
-          <em style={{ color: "var(--gold)", fontStyle: "italic" }}>
-            Let&apos;s talk.
-          </em>
+          <span style={{ color: "var(--gold)" }}>Keep the income.</span>
         </h2>
       </div>
       <div className="flex shrink-0" style={{ gap: "1rem" }}>

@@ -132,203 +132,47 @@ export default function HeroSection() {
           </div>
         </div>
 
-        {/* Right - floating card */}
+        {/* Right - statement card */}
         <div
           className="flex items-center justify-center relative"
           style={{ padding: "1rem 2rem" }}
         >
-          <div
-            style={{
-              background: "var(--white)",
-              borderRadius: "16px",
-              boxShadow: "0 24px 64px rgba(0,0,0,0.10)",
-              padding: "2rem",
-              width: "100%",
-              maxWidth: "480px",
-              position: "relative",
-              animation: "floatCard 6s ease-in-out infinite",
-            }}
-          >
-            {/* Card header */}
-            <div
-              className="flex justify-between items-center"
-              style={{
-                marginBottom: "1.5rem",
-                paddingBottom: "1rem",
-                borderBottom: "1px solid var(--warm)",
-              }}
-            >
-              <h3
-                className="font-serif"
-                style={{ fontSize: "1.1rem", fontWeight: 600 }}
-              >
-                March 2026 — Portfolio Overview
-              </h3>
-              <span
-                style={{
-                  background: "var(--green-light)",
-                  color: "var(--green)",
-                  fontSize: "0.65rem",
-                  letterSpacing: "0.1em",
-                  textTransform: "uppercase",
-                  padding: "0.25rem 0.6rem",
-                  borderRadius: "20px",
-                  fontWeight: 500,
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "0.35rem",
-                }}
-              >
-                <span
-                  style={{
-                    display: "inline-block",
-                    width: "6px",
-                    height: "6px",
-                    borderRadius: "50%",
-                    background: "var(--green)",
-                    animation: "pulse 2s ease-in-out infinite",
-                  }}
-                />
-                Live
-              </span>
+          <div className="hero-statement">
+            <div className="hero-statement-label uppercase">Statement</div>
+            <h3 className="font-serif hero-statement-title">
+              March 2026 — Uasin Gishu Portfolio
+            </h3>
+
+            <div className="ledger-row">
+              <span className="ledger-row-label">Rent collected</span>
+              <span className="ledger-dots" aria-hidden="true" />
+              <span className="ledger-row-value">KES 200,000</span>
+            </div>
+            <div className="ledger-row">
+              <span className="ledger-row-label">Collection rate</span>
+              <span className="ledger-dots" aria-hidden="true" />
+              <span className="ledger-row-value">94%</span>
+            </div>
+            <div className="ledger-row payoff">
+              <span className="ledger-row-label">Net disbursed to you</span>
+              <span className="ledger-dots" aria-hidden="true" />
+              <span className="ledger-row-value">KES 187,500</span>
             </div>
 
-            {/* Stats row */}
-            <div
-              className="grid"
-              style={{
-                gridTemplateColumns: "1fr 1fr",
-                gap: "1rem",
-                marginBottom: "1.5rem",
-              }}
-            >
-              <div
-                style={{
-                  background: "var(--cream)",
-                  borderRadius: "6px",
-                  padding: "1rem",
-                }}
-              >
-                <label
-                  style={{
-                    display: "block",
-                    fontSize: "0.65rem",
-                    letterSpacing: "0.1em",
-                    textTransform: "uppercase",
-                    color: "var(--muted)",
-                    marginBottom: "0.4rem",
-                  }}
-                >
-                  Collected This Month
-                </label>
-                <div
-                  className="font-serif"
-                  style={{
-                    fontSize: "1.6rem",
-                    fontWeight: 600,
-                    color: "var(--ink)",
-                  }}
-                >
-                  KES 200k{" "}
-                  <small
-                    style={{
-                      fontSize: "0.75rem",
-                      fontWeight: 400,
-                      color: "var(--muted)",
-                      fontFamily: "var(--font-sans), sans-serif",
-                    }}
-                  >
-                    /mo
-                  </small>
-                </div>
-              </div>
-              <div
-                style={{
-                  background: "var(--cream)",
-                  borderRadius: "6px",
-                  padding: "1rem",
-                }}
-              >
-                <label
-                  style={{
-                    display: "block",
-                    fontSize: "0.65rem",
-                    letterSpacing: "0.1em",
-                    textTransform: "uppercase",
-                    color: "var(--muted)",
-                    marginBottom: "0.4rem",
-                  }}
-                >
-                  Collection Rate
-                </label>
-                <div
-                  className="font-serif"
-                  style={{
-                    fontSize: "1.6rem",
-                    fontWeight: 600,
-                    color: "var(--ink)",
-                  }}
-                >
-                  94%{" "}
-                  <small
-                    style={{
-                      fontSize: "0.75rem",
-                      fontWeight: 400,
-                      color: "var(--muted)",
-                      fontFamily: "var(--font-sans), sans-serif",
-                    }}
-                  >
-                    on-time
-                  </small>
-                </div>
-              </div>
-            </div>
-
-            {/* Mini tenant list */}
-            <div className="flex flex-col" style={{ gap: "0.5rem" }}>
+            <div className="hero-tenant-list">
               {[
-                {
-                  name: "James Waweru",
-                  prop: "Plot A · Unit 4",
-                  status: "paid",
-                },
-                {
-                  name: "Grace Akinyi",
-                  prop: "Eldoret Block · Unit 2",
-                  status: "paid",
-                },
-                {
-                  name: "Daniel Otieno",
-                  prop: "Plot B · Unit 7",
-                  status: "pending",
-                },
+                { name: "James Waweru", prop: "Plot A, Unit 4", status: "paid" },
+                { name: "Grace Akinyi", prop: "Eldoret Block, Unit 2", status: "paid" },
+                { name: "Daniel Otieno", prop: "Plot B, Unit 7", status: "pending" },
               ].map((t) => (
-                <div
-                  key={t.name}
-                  className="flex justify-between items-center"
-                  style={{
-                    padding: "0.6rem 0.8rem",
-                    background: "var(--cream)",
-                    borderRadius: "4px",
-                  }}
-                >
-                  <div>
-                    <div style={{ fontSize: "0.8rem", fontWeight: 500 }}>
-                      {t.name}
-                    </div>
-                    <div style={{ fontSize: "0.7rem", color: "var(--muted)" }}>
-                      {t.prop}
-                    </div>
-                  </div>
-                  <span
-                    style={{
-                      width: "7px",
-                      height: "7px",
-                      borderRadius: "50%",
-                      background:
-                        t.status === "paid" ? "var(--green)" : "var(--gold)",
-                    }}
-                  />
+                <div key={t.name} className="hero-tenant-row">
+                  <span className="hero-tenant-name">
+                    {t.name} <span className="hero-tenant-property">· {t.prop}</span>
+                  </span>
+                  <span className="hero-tenant-dots" aria-hidden="true" />
+                  <span className={`hero-tenant-status uppercase ${t.status}`}>
+                    {t.status}
+                  </span>
                 </div>
               ))}
             </div>

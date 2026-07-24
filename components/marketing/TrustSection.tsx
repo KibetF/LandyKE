@@ -90,8 +90,8 @@ export default function TrustSection() {
               color: "var(--cream)",
             }}
           >
-            Trusted by landlords across{" "}
-            <em style={{ fontStyle: "italic", color: "var(--gold)" }}>Kenya</em>
+            Managed here.{" "}
+            <span style={{ color: "var(--gold)" }}>Trusted from anywhere.</span>
           </h2>
           <p
             style={{
