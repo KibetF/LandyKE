@@ -27,11 +27,22 @@ export default function AudienceTabs({ tenantContent, ownerContent }: AudienceTa
   });
 
   return (
-    <div className="marketing-section" style={{ paddingBottom: 0 }}>
+    <div className="marketing-section" style={{ paddingTop: 0, paddingBottom: 0 }}>
       <div
-        className="flex justify-center"
-        style={{ marginBottom: "3rem" }}
+        className="flex items-center flex-wrap"
+        style={{ marginBottom: "2.5rem", gap: "1rem" }}
       >
+        <span
+          className="uppercase"
+          style={{
+            fontSize: "0.65rem",
+            letterSpacing: "0.14em",
+            color: "var(--muted)",
+            fontWeight: 500,
+          }}
+        >
+          Showing prices for
+        </span>
         <div
           style={{
             display: "inline-flex",

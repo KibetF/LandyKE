@@ -142,7 +142,7 @@ export default function ContactSection() {
                   border: "none",
                   padding: "0.6rem 1.4rem",
                   fontSize: "0.8rem",
-                  borderRadius: "4px",
+                  borderRadius: "26px",
                   cursor: "pointer",
                   fontFamily: "var(--font-sans), sans-serif",
                 }}
@@ -190,7 +190,7 @@ export default function ContactSection() {
                   name="message"
                   rows={4}
                   required
-                  placeholder="Tell us about your property \u2014 type, number of units, current situation..."
+                  placeholder="Tell us about your property — type, number of units, current situation..."
                   style={{ ...fieldInputStyle, resize: "vertical" }}
                 />
               </div>
@@ -215,7 +215,7 @@ export default function ContactSection() {
                   fontWeight: 500,
                   letterSpacing: "0.1em",
                   border: "none",
-                  borderRadius: "4px",
+                  borderRadius: "26px",
                   cursor: formState === "loading" ? "wait" : "pointer",
                   transition: "background 0.25s",
                   marginTop: "0.5rem",

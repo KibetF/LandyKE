@@ -47,67 +47,39 @@ export default function HowItWorks() {
             fontWeight: 300,
             lineHeight: 1.1,
             maxWidth: "600px",
-            marginBottom: "4rem",
+            marginBottom: "3rem",
           }}
         >
-          From onboarding to{" "}
-          <em style={{ fontStyle: "italic", color: "var(--gold)" }}>
-            passive income
-          </em>
+          Keys in. <span style={{ color: "var(--gold)" }}>Statements out.</span>
         </h2>
       </ScrollReveal>
-      <div
-        className="steps-container relative"
-        style={{
-          marginTop: "1rem",
-        }}
-      >
-        {steps.map((s, i) => (
-          <ScrollReveal key={s.num} delay={Math.min(i + 1, 4)}>
-            <div
-              className="relative z-1"
-              style={{ padding: "0 2rem 3rem" }}
-            >
-              <div
-                className="font-serif flex items-center justify-center"
-                style={{
-                  width: "4rem",
-                  height: "4rem",
-                  borderRadius: "50%",
-                  background: "#fdf8f0",
-                  border: "2px solid var(--gold)",
-                  color: "var(--gold)",
-                  fontSize: "1.4rem",
-                  fontWeight: 600,
-                  margin: "0 auto 1.5rem",
-                }}
-              >
-                {s.num}
+      <ScrollReveal>
+        <div className="ledger-list" style={{ maxWidth: "760px" }}>
+          {steps.map((s) => (
+            <div key={s.num} className="ledger-list-row">
+              <span className="ledger-list-num">{s.num}</span>
+              <div>
+                <h4
+                  className="font-serif"
+                  style={{ fontSize: "1.1rem", fontWeight: 600, marginBottom: "0.4rem" }}
+                >
+                  {s.title}
+                </h4>
+                <p
+                  style={{
+                    fontSize: "0.85rem",
+                    color: "var(--muted)",
+                    lineHeight: 1.7,
+                    fontWeight: 300,
+                  }}
+                >
+                  {s.desc}
+                </p>
               </div>
-              <h4
-                className="font-serif text-center"
-                style={{
-                  fontSize: "1.1rem",
-                  fontWeight: 600,
-                  marginBottom: "0.5rem",
-                }}
-              >
-                {s.title}
-              </h4>
-              <p
-                style={{
-                  fontSize: "0.8rem",
-                  color: "var(--muted)",
-                  lineHeight: 1.7,
-                  fontWeight: 300,
-                }}
-              >
-                {s.desc}
-              </p>
             </div>
-          </ScrollReveal>
-        ))}
-      </div>
+          ))}
+        </div>
+      </ScrollReveal>
     </section>
   );
 }

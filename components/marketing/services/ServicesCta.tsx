@@ -29,7 +29,8 @@ export default function ServicesCta() {
             marginBottom: "1rem",
           }}
         >
-          Ready to upgrade your property experience?
+          Tell us what you need.{" "}
+          <span style={{ color: "var(--gold)" }}>We&apos;ll price it straight.</span>
         </h2>
         <p
           style={{

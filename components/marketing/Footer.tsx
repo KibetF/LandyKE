@@ -1,10 +1,10 @@
 import Link from "next/link";
+import { MapPin, Phone, Mail } from "lucide-react";
 
 const companyLinks: { label: string; href: string }[] = [
   { label: "About Us", href: "/about" },
   { label: "Our Team", href: "/about" },
   { label: "Coverage Areas", href: "/#portfolio" },
-  { label: "Careers", href: "/#contact" },
   { label: "Contact", href: "/#contact" },
 ];
 
@@ -140,30 +140,41 @@ export default function Footer() {
               </Link>
             </li>
             <li style={{ marginBottom: "0.6rem" }}>
-              <Link
+              <a
                 href="mailto:yafredkibet@gmail.com"
                 className="footer-link no-underline"
                 style={footerLinkStyle}
               >
                 Support
-              </Link>
+              </a>
             </li>
           </ul>
-          <div style={{ marginTop: "1.5rem" }}>
-            <p
-              style={{
-                fontSize: "0.7rem",
-                color: "rgba(245,240,232,0.3)",
-              }}
-            >
-              📍 Kapsoya, near Moi Girls High School, Eldoret
-              <br />
-              📞 +254 759 342 765
-              <br />
-              📞 +254 722 338 510
-              <br />
-              ✉ yafredkibet@gmail.com
-            </p>
+          <div
+            style={{
+              marginTop: "1.5rem",
+              display: "flex",
+              flexDirection: "column",
+              gap: "0.45rem",
+              fontSize: "0.7rem",
+              color: "rgba(245,240,232,0.3)",
+            }}
+          >
+            <span className="flex items-center" style={{ gap: "0.45rem" }}>
+              <MapPin size={13} color="var(--gold)" strokeWidth={1.5} style={{ flexShrink: 0 }} />
+              Kapsoya, near Moi Girls High School, Eldoret
+            </span>
+            <span className="flex items-center" style={{ gap: "0.45rem" }}>
+              <Phone size={13} color="var(--gold)" strokeWidth={1.5} style={{ flexShrink: 0 }} />
+              +254 759 342 765
+            </span>
+            <span className="flex items-center" style={{ gap: "0.45rem" }}>
+              <Phone size={13} color="var(--gold)" strokeWidth={1.5} style={{ flexShrink: 0 }} />
+              +254 722 338 510
+            </span>
+            <span className="flex items-center" style={{ gap: "0.45rem" }}>
+              <Mail size={13} color="var(--gold)" strokeWidth={1.5} style={{ flexShrink: 0 }} />
+              yafredkibet@gmail.com
+            </span>
           </div>
         </div>
       </footer>

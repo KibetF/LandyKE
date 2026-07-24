@@ -1,61 +1,14 @@
 import Link from "next/link";
-import {
-  Building2,
-  Wrench,
-  Paintbrush,
-  Search,
-  Scale,
-  CheckCircle,
-} from "lucide-react";
 import ScrollReveal from "@/components/ui/ScrollReveal";
-
-const sectionTagStyle = {
-  fontSize: "0.7rem",
-  letterSpacing: "0.18em",
-  color: "var(--gold)",
-  fontWeight: 500,
-  marginBottom: "1rem",
-  gap: "0.6rem",
-} as const;
-
-const cardStyle = {
-  background: "var(--white)",
-  borderRadius: "12px",
-  padding: "32px",
-  boxShadow: "0 2px 16px rgba(0,0,0,0.04)",
-  transition: "background 0.3s",
-  height: "100%",
-} as const;
-
-const cardTitleStyle = {
-  fontSize: "1.4rem",
-  fontWeight: 600,
-  marginBottom: "0.8rem",
-} as const;
-
-const cardDescStyle = {
-  fontSize: "0.85rem",
-  color: "var(--muted)",
-  lineHeight: 1.7,
-  fontWeight: 300,
-} as const;
-
-const pricingRowStyle = {
-  display: "flex",
-  justifyContent: "space-between",
-  alignItems: "baseline",
-  padding: "10px 0",
-  borderBottom: "1px solid var(--warm)",
-  gap: "1rem",
-} as const;
-
-const priceStyle = {
-  fontSize: "0.9rem",
-  fontWeight: 600,
-  color: "var(--gold)",
-  whiteSpace: "nowrap",
-  fontFamily: "var(--font-serif), serif",
-} as const;
+import {
+  CardHeader,
+  PriceRow,
+  GoldDot,
+  sectionTagStyle,
+  cardDescStyle,
+  ctaLinkStyle,
+  noteStyle,
+} from "./RateCardParts";
 
 const planLabelStyle = {
   fontSize: "0.8rem",
@@ -68,23 +21,6 @@ const planDescStyle = {
   color: "var(--muted)",
   fontWeight: 300,
   marginTop: "2px",
-} as const;
-
-const ctaLinkStyle = {
-  display: "inline-block",
-  marginTop: "1.5rem",
-  fontSize: "0.75rem",
-  color: "var(--gold)",
-  fontWeight: 500,
-  letterSpacing: "0.06em",
-} as const;
-
-const noteStyle = {
-  fontSize: "0.75rem",
-  color: "var(--muted)",
-  fontStyle: "italic",
-  marginTop: "1rem",
-  fontWeight: 300,
 } as const;
 
 const managementPackages = [
@@ -131,10 +67,7 @@ export default function LandlordServices() {
   return (
     <div>
       <ScrollReveal>
-        <div
-          className="section-tag flex items-center uppercase"
-          style={sectionTagStyle}
-        >
+        <div className="section-tag flex items-center uppercase" style={sectionTagStyle}>
           Property Owner Services
         </div>
         <h2
@@ -147,10 +80,8 @@ export default function LandlordServices() {
             marginBottom: "1rem",
           }}
         >
-          Maximize income,{" "}
-          <em style={{ fontStyle: "italic", color: "var(--gold)" }}>
-            minimize headaches
-          </em>
+          We run the property.{" "}
+          <span style={{ color: "var(--gold)" }}>You read the statement.</span>
         </h2>
         <p
           style={{
@@ -162,7 +93,7 @@ export default function LandlordServices() {
             marginBottom: "3rem",
           }}
         >
-          Let us handle everything. Choose the level of involvement you want &mdash;
+          Let us handle everything. Choose the level of involvement you want —
           we scale to fit.
         </p>
       </ScrollReveal>
@@ -170,41 +101,30 @@ export default function LandlordServices() {
       {/* Property Management Packages */}
       <ScrollReveal>
         <div style={{ marginBottom: "3rem" }}>
-          <div className="flex items-center" style={{ gap: "0.8rem", marginBottom: "2rem" }}>
-            <Building2 size={28} color="var(--gold)" strokeWidth={1.5} />
-            <h3 className="font-serif" style={{ fontSize: "1.6rem", fontWeight: 600 }}>
-              Property Management Packages
-            </h3>
-          </div>
+          <h3 className="font-serif" style={{ fontSize: "1.6rem", fontWeight: 600, marginBottom: "2rem" }}>
+            Property Management Packages
+          </h3>
 
           <div className="services-grid-3">
             {managementPackages.map((pkg, i) => (
               <ScrollReveal key={pkg.name} delay={Math.min(i + 1, 4)}>
                 <div
-                  className="service-card card-interactive"
-                  style={{
-                    ...cardStyle,
-                    borderTop: pkg.popular ? "3px solid var(--gold)" : "3px solid transparent",
-                    position: "relative",
-                  }}
+                  className={`rate-card${pkg.popular ? " featured" : ""}`}
+                  style={{ height: "100%" }}
                 >
                   {pkg.popular && (
-                    <span
+                    <div
+                      className="uppercase"
                       style={{
-                        display: "inline-block",
-                        background: "var(--gold)",
-                        color: "var(--white)",
-                        fontSize: "0.6rem",
+                        fontSize: "0.62rem",
+                        letterSpacing: "0.14em",
+                        color: "var(--gold)",
                         fontWeight: 600,
-                        letterSpacing: "0.12em",
-                        textTransform: "uppercase",
-                        padding: "4px 12px",
-                        borderRadius: "20px",
-                        marginBottom: "1rem",
+                        marginBottom: "0.6rem",
                       }}
                     >
-                      Most Popular
-                    </span>
+                      Most chosen
+                    </div>
                   )}
                   <h4
                     className="font-serif"
@@ -230,12 +150,7 @@ export default function LandlordServices() {
                         className="flex"
                         style={{ gap: "0.6rem", marginBottom: "0.6rem", alignItems: "flex-start" }}
                       >
-                        <CheckCircle
-                          size={16}
-                          color="var(--sage)"
-                          strokeWidth={2}
-                          style={{ marginTop: "2px", flexShrink: 0 }}
-                        />
+                        <GoldDot />
                         <span style={{ fontSize: "0.8rem", color: "var(--muted)", fontWeight: 300 }}>
                           {f}
                         </span>
@@ -257,49 +172,29 @@ export default function LandlordServices() {
 
       {/* Maintenance & Repairs */}
       <ScrollReveal>
-        <div className="service-card card-interactive" style={{ ...cardStyle, marginBottom: "3rem" }}>
-          <Wrench
-            size={32}
-            color="var(--gold)"
-            strokeWidth={1.5}
-            style={{ marginBottom: "1.5rem" }}
-          />
-          <h3 className="font-serif" style={cardTitleStyle}>
-            Maintenance &amp; Repairs
-          </h3>
-          <p style={{ ...cardDescStyle, marginBottom: "1.5rem" }}>
+        <div className="rate-card" style={{ marginBottom: "3rem" }}>
+          <CardHeader code="MR" title="Maintenance & Repairs" />
+          <p style={{ ...cardDescStyle, marginBottom: "1.25rem" }}>
             Never get a midnight call about a burst pipe again. We coordinate all
-            maintenance &mdash; plumbing, electrical, general repairs, and
-            emergencies &mdash; through our vetted contractor network.
+            maintenance — plumbing, electrical, general repairs, and
+            emergencies — through our vetted contractor network.
           </p>
-
-          <div>
-            <div style={pricingRowStyle}>
-              <div>
-                <div style={planLabelStyle}>Pay-As-You-Go</div>
-                <div style={planDescStyle}>No retainer. You pay per job + 15% coordination fee</div>
-              </div>
-              <span style={priceStyle}>No monthly fee</span>
-            </div>
-            <div style={pricingRowStyle}>
-              <div>
-                <div style={planLabelStyle}>Maintenance Retainer</div>
-                <div style={planDescStyle}>Priority response, 2 routine jobs/month, emergency coverage</div>
-              </div>
-              <span style={priceStyle}>KSh 3,000/mo</span>
-            </div>
-            <div style={{ ...pricingRowStyle, borderBottom: "none" }}>
-              <div>
-                <div style={planLabelStyle}>Full Coverage</div>
-                <div style={planDescStyle}>Unlimited routine maintenance, emergency response, quarterly inspections</div>
-              </div>
-              <span style={priceStyle}>KSh 7,000/mo</span>
-            </div>
-          </div>
-
-          <p style={noteStyle}>
-            Material and parts costs billed separately at cost + 10%.
-          </p>
+          <PriceRow
+            label="Pay-As-You-Go"
+            desc="No retainer. You pay per job + 15% coordination fee"
+            value="No monthly fee"
+          />
+          <PriceRow
+            label="Maintenance Retainer"
+            desc="Priority response, 2 routine jobs/month, emergency coverage"
+            value="KSh 3,000/mo"
+          />
+          <PriceRow
+            label="Full Coverage"
+            desc="Unlimited routine maintenance, emergency response, quarterly inspections"
+            value="KSh 7,000/mo"
+          />
+          <p style={noteStyle}>Material and parts costs billed separately at cost + 10%.</p>
           <Link href="/#contact" className="no-underline" style={ctaLinkStyle}>
             Protect Your Property &rarr;
           </Link>
@@ -309,22 +204,13 @@ export default function LandlordServices() {
       <div className="services-grid-3" style={{ marginBottom: "3rem" }}>
         {/* Renovation & Value Upgrades */}
         <ScrollReveal delay={1}>
-          <div className="service-card card-interactive" style={cardStyle}>
-            <Paintbrush
-              size={32}
-              color="var(--gold)"
-              strokeWidth={1.5}
-              style={{ marginBottom: "1.5rem" }}
-            />
-            <h3 className="font-serif" style={cardTitleStyle}>
-              Renovation &amp; Value Upgrades
-            </h3>
-            <p style={{ ...cardDescStyle, marginBottom: "1.5rem" }}>
+          <div className="rate-card" style={{ height: "100%" }}>
+            <CardHeader code="RV" title="Renovation & Upgrades" />
+            <p style={{ ...cardDescStyle, marginBottom: "1.25rem" }}>
               Increase your rental income by investing smartly. We advise, quote,
               and manage renovation projects.
             </p>
 
-            {/* 3-step process */}
             {[
               { step: "1", label: "Assessment", desc: "We inspect your property and identify high-ROI upgrades" },
               { step: "2", label: "Proposal", desc: "You receive a detailed quote with projected rent increase" },
@@ -333,21 +219,16 @@ export default function LandlordServices() {
               <div
                 key={s.step}
                 className="flex"
-                style={{ gap: "0.8rem", marginBottom: "0.8rem", alignItems: "flex-start" }}
+                style={{ gap: "0.8rem", marginBottom: "0.8rem", alignItems: "baseline" }}
               >
                 <span
+                  className="font-serif"
                   style={{
-                    width: "24px",
-                    height: "24px",
-                    borderRadius: "50%",
-                    background: "rgba(200,150,62,0.12)",
+                    fontSize: "1.1rem",
+                    fontWeight: 300,
                     color: "var(--gold)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: "0.7rem",
-                    fontWeight: 600,
                     flexShrink: 0,
+                    width: "1rem",
                   }}
                 >
                   {s.step}
@@ -359,13 +240,10 @@ export default function LandlordServices() {
               </div>
             ))}
 
-            {/* ROI callout */}
             <div
               style={{
-                background: "rgba(200,150,62,0.06)",
                 borderLeft: "3px solid var(--gold)",
-                borderRadius: "0 8px 8px 0",
-                padding: "14px 16px",
+                padding: "0.5rem 0 0.5rem 1rem",
                 marginTop: "1.2rem",
               }}
             >
@@ -384,48 +262,17 @@ export default function LandlordServices() {
 
         {/* Tenant Placement */}
         <ScrollReveal delay={2}>
-          <div className="service-card card-interactive" style={cardStyle}>
-            <Search
-              size={32}
-              color="var(--gold)"
-              strokeWidth={1.5}
-              style={{ marginBottom: "1.5rem" }}
-            />
-            <h3 className="font-serif" style={cardTitleStyle}>
-              Tenant Placement &amp; Listing
-            </h3>
-            <p style={{ ...cardDescStyle, marginBottom: "1.5rem" }}>
+          <div className="rate-card" style={{ height: "100%" }}>
+            <CardHeader code="TP" title="Tenant Placement" />
+            <p style={{ ...cardDescStyle, marginBottom: "1.25rem" }}>
               Vacant units cost you money every day. We fill them fast with
               professional listings, quality photos, thorough screening, and quick
               turnaround.
             </p>
-
-            <div>
-              <div style={pricingRowStyle}>
-                <div>
-                  <div style={planLabelStyle}>Standard Listing</div>
-                </div>
-                <span style={priceStyle}>KSh 2,000</span>
-              </div>
-              <div style={pricingRowStyle}>
-                <div>
-                  <div style={planLabelStyle}>Premium Listing</div>
-                  <div style={planDescStyle}>Professional photos + priority placement</div>
-                </div>
-                <span style={priceStyle}>KSh 5,000</span>
-              </div>
-              <div style={{ ...pricingRowStyle, borderBottom: "none" }}>
-                <div>
-                  <div style={planLabelStyle}>Tenant Placement Fee</div>
-                  <div style={planDescStyle}>Successful placement only</div>
-                </div>
-                <span style={priceStyle}>50% of 1st month</span>
-              </div>
-            </div>
-
-            <p style={noteStyle}>
-              Placement fee only charged on successful move-in.
-            </p>
+            <PriceRow label="Standard Listing" value="KSh 2,000" />
+            <PriceRow label="Premium Listing" desc="Professional photos + priority placement" value="KSh 5,000" />
+            <PriceRow label="Tenant Placement Fee" desc="Successful placement only" value="50% of 1st month" />
+            <p style={noteStyle}>Placement fee only charged on successful move-in.</p>
             <Link href="/#contact" className="no-underline" style={ctaLinkStyle}>
               Fill My Vacancy &rarr;
             </Link>
@@ -434,51 +281,16 @@ export default function LandlordServices() {
 
         {/* Legal & Compliance */}
         <ScrollReveal delay={3}>
-          <div className="service-card card-interactive" style={cardStyle}>
-            <Scale
-              size={32}
-              color="var(--gold)"
-              strokeWidth={1.5}
-              style={{ marginBottom: "1.5rem" }}
-            />
-            <h3 className="font-serif" style={cardTitleStyle}>
-              Legal &amp; Compliance
-            </h3>
-            <p style={{ ...cardDescStyle, marginBottom: "1.5rem" }}>
+          <div className="rate-card" style={{ height: "100%" }}>
+            <CardHeader code="LC" title="Legal & Compliance" />
+            <p style={{ ...cardDescStyle, marginBottom: "1.25rem" }}>
               Stay on the right side of Kenyan tenancy law. We handle lease
               agreements, notices, eviction procedures, and regulatory compliance.
             </p>
-
-            <div>
-              <div style={pricingRowStyle}>
-                <div>
-                  <div style={planLabelStyle}>Lease Agreement</div>
-                  <div style={planDescStyle}>Drafting</div>
-                </div>
-                <span style={priceStyle}>KSh 1,500</span>
-              </div>
-              <div style={pricingRowStyle}>
-                <div>
-                  <div style={planLabelStyle}>Tenant Notice</div>
-                  <div style={planDescStyle}>Preparation &amp; delivery</div>
-                </div>
-                <span style={priceStyle}>KSh 500</span>
-              </div>
-              <div style={pricingRowStyle}>
-                <div>
-                  <div style={planLabelStyle}>Eviction Handling</div>
-                  <div style={planDescStyle}>Full process</div>
-                </div>
-                <span style={priceStyle}>KSh 10,000</span>
-              </div>
-              <div style={{ ...pricingRowStyle, borderBottom: "none" }}>
-                <div>
-                  <div style={planLabelStyle}>Annual Compliance Review</div>
-                </div>
-                <span style={priceStyle}>KSh 5,000/yr</span>
-              </div>
-            </div>
-
+            <PriceRow label="Lease Agreement" desc="Drafting" value="KSh 1,500" />
+            <PriceRow label="Tenant Notice" desc="Preparation & delivery" value="KSh 500" />
+            <PriceRow label="Eviction Handling" desc="Full process" value="KSh 10,000" />
+            <PriceRow label="Annual Compliance Review" value="KSh 5,000/yr" />
             <Link href="/#contact" className="no-underline" style={ctaLinkStyle}>
               Get Legal Support &rarr;
             </Link>
@@ -488,99 +300,58 @@ export default function LandlordServices() {
 
       {/* Complete Property Partner Bundle */}
       <ScrollReveal>
-        <div
-          style={{
-            background: "linear-gradient(135deg, rgba(200,150,62,0.08), rgba(200,150,62,0.02))",
-            borderRadius: "16px",
-            padding: "40px",
-            borderLeft: "4px solid var(--gold)",
-            position: "relative",
-            overflow: "hidden",
-          }}
-        >
-          <span
-            style={{
-              display: "inline-block",
-              background: "var(--gold)",
-              color: "var(--white)",
-              fontSize: "0.6rem",
-              fontWeight: 600,
-              letterSpacing: "0.12em",
-              textTransform: "uppercase",
-              padding: "4px 12px",
-              borderRadius: "20px",
-              marginBottom: "1.2rem",
-            }}
-          >
-            Best Value
-          </span>
-          <h3
-            className="font-serif"
-            style={{
-              fontSize: "1.8rem",
-              fontWeight: 600,
-              marginBottom: "1rem",
-            }}
-          >
+        <div className="paper-ledger" style={{ maxWidth: "560px" }}>
+          <div className="hero-statement-label uppercase">Bundle</div>
+          <h3 className="hero-statement-title font-serif" style={{ fontSize: "1.5rem" }}>
             Complete Property Partner
           </h3>
-          <p style={{ ...cardDescStyle, marginBottom: "1.5rem", maxWidth: "500px" }}>
+          <p style={{ ...cardDescStyle, marginBottom: "1.25rem" }}>
             The all-in-one package for landlords who want total peace of mind.
           </p>
-
-          <div style={{ marginBottom: "1.5rem" }}>
-            {[
-              "Premium Management Package (12%)",
-              "Maintenance Retainer included",
-              "2 free standard listings per year",
-              "Annual compliance review included",
-            ].map((item) => (
-              <div
-                key={item}
-                className="flex items-center"
-                style={{ gap: "0.6rem", marginBottom: "0.5rem" }}
-              >
-                <CheckCircle
-                  size={16}
-                  color="var(--sage)"
-                  strokeWidth={2}
-                  style={{ flexShrink: 0 }}
-                />
-                <span style={{ fontSize: "0.85rem", fontWeight: 400 }}>{item}</span>
-              </div>
-            ))}
+          <div className="ledger-row">
+            <span className="ledger-row-label">Premium management</span>
+            <span className="ledger-dots" aria-hidden="true" />
+            <span className="ledger-row-value">12% of rent</span>
           </div>
-
-          <div className="flex items-baseline flex-wrap" style={{ gap: "1rem", marginBottom: "0.5rem" }}>
-            <span
-              className="font-serif"
-              style={{
-                fontSize: "2.2rem",
-                fontWeight: 600,
-                color: "var(--gold)",
-              }}
-            >
-              12% of rent + KSh 8,000/mo
+          <div className="ledger-row">
+            <span className="ledger-row-label">Maintenance retainer</span>
+            <span className="ledger-dots" aria-hidden="true" />
+            <span className="ledger-row-value">included</span>
+          </div>
+          <div className="ledger-row">
+            <span className="ledger-row-label">Standard listings</span>
+            <span className="ledger-dots" aria-hidden="true" />
+            <span className="ledger-row-value">2 free/yr</span>
+          </div>
+          <div className="ledger-row">
+            <span className="ledger-row-label">Compliance review</span>
+            <span className="ledger-dots" aria-hidden="true" />
+            <span className="ledger-row-value">annual</span>
+          </div>
+          <div className="ledger-row payoff">
+            <span className="ledger-row-label">All-in</span>
+            <span className="ledger-dots" aria-hidden="true" />
+            <span className="ledger-row-value" style={{ fontSize: "1.2rem" }}>
+              12% + KSh 8,000/mo
             </span>
           </div>
           <p
             style={{
               fontSize: "0.8rem",
-              color: "var(--sage)",
-              fontWeight: 500,
-              marginBottom: "1.5rem",
+              color: "var(--muted)",
+              fontWeight: 300,
+              marginTop: "0.75rem",
             }}
           >
-            Save KSh 4,000+/year vs &agrave; la carte
+            Saves KSh 4,000+ per year versus à la carte.
           </p>
-
           <Link
             href="/#contact"
             className="no-underline uppercase"
             style={{
               background: "var(--ink)",
               color: "var(--cream)",
-              height: "48px",
+              height: "52px",
               padding: "0 2rem",
               fontFamily: "var(--font-sans), sans-serif",
               fontSize: "0.8rem",
@@ -591,6 +362,7 @@ export default function LandlordServices() {
               transition: "all 0.25s",
               display: "inline-flex",
               alignItems: "center",
+              marginTop: "1.25rem",
             }}
           >
             Become a Partner

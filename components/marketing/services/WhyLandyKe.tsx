@@ -1,26 +1,25 @@
-import { MapPin, Monitor, Receipt, Handshake } from "lucide-react";
 import ScrollReveal from "@/components/ui/ScrollReveal";
 
 const valueProps = [
   {
-    Icon: MapPin,
+    key: "On the ground",
     title: "Local Presence",
-    desc: "We physically manage your property. We\u2019re not a remote app \u2014 we\u2019re on the ground in Eldoret.",
+    desc: "We physically manage your property. We’re not a remote app — we’re on the ground in Eldoret.",
   },
   {
-    Icon: Monitor,
+    key: "Platform",
     title: "Tech-Powered",
     desc: "Real-time reporting, M-Pesa reconciliation, and tenant management through the LandyKe platform.",
   },
   {
-    Icon: Receipt,
+    key: "Pricing",
     title: "Transparent Pricing",
-    desc: "No hidden fees. Everything is upfront \u2014 you always know what you\u2019re paying for.",
+    desc: "No hidden fees. Everything is upfront — you always know what you’re paying for.",
   },
   {
-    Icon: Handshake,
-    title: "One Partner, Everything Handled",
-    desc: "Internet, maintenance, legal, cleaning \u2014 one relationship replaces a dozen vendors.",
+    key: "One partner",
+    title: "Everything Handled",
+    desc: "Internet, maintenance, legal, cleaning — one relationship replaces a dozen vendors.",
   },
 ];
 
@@ -55,58 +54,46 @@ export default function WhyLandyKe() {
               lineHeight: 1.1,
               color: "var(--cream)",
               maxWidth: "600px",
-              marginBottom: "4rem",
+              marginBottom: "3rem",
             }}
           >
-            The trusted choice for{" "}
-            <em style={{ fontStyle: "italic", color: "var(--gold)" }}>
-              property services in Eldoret
-            </em>
+            We manage in person.{" "}
+            <span style={{ color: "var(--gold)" }}>We report in numbers.</span>
           </h2>
         </ScrollReveal>
 
-        <div className="services-grid-4">
-          {valueProps.map((v, i) => (
-            <ScrollReveal key={v.title} delay={Math.min(i + 1, 4)}>
-              <div
-                style={{
-                  background: "rgba(245,240,232,0.05)",
-                  borderRadius: "12px",
-                  padding: "32px",
-                  border: "1px solid rgba(245,240,232,0.08)",
-                }}
-              >
-                <v.Icon
-                  size={32}
-                  color="var(--gold)"
-                  strokeWidth={1.5}
-                  style={{ marginBottom: "1.5rem" }}
-                />
-                <h3
-                  className="font-serif"
-                  style={{
-                    fontSize: "1.4rem",
-                    fontWeight: 600,
-                    marginBottom: "0.8rem",
-                    color: "var(--cream)",
-                  }}
-                >
-                  {v.title}
-                </h3>
-                <p
-                  style={{
-                    fontSize: "0.85rem",
-                    color: "rgba(245,240,232,0.6)",
-                    lineHeight: 1.7,
-                    fontWeight: 300,
-                  }}
-                >
-                  {v.desc}
-                </p>
+        <ScrollReveal>
+          <div className="ledger-list keyed on-ink">
+            {valueProps.map((v) => (
+              <div key={v.key} className="ledger-list-row">
+                <span className="ledger-list-key">{v.key}</span>
+                <div>
+                  <h3
+                    className="font-serif"
+                    style={{
+                      fontSize: "1.2rem",
+                      fontWeight: 600,
+                      marginBottom: "0.4rem",
+                      color: "var(--cream)",
+                    }}
+                  >
+                    {v.title}
+                  </h3>
+                  <p
+                    style={{
+                      fontSize: "0.85rem",
+                      color: "rgba(245,240,232,0.6)",
+                      lineHeight: 1.7,
+                      fontWeight: 300,
+                    }}
+                  >
+                    {v.desc}
+                  </p>
+                </div>
               </div>
-            </ScrollReveal>
-          ))}
-        </div>
+            ))}
+          </div>
+        </ScrollReveal>
       </div>
     </section>
   );

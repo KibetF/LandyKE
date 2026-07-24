@@ -1,27 +1,4 @@
-import { Shield, Eye, Handshake, TrendingUp } from "lucide-react";
-
-const values = [
-  {
-    Icon: Shield,
-    title: "Integrity First",
-    desc: "Every shilling is accounted for. Transparent reporting, no hidden fees, and full audit trails on every transaction.",
-  },
-  {
-    Icon: Eye,
-    title: "Full Visibility",
-    desc: "Your client portal gives you real-time access to property performance, tenant status, and financial summaries — 24/7.",
-  },
-  {
-    Icon: Handshake,
-    title: "Local Expertise",
-    desc: "Deep knowledge of Kenyan property law, KRA compliance, and the Eldoret rental market — from CBD commercial units to residential estates.",
-  },
-  {
-    Icon: TrendingUp,
-    title: "Growth-Oriented",
-    desc: "We don't just maintain — we optimise. Rent reviews, vacancy reduction strategies, and preventive maintenance to protect your asset value.",
-  },
-];
+import ValuesList from "./ValuesList";
 
 export default function AboutSection() {
   return (
@@ -59,10 +36,8 @@ export default function AboutSection() {
               marginBottom: "2rem",
             }}
           >
-            Built by landlords,{" "}
-            <em style={{ fontStyle: "italic", color: "var(--gold)" }}>
-              for landlords
-            </em>
+            Built by landlords.{" "}
+            <span style={{ color: "var(--gold)" }}>Run for landlords.</span>
           </h2>
           <div
             style={{
@@ -159,62 +134,7 @@ export default function AboutSection() {
         </div>
 
         {/* Right — Values */}
-        <div
-          className="values-grid"
-        >
-          {values.map((v) => (
-            <div
-              key={v.title}
-              className="card-hover"
-              style={{
-                background: "var(--white)",
-                borderRadius: "12px",
-                padding: "2rem",
-                boxShadow: "0 4px 20px rgba(0,0,0,0.06)",
-                border: "1px solid rgba(201,146,26,0.15)",
-              }}
-            >
-              <div
-                style={{
-                  width: "48px",
-                  height: "48px",
-                  borderRadius: "50%",
-                  background: "rgba(201,146,26,0.1)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  marginBottom: "1.2rem",
-                }}
-              >
-                <v.Icon
-                  size={24}
-                  color="var(--gold)"
-                  strokeWidth={1.5}
-                />
-              </div>
-              <h4
-                className="font-serif"
-                style={{
-                  fontSize: "1.1rem",
-                  fontWeight: 600,
-                  marginBottom: "0.6rem",
-                }}
-              >
-                {v.title}
-              </h4>
-              <p
-                style={{
-                  fontSize: "0.8rem",
-                  color: "var(--muted)",
-                  lineHeight: 1.7,
-                  fontWeight: 300,
-                }}
-              >
-                {v.desc}
-              </p>
-            </div>
-          ))}
-        </div>
+        <ValuesList />
       </div>
     </section>
   );

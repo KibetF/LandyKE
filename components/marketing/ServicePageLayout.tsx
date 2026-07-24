@@ -1,14 +1,15 @@
 import Link from "next/link";
-import { ArrowLeft, CheckCircle } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import Footer from "@/components/marketing/Footer";
+import { GoldDot } from "@/components/marketing/services/RateCardParts";
 
 interface ServicePageLayoutProps {
   tag: string;
   title: string;
   titleAccent: string;
   intro: string;
-  Icon: LucideIcon;
+  Icon: LucideIcon; // kept for the 8 data pages' sake; the template no longer renders it
   features: { title: string; desc: string }[];
   whyUs: string[];
   ctaText?: string;
@@ -19,7 +20,6 @@ export default function ServicePageLayout({
   title,
   titleAccent,
   intro,
-  Icon,
   features,
   whyUs,
   ctaText = "Get a Free Consultation",
@@ -77,9 +77,7 @@ export default function ServicePageLayout({
                 }}
               >
                 {title}{" "}
-                <em style={{ fontStyle: "italic", color: "var(--gold)" }}>
-                  {titleAccent}
-                </em>
+                <span style={{ color: "var(--gold)" }}>{titleAccent}</span>
               </h1>
               <p
                 style={{
@@ -93,16 +91,25 @@ export default function ServicePageLayout({
                 {intro}
               </p>
             </div>
-            <div
-              className="flex items-center justify-center hidden md:flex"
-              style={{
-                width: "120px",
-                height: "120px",
-                borderRadius: "24px",
-                background: "rgba(201,146,26,0.08)",
-              }}
-            >
-              <Icon size={56} color="var(--gold)" strokeWidth={1} />
+            {/* Index card — numbers match the features list below */}
+            <div className="hidden md:block">
+              <div className="paper-ledger" style={{ maxWidth: "400px", marginLeft: "auto" }}>
+                <div className="hero-statement-label uppercase">{tag}</div>
+                <h3 className="hero-statement-title font-serif" style={{ fontSize: "1.15rem" }}>
+                  In this file
+                </h3>
+                {features.map((f, i) => (
+                  <div key={f.title} className="ledger-row" style={{ padding: "0.4rem 0" }}>
+                    <span className="ledger-row-label" style={{ whiteSpace: "normal" }}>
+                      {f.title}
+                    </span>
+                    <span className="ledger-dots" aria-hidden="true" />
+                    <span className="ledger-row-value" style={{ fontSize: "0.85rem" }}>
+                      {String(i + 1).padStart(2, "0")}
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </section>
@@ -117,42 +124,37 @@ export default function ServicePageLayout({
             style={{
               fontSize: "1.6rem",
               fontWeight: 600,
-              marginBottom: "2rem",
+              marginBottom: "1.5rem",
             }}
           >
             What&apos;s Included
           </h2>
-          <div className="services-grid-3">
-            {features.map((f) => (
-              <div
-                key={f.title}
-                style={{
-                  background: "var(--white)",
-                  borderRadius: "12px",
-                  padding: "28px",
-                  boxShadow: "0 2px 16px rgba(0,0,0,0.04)",
-                }}
-              >
-                <h3
-                  className="font-serif"
-                  style={{
-                    fontSize: "1.15rem",
-                    fontWeight: 600,
-                    marginBottom: "0.6rem",
-                  }}
-                >
-                  {f.title}
-                </h3>
-                <p
-                  style={{
-                    fontSize: "0.85rem",
-                    color: "var(--muted)",
-                    lineHeight: 1.7,
-                    fontWeight: 300,
-                  }}
-                >
-                  {f.desc}
-                </p>
+          <div className="ledger-list">
+            {features.map((f, i) => (
+              <div key={f.title} className="ledger-list-row">
+                <span className="ledger-list-num">{String(i + 1).padStart(2, "0")}</span>
+                <div>
+                  <h3
+                    className="font-serif"
+                    style={{
+                      fontSize: "1.15rem",
+                      fontWeight: 600,
+                      marginBottom: "0.4rem",
+                    }}
+                  >
+                    {f.title}
+                  </h3>
+                  <p
+                    style={{
+                      fontSize: "0.85rem",
+                      color: "var(--muted)",
+                      lineHeight: 1.7,
+                      fontWeight: 300,
+                    }}
+                  >
+                    {f.desc}
+                  </p>
+                </div>
               </div>
             ))}
           </div>
@@ -187,14 +189,7 @@ export default function ServicePageLayout({
                 className="flex items-start"
                 style={{ gap: "0.8rem" }}
               >
-                <CheckCircle
-                  size={18}
-                  style={{
-                    color: "var(--green)",
-                    flexShrink: 0,
-                    marginTop: "0.15rem",
-                  }}
-                />
+                <GoldDot />
                 <p
                   style={{
                     fontSize: "0.9rem",
@@ -227,17 +222,19 @@ export default function ServicePageLayout({
               marginBottom: "1.5rem",
             }}
           >
-            Ready to get started?
+            One call starts it.
           </h2>
           <Link
             href="/#contact"
             className="client-login-btn no-underline uppercase"
             style={{
-              display: "inline-block",
+              display: "inline-flex",
+              alignItems: "center",
               background: "var(--ink)",
               color: "var(--cream)",
-              padding: "0.8rem 2rem",
-              borderRadius: "4px",
+              height: "52px",
+              padding: "0 2rem",
+              borderRadius: "26px",
               fontSize: "0.8rem",
               letterSpacing: "0.1em",
               fontWeight: 500,

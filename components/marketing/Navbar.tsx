@@ -16,6 +16,12 @@ export default function Navbar() {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
 
+  function isActive(href: string) {
+    if (href === "/services") return pathname.startsWith("/services");
+    if (href === "/about") return pathname.startsWith("/about");
+    return false;
+  }
+
   function handleLogoClick(e: React.MouseEvent) {
     if (pathname === "/") {
       e.preventDefault();
@@ -67,7 +73,8 @@ export default function Navbar() {
             <li key={link.label}>
               <Link
                 href={link.href}
-                className="nav-link no-underline uppercase"
+                aria-current={isActive(link.href) ? "page" : undefined}
+                className={`nav-link no-underline uppercase${isActive(link.href) ? " nav-link-active" : ""}`}
                 style={{
                   fontSize: "0.72rem",
                   fontWeight: 500,
@@ -75,7 +82,6 @@ export default function Navbar() {
                   color: "var(--muted)",
                   transition: "color 0.2s",
                   padding: "0.4rem 0",
-                  borderBottom: "1.5px solid transparent",
                 }}
               >
                 {link.label}
@@ -141,7 +147,8 @@ export default function Navbar() {
             <Link
               key={link.label}
               href={link.href}
-              className="nav-link no-underline uppercase"
+              aria-current={isActive(link.href) ? "page" : undefined}
+              className={`nav-link no-underline uppercase${isActive(link.href) ? " nav-link-active" : ""}`}
               onClick={() => setOpen(false)}
               style={{
                 fontSize: "0.75rem",
