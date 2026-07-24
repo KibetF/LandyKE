@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
@@ -15,6 +15,15 @@ const navLinks = [
 export default function Navbar() {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
+
+  // Navigating from inside the fixed mobile menu can leave the new page
+  // scrolled to the wrong position; force top on route change unless the
+  // navigation targets an in-page anchor.
+  useEffect(() => {
+    if (!window.location.hash) {
+      window.scrollTo(0, 0);
+    }
+  }, [pathname]);
 
   function isActive(href: string) {
     if (href === "/services") return pathname.startsWith("/services");

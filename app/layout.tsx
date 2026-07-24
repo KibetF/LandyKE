@@ -16,9 +16,22 @@ const dmSans = DM_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "LandyKe — Property Management, Simplified",
+  metadataBase: new URL("https://www.landyke.com"),
+  title: {
+    default: "LandyKe — Property Management in Eldoret, Kenya",
+    template: "%s | LandyKe",
+  },
   description:
-    "Professional property management across Kenya. Rent collection, tenant management, maintenance coordination, and full financial reporting.",
+    "Professional property management in Eldoret, Kenya. Rent collection, tenant management, maintenance coordination, and full financial reporting for local and diaspora landlords.",
+  openGraph: {
+    type: "website",
+    siteName: "LandyKe",
+    locale: "en_KE",
+    url: "https://www.landyke.com",
+    title: "LandyKe — Property Management in Eldoret, Kenya",
+    description:
+      "Professional property management in Eldoret, Kenya. Rent collection, tenant management, maintenance coordination, and full financial reporting.",
+  },
   verification: {
     other: {
       "facebook-domain-verification": "xjqdxxf672xpl53xm4tgbdzxasbzgp",
