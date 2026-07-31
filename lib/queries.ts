@@ -274,10 +274,8 @@ export function computeTenantStatus(
   payments: Array<{ tenant_id: string; amount: number; paid_date: string | null; rent_period?: string | null; status: string; payment_type?: string | null }>,
   monthKey: string
 ) {
-  const end = getMonthEnd(monthKey);
-
   // Include tenants created during or before the selected month
-  const eligibleTenants = tenants.filter((t) => !t.created_at || t.created_at <= end);
+  const eligibleTenants = tenants.filter((t) => !t.created_at || t.created_at.slice(0, 7) <= monthKey);
 
   // If viewing the current month and today is before the 5th, rent is not yet due
   const today = new Date();
@@ -373,11 +371,10 @@ export function computeArrears(
   monthKey: string
 ) {
   const start = getMonthStart(monthKey);
-  const end = getMonthEnd(monthKey);
   const today = new Date();
 
   return tenants
-    .filter((t) => !t.created_at || t.created_at <= end)
+    .filter((t) => !t.created_at || t.created_at.slice(0, 7) <= monthKey)
     .map((t) => {
       const rent = Number(t.rent_amount);
       const periodPayments = payments.filter((p) => {

@@ -3,7 +3,6 @@ import { createClient } from "@/lib/supabase/server";
 import {
   getLandlord,
   getMonthRange,
-  getMonthEnd,
   getShortMonth,
   formatMonthKey,
   periodOf,
@@ -30,7 +29,6 @@ export async function GET(request: NextRequest) {
   const activeTenants = tenantRes.data || [];
   const allPayments = paymentRes.data || [];
 
-  const monthEnd = getMonthEnd(selectedMonth);
   const isRentPayment = (p: { payment_type?: string | null }) => !p.payment_type || p.payment_type === "rent";
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -45,7 +43,7 @@ export async function GET(request: NextRequest) {
 
   // Tenants eligible for this month
   const tenantsForMonth = activeTenants.filter((t) => {
-    if (t.created_at && t.created_at > monthEnd) return false;
+    if (t.created_at && t.created_at.slice(0, 7) > selectedMonth) return false;
     const propStart = propStartMap.get(t.property_id);
     if (propStart && propStart > selectedMonth) return false;
     return true;
