@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
   // - created during or before selected month
   // - property's collection_start_month <= selected month (if set)
   const tenantsForMonth = activeTenants.filter((t) => {
-    if (t.created_at && t.created_at > monthEnd) return false;
+    if (t.created_at && t.created_at.slice(0, 7) > selectedMonth) return false;
     const propStart = propStartMap.get(t.property_id);
     if (propStart && propStart > selectedMonth) return false;
     return true;
@@ -68,10 +68,9 @@ export async function GET(request: NextRequest) {
   // Expected rent for a given month: only tenants/properties actually
   // collecting that month (created on/before month end, collection started).
   function expectedForMonth(key: string): number {
-    const end = getMonthEnd(key);
     return activeTenants
       .filter((t) => {
-        if (t.created_at && t.created_at > end) return false;
+        if (t.created_at && t.created_at.slice(0, 7) > key) return false;
         const propStart = propStartMap.get(t.property_id);
         if (propStart && propStart > key) return false;
         return true;
