@@ -357,6 +357,16 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
     });
   }
 
+  async function downloadClientMonthlyReport() {
+    if (!reportData?.clientReport) return;
+    const { generateClientMonthlyReport } = await import("@/lib/pdf/generate-report");
+    generateClientMonthlyReport({
+      ...reportData.clientReport,
+      landlordName: reportData.clientReport.landlordName || reportLandlord?.full_name || "",
+      month: formatMonthLabel(reportMonth),
+    });
+  }
+
   async function downloadAdminPropertySummary() {
     if (!reportData) return;
     const { generatePropertySummary } = await import("@/lib/pdf/generate-report");
@@ -1954,6 +1964,10 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
             </div>
             {reportLandlord && reportData && (
               <>
+                <button onClick={downloadClientMonthlyReport} className="flex items-center" style={{ ...btnStyle, gap: "0.4rem", fontSize: "0.8rem", padding: "0.7rem 1rem", background: "var(--gold)" }}>
+                  <FileText size={14} />
+                  Client Monthly Statement
+                </button>
                 <button onClick={downloadAdminRentStatement} className="flex items-center" style={{ ...btnStyle, gap: "0.4rem", fontSize: "0.8rem", padding: "0.7rem 1rem" }}>
                   <FileText size={14} />
                   Rent Statement PDF

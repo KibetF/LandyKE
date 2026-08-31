@@ -79,7 +79,20 @@ export interface AdminReportData {
   arrearsData: { tenant: string; property: string; unit: string; amount: number; rentTotal?: number; paid?: number; days: number }[];
   tenantStatusData: { name: string; property: string; unit?: string; amount: number; date: string; status: "paid" | "pending" | "overdue" | "partial" | "vacated_unpaid"; notes?: string }[];
   propertyBreakdown: PropertyBreakdown[];
+  clientReport: ClientMonthlyAccount;
   selectedMonth: string;
+}
+
+/** Cash-basis figures for the end-of-month statement sent to a client. */
+export interface ClientMonthlyAccount {
+  landlordName: string;
+  collectedThisMonth: number;
+  totalInAccount: number;
+  openingBalance: number;
+  openingBalanceAsOf: string | null;
+  collectedSinceOpening: number;
+  excludedThisMonth: number;
+  properties: { name: string; payments: number; collected: number }[];
 }
 
 export interface OverviewProperty {

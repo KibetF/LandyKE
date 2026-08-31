@@ -9,6 +9,7 @@ import {
   computeTenantStatus,
   computeArrears,
   countTenantsFullyPaid,
+  computeClientMonthlyAccount,
 } from "@/lib/queries";
 
 async function verifyAdmin() {
@@ -32,15 +33,17 @@ export async function GET(request: NextRequest) {
   const adminClient = createAdminClient();
 
   // Fetch all data for this landlord
-  const [propertyRes, tenantRes, paymentRes] = await Promise.all([
+  const [propertyRes, tenantRes, paymentRes, landlordRes] = await Promise.all([
     adminClient.schema("landyke").from("properties").select("id, name, location, total_units, collection_start_month").eq("landlord_id", landlordId),
     adminClient.schema("landyke").from("tenants").select("id, full_name, rent_amount, status, property_id, unit_number, unit_type, created_at, properties(name)").eq("landlord_id", landlordId).eq("status", "active"),
-    adminClient.schema("landyke").from("payments").select("id, amount, paid_date, rent_period, payment_type, status, notes, tenant_id, landlord_id, tenants(full_name, property_id, properties(name))").eq("landlord_id", landlordId).order("paid_date", { ascending: false }),
+    adminClient.schema("landyke").from("payments").select("id, amount, paid_date, rent_period, payment_type, status, notes, from_carryover, tenant_id, landlord_id, tenants(full_name, property_id, properties(name))").eq("landlord_id", landlordId).order("paid_date", { ascending: false }),
+    adminClient.schema("landyke").from("landlords").select("full_name, carryover_amount, carryover_as_of").eq("id", landlordId).single(),
   ]);
 
   const properties = propertyRes.data || [];
   const activeTenants = tenantRes.data || [];
   const allPayments = paymentRes.data || [];
+  const landlord = landlordRes.data;
 
   const isRentPayment = (p: { payment_type?: string | null }) => !p.payment_type || p.payment_type === "rent";
 
@@ -153,6 +156,16 @@ export async function GET(request: NextRequest) {
     };
   });
 
+  // Cash-basis account view for the end-of-month client statement. Kept
+  // separate from the figures above, which are rent-period based.
+  const clientReport = {
+    landlordName: landlord?.full_name || "",
+    ...computeClientMonthlyAccount(allPayments, selectedMonth, {
+      carryoverAmount: landlord?.carryover_amount,
+      carryoverAsOf: landlord?.carryover_as_of,
+    }),
+  };
+
   return NextResponse.json({
     incomeData,
     occupancyData,
@@ -160,6 +173,7 @@ export async function GET(request: NextRequest) {
     arrearsData,
     tenantStatusData,
     propertyBreakdown,
+    clientReport,
     selectedMonth,
   });
 }

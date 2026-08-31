@@ -350,6 +350,109 @@ export function computeTenantStatus(
 }
 
 /**
+ * A payment the tenant made straight into the landlord's old external (KCB)
+ * account rather than the LandyKE collection account. Flagged by a note, which
+ * is the only signal the schema carries. Money that never reached our account
+ * must stay out of any "in the account" figure.
+ */
+export function isExternalPayment(p: { notes?: string | null }): boolean {
+  return !!p.notes && /kcb/i.test(p.notes);
+}
+
+/**
+ * Cash-basis account report for one client, for a single month.
+ *
+ * Deliberately bucketed by `paid_date`, not `rent_period`: this report is sent
+ * alongside a bank statement, so a payment belongs to the month the cash
+ * actually landed. Rent paid late for a prior month shows up in the month it
+ * arrived, exactly as the bank would show it.
+ *
+ * Excluded throughout: payments routed to the external KCB account (never
+ * reached us) and `from_carryover` rows (already represented in the opening
+ * balance — counting them again would double up).
+ *
+ * The lifetime total is `openingBalance + everything received after
+ * `carryoverAsOf``. The opening balance stands in for the pre-cutoff period as
+ * a single agreed figure, so pre-cutoff rows are never added on top of it.
+ */
+type PaymentTenantRel = { properties?: { name: string } | { name: string }[] | null };
+
+export function computeClientMonthlyAccount(
+  payments: Array<{
+    amount: number;
+    paid_date: string | null;
+    status: string;
+    notes?: string | null;
+    from_carryover?: boolean | null;
+    // Supabase types both relations as possibly-arrays depending on the query.
+    tenants?: PaymentTenantRel | PaymentTenantRel[] | null;
+  }>,
+  monthKey: string,
+  opts: { carryoverAmount?: number | null; carryoverAsOf?: string | null } = {}
+) {
+  const monthStart = getMonthStart(monthKey);
+  const monthEnd = getMonthEnd(monthKey);
+  const openingBalance = Number(opts.carryoverAmount || 0);
+  const cutoff = opts.carryoverAsOf || null;
+
+  // Money that actually reached our account: paid, not carryover, not KCB.
+  const received = payments.filter(
+    (p) => p.status === "paid" && !p.from_carryover && !isExternalPayment(p)
+  );
+
+  const inMonth = received.filter(
+    (p) => p.paid_date && p.paid_date >= monthStart && p.paid_date <= monthEnd
+  );
+  const collectedThisMonth = inMonth.reduce((s, p) => s + Number(p.amount), 0);
+
+  // Only post-cutoff money is added to the opening balance.
+  const collectedSinceOpening = received
+    .filter((p) => !cutoff || (p.paid_date != null && p.paid_date > cutoff))
+    .reduce((s, p) => s + Number(p.amount), 0);
+
+  const propertyName = (p: { tenants?: PaymentTenantRel | PaymentTenantRel[] | null }) => {
+    const tenant = Array.isArray(p.tenants) ? p.tenants[0] : p.tenants;
+    const rel = tenant?.properties;
+    if (!rel) return "Unassigned";
+    const name = Array.isArray(rel) ? rel[0]?.name : rel.name;
+    return (name || "Unassigned").trim();
+  };
+
+  const byProperty = new Map<string, { name: string; payments: number; collected: number }>();
+  for (const p of inMonth) {
+    const name = propertyName(p);
+    const row = byProperty.get(name) || { name, payments: 0, collected: 0 };
+    row.payments += 1;
+    row.collected += Number(p.amount);
+    byProperty.set(name, row);
+  }
+
+  // Surfaced so the report can footnote what was left out, rather than
+  // silently dropping money the client may be expecting to see.
+  const excludedThisMonth = payments
+    .filter(
+      (p) =>
+        p.status === "paid" &&
+        !p.from_carryover &&
+        isExternalPayment(p) &&
+        p.paid_date &&
+        p.paid_date >= monthStart &&
+        p.paid_date <= monthEnd
+    )
+    .reduce((s, p) => s + Number(p.amount), 0);
+
+  return {
+    collectedThisMonth,
+    totalInAccount: openingBalance + collectedSinceOpening,
+    openingBalance,
+    openingBalanceAsOf: cutoff,
+    collectedSinceOpening,
+    excludedThisMonth,
+    properties: [...byProperty.values()].sort((a, b) => b.collected - a.collected),
+  };
+}
+
+/**
  * Count tenants whose rent for the period is *fully* covered. A partial payer
  * is deliberately not counted — the "X of Y paid" figure must not be inflated
  * by someone who still owes a balance.
