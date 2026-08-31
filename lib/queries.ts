@@ -271,7 +271,7 @@ const AVATAR_COLORS = ["#4a5c4e", "#8b3a2a", "#c8963e", "#2d6a4f", "#6b3d8a", "#
 
 export function computeTenantStatus(
   tenants: Array<{ id: string; full_name: string; rent_amount: number; property_id: string; unit_number?: string | null; created_at?: string; properties?: { name: string; location: string | null } }>,
-  payments: Array<{ tenant_id: string; amount: number; paid_date: string | null; rent_period?: string | null; status: string; payment_type?: string | null }>,
+  payments: Array<{ tenant_id: string; amount: number; paid_date: string | null; rent_period?: string | null; status: string; payment_type?: string | null; notes?: string | null }>,
   monthKey: string
 ) {
   // Include tenants created during or before the selected month
@@ -304,27 +304,34 @@ export function computeTenantStatus(
       .sort()
       .pop();
 
+    const paidEvents = tenantPayments.filter((p) => p.status === "paid");
+
     const rent = Number(t.rent_amount);
     let status: "paid" | "pending" | "overdue" | "vacated_unpaid" | "partial" = rentNotYetDue ? "pending" : "overdue";
     let date = rentNotYetDue ? "Due 5th" : "No payment";
+    let notes = "";
 
     if (vacatedPayment) {
       status = "vacated_unpaid";
       date = "Vacated";
+      notes = vacatedPayment.notes || "";
     } else if (paidSum >= rent && rent > 0) {
       status = "paid";
       if (lastPaidDate) {
         date = new Date(lastPaidDate).toLocaleDateString("en-KE", { day: "numeric", month: "short", year: "numeric" });
       }
+      notes = paidEvents[0]?.notes || "";
     } else if (paidSum > 0) {
       status = "partial";
       const owed = rent - paidSum;
       date = `KES ${owed.toLocaleString("en-KE")} owed`;
+      notes = paidEvents[0]?.notes || "";
     } else if (pendingPayment) {
       status = "pending";
       date = pendingPayment.paid_date
         ? `Due ${new Date(pendingPayment.paid_date).toLocaleDateString("en-KE", { day: "numeric", month: "short" })}`
         : "Pending";
+      notes = pendingPayment.notes || "";
     }
 
     return {
@@ -337,8 +344,137 @@ export function computeTenantStatus(
       paidThisMonth: paidSum,
       date,
       status,
+      notes,
     };
   });
+}
+
+/**
+ * A payment the tenant made straight into the landlord's old external (KCB)
+ * account rather than the LandyKE collection account. Flagged by a note, which
+ * is the only signal the schema carries. Money that never reached our account
+ * must stay out of any "in the account" figure.
+ */
+export function isExternalPayment(p: { notes?: string | null }): boolean {
+  return !!p.notes && /kcb/i.test(p.notes);
+}
+
+/**
+ * Cash-basis account report for one client, for a single month.
+ *
+ * Deliberately bucketed by `paid_date`, not `rent_period`: this report is sent
+ * alongside a bank statement, so a payment belongs to the month the cash
+ * actually landed. Rent paid late for a prior month shows up in the month it
+ * arrived, exactly as the bank would show it.
+ *
+ * Excluded throughout: payments routed to the external KCB account (never
+ * reached us) and `from_carryover` rows (already represented in the opening
+ * balance — counting them again would double up).
+ *
+ * The lifetime total is `openingBalance + everything received after
+ * `carryoverAsOf``. The opening balance stands in for the pre-cutoff period as
+ * a single agreed figure, so pre-cutoff rows are never added on top of it.
+ */
+type PaymentTenantRel = { properties?: { name: string } | { name: string }[] | null };
+
+export function computeClientMonthlyAccount(
+  payments: Array<{
+    amount: number;
+    paid_date: string | null;
+    status: string;
+    notes?: string | null;
+    from_carryover?: boolean | null;
+    // Supabase types both relations as possibly-arrays depending on the query.
+    tenants?: PaymentTenantRel | PaymentTenantRel[] | null;
+  }>,
+  monthKey: string,
+  opts: { carryoverAmount?: number | null; carryoverAsOf?: string | null } = {}
+) {
+  const monthStart = getMonthStart(monthKey);
+  const monthEnd = getMonthEnd(monthKey);
+  const openingBalance = Number(opts.carryoverAmount || 0);
+  const cutoff = opts.carryoverAsOf || null;
+
+  // Money that actually reached our account: paid, not carryover, not KCB.
+  const received = payments.filter(
+    (p) => p.status === "paid" && !p.from_carryover && !isExternalPayment(p)
+  );
+
+  const inMonth = received.filter(
+    (p) => p.paid_date && p.paid_date >= monthStart && p.paid_date <= monthEnd
+  );
+  const collectedThisMonth = inMonth.reduce((s, p) => s + Number(p.amount), 0);
+
+  // Only post-cutoff money is added to the opening balance.
+  const collectedSinceOpening = received
+    .filter((p) => !cutoff || (p.paid_date != null && p.paid_date > cutoff))
+    .reduce((s, p) => s + Number(p.amount), 0);
+
+  const propertyName = (p: { tenants?: PaymentTenantRel | PaymentTenantRel[] | null }) => {
+    const tenant = Array.isArray(p.tenants) ? p.tenants[0] : p.tenants;
+    const rel = tenant?.properties;
+    if (!rel) return "Unassigned";
+    const name = Array.isArray(rel) ? rel[0]?.name : rel.name;
+    return (name || "Unassigned").trim();
+  };
+
+  const byProperty = new Map<string, { name: string; payments: number; collected: number }>();
+  for (const p of inMonth) {
+    const name = propertyName(p);
+    const row = byProperty.get(name) || { name, payments: 0, collected: 0 };
+    row.payments += 1;
+    row.collected += Number(p.amount);
+    byProperty.set(name, row);
+  }
+
+  // Surfaced so the report can footnote what was left out, rather than
+  // silently dropping money the client may be expecting to see.
+  const excludedThisMonth = payments
+    .filter(
+      (p) =>
+        p.status === "paid" &&
+        !p.from_carryover &&
+        isExternalPayment(p) &&
+        p.paid_date &&
+        p.paid_date >= monthStart &&
+        p.paid_date <= monthEnd
+    )
+    .reduce((s, p) => s + Number(p.amount), 0);
+
+  return {
+    collectedThisMonth,
+    totalInAccount: openingBalance + collectedSinceOpening,
+    openingBalance,
+    openingBalanceAsOf: cutoff,
+    collectedSinceOpening,
+    excludedThisMonth,
+    properties: [...byProperty.values()].sort((a, b) => b.collected - a.collected),
+  };
+}
+
+/**
+ * Count tenants whose rent for the period is *fully* covered. A partial payer
+ * is deliberately not counted — the "X of Y paid" figure must not be inflated
+ * by someone who still owes a balance.
+ */
+export function countTenantsFullyPaid(
+  tenants: Array<{ id: string; rent_amount: number }>,
+  payments: Array<{ tenant_id: string; amount: number; paid_date: string | null; rent_period?: string | null; status: string; payment_type?: string | null }>,
+  monthKey: string
+) {
+  return tenants.filter((t) => {
+    const rent = Number(t.rent_amount);
+    if (rent <= 0) return false;
+    const paidSum = payments
+      .filter((p) => {
+        if (p.tenant_id !== t.id) return false;
+        if (p.status !== "paid") return false;
+        if (p.payment_type && p.payment_type !== "rent") return false;
+        return periodOf(p) === monthKey;
+      })
+      .reduce((s, p) => s + Number(p.amount), 0);
+    return paidSum >= rent;
+  }).length;
 }
 
 /**
@@ -366,7 +502,7 @@ export function computeRecentTransactions(
  * is less than their rent. Includes both partial (paid < rent) and zero-paid.
  */
 export function computeArrears(
-  tenants: Array<{ id: string; full_name: string; rent_amount: number; property_id: string; created_at?: string; properties?: { name: string } }>,
+  tenants: Array<{ id: string; full_name: string; rent_amount: number; property_id: string; unit_number?: string | null; created_at?: string; properties?: { name: string } }>,
   payments: Array<{ tenant_id: string; amount: number; paid_date: string | null; rent_period?: string | null; status: string; payment_type?: string | null }>,
   monthKey: string
 ) {
@@ -395,7 +531,7 @@ export function computeArrears(
       return {
         tenant: t.full_name,
         property: t.properties?.name || "",
-        unit: "",
+        unit: t.unit_number || "",
         amount: balance,
         rentTotal: rent,
         paid: paidSum,

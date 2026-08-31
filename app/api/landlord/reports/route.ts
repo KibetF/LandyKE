@@ -6,6 +6,8 @@ import {
   getShortMonth,
   formatMonthKey,
   periodOf,
+  computeTenantStatus,
+  countTenantsFullyPaid,
 } from "@/lib/queries";
 
 export async function GET(request: NextRequest) {
@@ -75,62 +77,23 @@ export async function GET(request: NextRequest) {
     return { month: formatMonthKey(key).split(" ")[0], rate };
   });
 
-  // Determine if the selected month's rent is not yet due (before the 5th)
-  const today = new Date();
-  const currentMonthKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}`;
-  const isCurrentMonth = selectedMonth === currentMonthKey;
-  const rentNotYetDue = isCurrentMonth && today.getDate() < 5;
+  // Supabase types the `properties` relation as an array on some rows; the
+  // shared compute* helpers expect a plain object, so normalise it once here.
+  const tenantsForReports = tenantsForMonth.map((t) => ({
+    ...t,
+    properties: { name: getPropertyName(t), location: null },
+  }));
 
-  // Tenant status (bucketed by rent_period)
-  const tenantStatusData = tenantsForMonth.map((t) => {
-    const tenantPayments = allPayments.filter(
-      (p) => p.tenant_id === t.id && isRentPayment(p) && periodOf(p) === selectedMonth
-    );
-    const paidEvents = tenantPayments.filter((p) => p.status === "paid");
-    const paidSum = paidEvents.reduce((s, p) => s + Number(p.amount), 0);
-    const pendingPayment = tenantPayments.find((p) => p.status === "pending");
-    const vacatedPayment = tenantPayments.find((p) => p.status === "vacated_unpaid");
-    const lastPaid = paidEvents
-      .filter((p) => p.paid_date)
-      .map((p) => p.paid_date as string)
-      .sort()
-      .pop();
-
-    const rent = Number(t.rent_amount);
-    let status: "paid" | "pending" | "overdue" | "vacated_unpaid" | "partial" = rentNotYetDue ? "pending" : "overdue";
-    let date = rentNotYetDue ? "Due 5th" : "No payment";
-    let paymentNotes = "";
-
-    if (vacatedPayment) {
-      status = "vacated_unpaid";
-      date = "Vacated";
-      paymentNotes = vacatedPayment.notes || "";
-    } else if (paidSum >= rent && rent > 0) {
-      status = "paid";
-      if (lastPaid) date = new Date(lastPaid).toLocaleDateString("en-KE", { day: "numeric", month: "short", year: "numeric" });
-      paymentNotes = paidEvents[0]?.notes || "";
-    } else if (paidSum > 0) {
-      status = "partial";
-      date = `KES ${(rent - paidSum).toLocaleString("en-KE")} owed`;
-      paymentNotes = paidEvents[0]?.notes || "";
-    } else if (pendingPayment) {
-      status = "pending";
-      date = pendingPayment.paid_date
-        ? `Due ${new Date(pendingPayment.paid_date).toLocaleDateString("en-KE", { day: "numeric", month: "short" })}`
-        : "Pending";
-      paymentNotes = pendingPayment.notes || "";
-    }
-
-    return {
-      name: t.full_name,
-      property: getPropertyName(t),
-      unit: t.unit_number || "",
-      amount: Number(t.rent_amount),
-      date,
-      status,
-      notes: paymentNotes,
-    };
-  });
+  // Tenant status (bucketed by rent_period) — shared with the admin route.
+  const tenantStatusData = computeTenantStatus(tenantsForReports, allPayments, selectedMonth).map((t) => ({
+    name: t.name,
+    property: t.property,
+    unit: t.unit,
+    amount: t.amount,
+    date: t.date,
+    status: t.status,
+    notes: t.notes,
+  }));
 
   // Per-property payment breakdown (bucketed by rent_period)
   const propertyBreakdown = properties.map((prop) => {
@@ -143,8 +106,8 @@ export async function GET(request: NextRequest) {
     const pCollected = pPaidPayments.reduce((s, p) => s + Number(p.amount), 0);
     const pExternalPayments = pPaidPayments.filter((p) => p.notes && /kcb/i.test(p.notes));
     const pExternal = pExternalPayments.reduce((s, p) => s + Number(p.amount), 0);
-    const paidTenantIds = new Set(pPaidPayments.map((p) => p.tenant_id));
-    const tenantsPaid = pTenants.filter((t) => paidTenantIds.has(t.id)).length;
+    // Only fully-settled tenants count — a partial payer still owes a balance.
+    const tenantsPaid = countTenantsFullyPaid(pTenants, allPayments, selectedMonth);
 
     return {
       name: prop.name,

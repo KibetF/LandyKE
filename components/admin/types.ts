@@ -76,10 +76,23 @@ export interface AdminReportData {
   incomeData: { month: string; collected: number; expected: number }[];
   occupancyData: { name: string; total: number; occupied: number; rate: number }[];
   collectionRates: { month: string; rate: number }[];
-  arrearsData: { tenant: string; property: string; unit: string; amount: number; days: number }[];
-  tenantStatusData: { name: string; property: string; unit?: string; amount: number; date: string; status: "paid" | "pending" | "overdue"; notes?: string }[];
+  arrearsData: { tenant: string; property: string; unit: string; amount: number; rentTotal?: number; paid?: number; days: number }[];
+  tenantStatusData: { name: string; property: string; unit?: string; amount: number; date: string; status: "paid" | "pending" | "overdue" | "partial" | "vacated_unpaid"; notes?: string }[];
   propertyBreakdown: PropertyBreakdown[];
+  clientReport: ClientMonthlyAccount;
   selectedMonth: string;
+}
+
+/** Cash-basis figures for the end-of-month statement sent to a client. */
+export interface ClientMonthlyAccount {
+  landlordName: string;
+  collectedThisMonth: number;
+  totalInAccount: number;
+  openingBalance: number;
+  openingBalanceAsOf: string | null;
+  collectedSinceOpening: number;
+  excludedThisMonth: number;
+  properties: { name: string; payments: number; collected: number }[];
 }
 
 export interface OverviewProperty {

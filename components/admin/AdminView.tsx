@@ -357,6 +357,16 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
     });
   }
 
+  async function downloadClientMonthlyReport() {
+    if (!reportData?.clientReport) return;
+    const { generateClientMonthlyReport } = await import("@/lib/pdf/generate-report");
+    generateClientMonthlyReport({
+      ...reportData.clientReport,
+      landlordName: reportData.clientReport.landlordName || reportLandlord?.full_name || "",
+      month: formatMonthLabel(reportMonth),
+    });
+  }
+
   async function downloadAdminPropertySummary() {
     if (!reportData) return;
     const { generatePropertySummary } = await import("@/lib/pdf/generate-report");
@@ -1641,7 +1651,7 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
                     </div>
                     <div>
                       <label style={labelStyle}>Paid Date</label>
-                      <input type="date" value={paymentForm.paid_date} onChange={(e) => setPaymentForm((f) => ({ ...f, paid_date: e.target.value }))} style={inputStyle} />
+                      <input type="date" required value={paymentForm.paid_date} onChange={(e) => setPaymentForm((f) => ({ ...f, paid_date: e.target.value }))} style={inputStyle} />
                     </div>
                   </div>
                   <div className="form-grid-2col" style={{ marginBottom: "1rem" }}>
@@ -1954,6 +1964,10 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
             </div>
             {reportLandlord && reportData && (
               <>
+                <button onClick={downloadClientMonthlyReport} className="flex items-center" style={{ ...btnStyle, gap: "0.4rem", fontSize: "0.8rem", padding: "0.7rem 1rem", background: "var(--gold)" }}>
+                  <FileText size={14} />
+                  Client Monthly Statement
+                </button>
                 <button onClick={downloadAdminRentStatement} className="flex items-center" style={{ ...btnStyle, gap: "0.4rem", fontSize: "0.8rem", padding: "0.7rem 1rem" }}>
                   <FileText size={14} />
                   Rent Statement PDF
@@ -2193,10 +2207,16 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
                                                 <td style={{ padding: "0.6rem 1rem" }}>KES {t.amount.toLocaleString()}</td>
                                                 <td style={{ padding: "0.6rem 1rem" }}>
                                                   <span className="status-pill" style={{
-                                                    background: t.status === "paid" ? "var(--green-light)" : t.status === "pending" ? "var(--gold-light)" : "var(--red-light)",
-                                                    color: t.status === "paid" ? "var(--green)" : t.status === "pending" ? "var(--gold)" : "var(--rust)",
+                                                    background: t.status === "paid" ? "var(--green-light)"
+                                                      : t.status === "pending" ? "var(--gold-light)"
+                                                      : t.status === "partial" ? "#fdf2dd"
+                                                      : "var(--red-light)",
+                                                    color: t.status === "paid" ? "var(--green)"
+                                                      : t.status === "pending" ? "var(--gold)"
+                                                      : t.status === "partial" ? "#8a5a00"
+                                                      : "var(--rust)",
                                                   }}>
-                                                    {t.status.charAt(0).toUpperCase() + t.status.slice(1)}
+                                                    {t.status === "vacated_unpaid" ? "Vacated" : t.status.charAt(0).toUpperCase() + t.status.slice(1)}
                                                   </span>
                                                 </td>
                                                 <td style={{ padding: "0.6rem 1rem", fontSize: "0.75rem", color: "var(--muted)" }}>{t.date}</td>
