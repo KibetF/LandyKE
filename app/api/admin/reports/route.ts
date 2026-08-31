@@ -3,11 +3,12 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
   getMonthRange,
-  getMonthStart,
-  getMonthEnd,
   getShortMonth,
   formatMonthKey,
-  LAUNCH_MONTH,
+  periodOf,
+  computeTenantStatus,
+  computeArrears,
+  countTenantsFullyPaid,
 } from "@/lib/queries";
 
 async function verifyAdmin() {
@@ -34,14 +35,14 @@ export async function GET(request: NextRequest) {
   const [propertyRes, tenantRes, paymentRes] = await Promise.all([
     adminClient.schema("landyke").from("properties").select("id, name, location, total_units, collection_start_month").eq("landlord_id", landlordId),
     adminClient.schema("landyke").from("tenants").select("id, full_name, rent_amount, status, property_id, unit_number, unit_type, created_at, properties(name)").eq("landlord_id", landlordId).eq("status", "active"),
-    adminClient.schema("landyke").from("payments").select("id, amount, paid_date, status, notes, tenant_id, landlord_id, tenants(full_name, property_id, properties(name))").eq("landlord_id", landlordId).order("paid_date", { ascending: false }),
+    adminClient.schema("landyke").from("payments").select("id, amount, paid_date, rent_period, payment_type, status, notes, tenant_id, landlord_id, tenants(full_name, property_id, properties(name))").eq("landlord_id", landlordId).order("paid_date", { ascending: false }),
   ]);
 
   const properties = propertyRes.data || [];
   const activeTenants = tenantRes.data || [];
   const allPayments = paymentRes.data || [];
 
-  const monthStart = getMonthStart(selectedMonth);
+  const isRentPayment = (p: { payment_type?: string | null }) => !p.payment_type || p.payment_type === "rent";
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   function getPropertyName(row: any): string {
@@ -49,8 +50,6 @@ export async function GET(request: NextRequest) {
     if (Array.isArray(row.properties)) return row.properties[0]?.name || "";
     return row.properties.name || "";
   }
-
-  const monthEnd = getMonthEnd(selectedMonth);
 
   // Build map of property collection start months
   const propStartMap = new Map(properties.map((p) => [p.id, p.collection_start_month]));
@@ -64,6 +63,14 @@ export async function GET(request: NextRequest) {
     if (propStart && propStart > selectedMonth) return false;
     return true;
   });
+
+  // Supabase types the `properties` relation as an array on some rows; the
+  // shared compute* helpers expect a plain object, so normalise it once here
+  // rather than re-deriving the name at every call site.
+  const tenantsForReports = tenantsForMonth.map((t) => ({
+    ...t,
+    properties: { name: getPropertyName(t), location: null },
+  }));
 
   // Expected rent for a given month: only tenants/properties actually
   // collecting that month (created on/before month end, collection started).
@@ -81,10 +88,8 @@ export async function GET(request: NextRequest) {
   // Income by month
   const months = getMonthRange(selectedMonth, 6);
   const incomeData = months.map((key) => {
-    const start = getMonthStart(key);
-    const end = getMonthEnd(key);
     const collected = allPayments
-      .filter((p) => p.paid_date && p.paid_date >= start && p.paid_date <= end && p.status === "paid")
+      .filter((p) => p.status === "paid" && isRentPayment(p) && periodOf(p) === key)
       .reduce((s, p) => s + Number(p.amount), 0);
     return { month: getShortMonth(key), collected, expected: expectedForMonth(key) };
   });
@@ -98,83 +103,42 @@ export async function GET(request: NextRequest) {
 
   // Collection rates
   const collectionRates = months.map((key) => {
-    const start = getMonthStart(key);
-    const end = getMonthEnd(key);
     const collected = allPayments
-      .filter((p) => p.paid_date && p.paid_date >= start && p.paid_date <= end && p.status === "paid")
+      .filter((p) => p.status === "paid" && isRentPayment(p) && periodOf(p) === key)
       .reduce((s, p) => s + Number(p.amount), 0);
     const monthExpected = expectedForMonth(key);
     const rate = monthExpected > 0 ? Math.round((collected / monthExpected) * 100) : 0;
     return { month: formatMonthKey(key).split(" ")[0], rate };
   });
 
-  // Arrears
-  const today = new Date();
-  const arrearsData = tenantsForMonth
-    .filter((t) => {
-      const hasPaid = allPayments.some(
-        (p) => p.tenant_id === t.id && p.paid_date && p.paid_date >= monthStart && p.paid_date <= monthEnd && p.status === "paid"
-      );
-      return !hasPaid;
-    })
-    .map((t) => {
-      const daysOverdue = Math.max(0, Math.floor((today.getTime() - new Date(monthStart).getTime()) / (1000 * 60 * 60 * 24)));
-      return {
-        tenant: t.full_name,
-        property: getPropertyName(t),
-        unit: t.unit_number || "",
-        amount: Number(t.rent_amount),
-        days: daysOverdue,
-      };
-    });
+  // Arrears — partial-aware: `amount` is the outstanding balance, not full rent
+  const arrearsData = computeArrears(tenantsForReports, allPayments, selectedMonth);
 
-  // Tenant status (for Tenant Payment PDF)
-  const tenantStatusData = tenantsForMonth.map((t) => {
-    const tenantPayments = allPayments.filter(
-      (p) => p.tenant_id === t.id && p.paid_date && p.paid_date >= monthStart && p.paid_date <= monthEnd
-    );
-    const paidPayment = tenantPayments.find((p) => p.status === "paid");
-    const pendingPayment = tenantPayments.find((p) => p.status === "pending");
-
-    let status: "paid" | "pending" | "overdue" = "overdue";
-    let date = "No payment";
-    let paymentNotes = "";
-    if (paidPayment && paidPayment.paid_date) {
-      status = "paid";
-      date = new Date(paidPayment.paid_date).toLocaleDateString("en-KE", { day: "numeric", month: "short", year: "numeric" });
-      paymentNotes = paidPayment.notes || "";
-    } else if (pendingPayment) {
-      status = "pending";
-      date = pendingPayment.paid_date
-        ? `Due ${new Date(pendingPayment.paid_date).toLocaleDateString("en-KE", { day: "numeric", month: "short" })}`
-        : "Pending";
-      paymentNotes = pendingPayment.notes || "";
-    }
-
-    return {
-      name: t.full_name,
-      property: getPropertyName(t),
-      unit: t.unit_number || "",
-      amount: Number(t.rent_amount),
-      date,
-      status,
-      notes: paymentNotes,
-    };
-  });
+  // Tenant status (for Tenant Payment PDF) — shared with the landlord route so
+  // partial payments are bucketed by rent_period and summed against rent.
+  const tenantStatusData = computeTenantStatus(tenantsForReports, allPayments, selectedMonth).map((t) => ({
+    name: t.name,
+    property: t.property,
+    unit: t.unit,
+    amount: t.amount,
+    date: t.date,
+    status: t.status,
+    notes: t.notes,
+  }));
 
   // Per-property payment breakdown for the selected month
   const propertyBreakdown = properties.map((prop) => {
     const pTenants = tenantsForMonth.filter((t) => t.property_id === prop.id);
     const pExpected = pTenants.reduce((s, t) => s + Number(t.rent_amount), 0);
     const pPaidPayments = allPayments.filter(
-      (p) => p.paid_date && p.paid_date >= monthStart && p.paid_date <= monthEnd && p.status === "paid" &&
+      (p) => p.status === "paid" && isRentPayment(p) && periodOf(p) === selectedMonth &&
         pTenants.some((t) => t.id === p.tenant_id)
     );
     const pCollected = pPaidPayments.reduce((s, p) => s + Number(p.amount), 0);
     const pExternalPayments = pPaidPayments.filter((p) => p.notes && /kcb/i.test(p.notes));
     const pExternal = pExternalPayments.reduce((s, p) => s + Number(p.amount), 0);
-    const paidTenantIds = new Set(pPaidPayments.map((p) => p.tenant_id));
-    const tenantsPaid = pTenants.filter((t) => paidTenantIds.has(t.id)).length;
+    // Only fully-settled tenants count — a partial payer still owes a balance.
+    const tenantsPaid = countTenantsFullyPaid(pTenants, allPayments, selectedMonth);
 
     return {
       name: prop.name,

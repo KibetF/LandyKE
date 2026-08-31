@@ -271,7 +271,7 @@ const AVATAR_COLORS = ["#4a5c4e", "#8b3a2a", "#c8963e", "#2d6a4f", "#6b3d8a", "#
 
 export function computeTenantStatus(
   tenants: Array<{ id: string; full_name: string; rent_amount: number; property_id: string; unit_number?: string | null; created_at?: string; properties?: { name: string; location: string | null } }>,
-  payments: Array<{ tenant_id: string; amount: number; paid_date: string | null; rent_period?: string | null; status: string; payment_type?: string | null }>,
+  payments: Array<{ tenant_id: string; amount: number; paid_date: string | null; rent_period?: string | null; status: string; payment_type?: string | null; notes?: string | null }>,
   monthKey: string
 ) {
   // Include tenants created during or before the selected month
@@ -304,27 +304,34 @@ export function computeTenantStatus(
       .sort()
       .pop();
 
+    const paidEvents = tenantPayments.filter((p) => p.status === "paid");
+
     const rent = Number(t.rent_amount);
     let status: "paid" | "pending" | "overdue" | "vacated_unpaid" | "partial" = rentNotYetDue ? "pending" : "overdue";
     let date = rentNotYetDue ? "Due 5th" : "No payment";
+    let notes = "";
 
     if (vacatedPayment) {
       status = "vacated_unpaid";
       date = "Vacated";
+      notes = vacatedPayment.notes || "";
     } else if (paidSum >= rent && rent > 0) {
       status = "paid";
       if (lastPaidDate) {
         date = new Date(lastPaidDate).toLocaleDateString("en-KE", { day: "numeric", month: "short", year: "numeric" });
       }
+      notes = paidEvents[0]?.notes || "";
     } else if (paidSum > 0) {
       status = "partial";
       const owed = rent - paidSum;
       date = `KES ${owed.toLocaleString("en-KE")} owed`;
+      notes = paidEvents[0]?.notes || "";
     } else if (pendingPayment) {
       status = "pending";
       date = pendingPayment.paid_date
         ? `Due ${new Date(pendingPayment.paid_date).toLocaleDateString("en-KE", { day: "numeric", month: "short" })}`
         : "Pending";
+      notes = pendingPayment.notes || "";
     }
 
     return {
@@ -337,8 +344,34 @@ export function computeTenantStatus(
       paidThisMonth: paidSum,
       date,
       status,
+      notes,
     };
   });
+}
+
+/**
+ * Count tenants whose rent for the period is *fully* covered. A partial payer
+ * is deliberately not counted — the "X of Y paid" figure must not be inflated
+ * by someone who still owes a balance.
+ */
+export function countTenantsFullyPaid(
+  tenants: Array<{ id: string; rent_amount: number }>,
+  payments: Array<{ tenant_id: string; amount: number; paid_date: string | null; rent_period?: string | null; status: string; payment_type?: string | null }>,
+  monthKey: string
+) {
+  return tenants.filter((t) => {
+    const rent = Number(t.rent_amount);
+    if (rent <= 0) return false;
+    const paidSum = payments
+      .filter((p) => {
+        if (p.tenant_id !== t.id) return false;
+        if (p.status !== "paid") return false;
+        if (p.payment_type && p.payment_type !== "rent") return false;
+        return periodOf(p) === monthKey;
+      })
+      .reduce((s, p) => s + Number(p.amount), 0);
+    return paidSum >= rent;
+  }).length;
 }
 
 /**
@@ -366,7 +399,7 @@ export function computeRecentTransactions(
  * is less than their rent. Includes both partial (paid < rent) and zero-paid.
  */
 export function computeArrears(
-  tenants: Array<{ id: string; full_name: string; rent_amount: number; property_id: string; created_at?: string; properties?: { name: string } }>,
+  tenants: Array<{ id: string; full_name: string; rent_amount: number; property_id: string; unit_number?: string | null; created_at?: string; properties?: { name: string } }>,
   payments: Array<{ tenant_id: string; amount: number; paid_date: string | null; rent_period?: string | null; status: string; payment_type?: string | null }>,
   monthKey: string
 ) {
@@ -395,7 +428,7 @@ export function computeArrears(
       return {
         tenant: t.full_name,
         property: t.properties?.name || "",
-        unit: "",
+        unit: t.unit_number || "",
         amount: balance,
         rentTotal: rent,
         paid: paidSum,

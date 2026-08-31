@@ -280,6 +280,8 @@ export function generateTenantPaymentReport(data: TenantPaymentReportData) {
         const val = (hookData.cell.raw as string).toLowerCase();
         if (val === "paid") {
           hookData.cell.styles.textColor = COLORS.green;
+        } else if (val === "partial") {
+          hookData.cell.styles.textColor = [138, 90, 0];
         } else if (val === "pending") {
           hookData.cell.styles.textColor = COLORS.gold;
         } else if (val === "vacated - unpaid") {

@@ -76,8 +76,8 @@ export interface AdminReportData {
   incomeData: { month: string; collected: number; expected: number }[];
   occupancyData: { name: string; total: number; occupied: number; rate: number }[];
   collectionRates: { month: string; rate: number }[];
-  arrearsData: { tenant: string; property: string; unit: string; amount: number; days: number }[];
-  tenantStatusData: { name: string; property: string; unit?: string; amount: number; date: string; status: "paid" | "pending" | "overdue"; notes?: string }[];
+  arrearsData: { tenant: string; property: string; unit: string; amount: number; rentTotal?: number; paid?: number; days: number }[];
+  tenantStatusData: { name: string; property: string; unit?: string; amount: number; date: string; status: "paid" | "pending" | "overdue" | "partial" | "vacated_unpaid"; notes?: string }[];
   propertyBreakdown: PropertyBreakdown[];
   selectedMonth: string;
 }

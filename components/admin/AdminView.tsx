@@ -1641,7 +1641,7 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
                     </div>
                     <div>
                       <label style={labelStyle}>Paid Date</label>
-                      <input type="date" value={paymentForm.paid_date} onChange={(e) => setPaymentForm((f) => ({ ...f, paid_date: e.target.value }))} style={inputStyle} />
+                      <input type="date" required value={paymentForm.paid_date} onChange={(e) => setPaymentForm((f) => ({ ...f, paid_date: e.target.value }))} style={inputStyle} />
                     </div>
                   </div>
                   <div className="form-grid-2col" style={{ marginBottom: "1rem" }}>
@@ -2193,10 +2193,16 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
                                                 <td style={{ padding: "0.6rem 1rem" }}>KES {t.amount.toLocaleString()}</td>
                                                 <td style={{ padding: "0.6rem 1rem" }}>
                                                   <span className="status-pill" style={{
-                                                    background: t.status === "paid" ? "var(--green-light)" : t.status === "pending" ? "var(--gold-light)" : "var(--red-light)",
-                                                    color: t.status === "paid" ? "var(--green)" : t.status === "pending" ? "var(--gold)" : "var(--rust)",
+                                                    background: t.status === "paid" ? "var(--green-light)"
+                                                      : t.status === "pending" ? "var(--gold-light)"
+                                                      : t.status === "partial" ? "#fdf2dd"
+                                                      : "var(--red-light)",
+                                                    color: t.status === "paid" ? "var(--green)"
+                                                      : t.status === "pending" ? "var(--gold)"
+                                                      : t.status === "partial" ? "#8a5a00"
+                                                      : "var(--rust)",
                                                   }}>
-                                                    {t.status.charAt(0).toUpperCase() + t.status.slice(1)}
+                                                    {t.status === "vacated_unpaid" ? "Vacated" : t.status.charAt(0).toUpperCase() + t.status.slice(1)}
                                                   </span>
                                                 </td>
                                                 <td style={{ padding: "0.6rem 1rem", fontSize: "0.75rem", color: "var(--muted)" }}>{t.date}</td>
