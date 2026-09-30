@@ -88,6 +88,7 @@ export interface AdminReportData {
 export interface ClientMonthlyAccount {
   landlordName: string;
   collectedThisMonth: number;
+  otherReceivedThisMonth: number;
   totalInAccount: number;
   openingBalance: number;
   openingBalanceAsOf: string | null;

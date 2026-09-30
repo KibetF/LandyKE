@@ -360,12 +360,15 @@ export function isExternalPayment(p: { notes?: string | null }): boolean {
 }
 
 /**
- * Cash-basis account report for one client, for a single month.
+ * Account report for one client, for a single month.
  *
- * Deliberately bucketed by `paid_date`, not `rent_period`: this report is sent
- * alongside a bank statement, so a payment belongs to the month the cash
- * actually landed. Rent paid late for a prior month shows up in the month it
- * arrived, exactly as the bank would show it.
+ * The headline "collected" figure and the per-property split are rent *for*
+ * the month (bucketed by `rent_period`), so they match the payment breakdown
+ * and rent statement. Money that landed in the month but pays for another
+ * month (late arrears, advances) is reported separately as
+ * `otherReceivedThisMonth`, so the report still reconciles with the bank
+ * statement: cash received in the month = rent for the month received in it
+ * + other received.
  *
  * Excluded throughout: payments routed to the external KCB account (never
  * reached us) and `from_carryover` rows (already represented in the opening
@@ -381,6 +384,8 @@ export function computeClientMonthlyAccount(
   payments: Array<{
     amount: number;
     paid_date: string | null;
+    rent_period?: string | null;
+    payment_type?: string | null;
     status: string;
     notes?: string | null;
     from_carryover?: boolean | null;
@@ -400,10 +405,16 @@ export function computeClientMonthlyAccount(
     (p) => p.status === "paid" && !p.from_carryover && !isExternalPayment(p)
   );
 
-  const inMonth = received.filter(
-    (p) => p.paid_date && p.paid_date >= monthStart && p.paid_date <= monthEnd
-  );
-  const collectedThisMonth = inMonth.reduce((s, p) => s + Number(p.amount), 0);
+  const isRentForMonth = (p: { payment_type?: string | null; rent_period?: string | null; paid_date: string | null }) =>
+    (p.payment_type || "rent") === "rent" && periodOf(p) === monthKey;
+
+  const forMonth = received.filter(isRentForMonth);
+  const collectedThisMonth = forMonth.reduce((s, p) => s + Number(p.amount), 0);
+
+  // Cash that landed this month but isn't this month's rent.
+  const otherReceivedThisMonth = received
+    .filter((p) => p.paid_date && p.paid_date >= monthStart && p.paid_date <= monthEnd && !isRentForMonth(p))
+    .reduce((s, p) => s + Number(p.amount), 0);
 
   // Only post-cutoff money is added to the opening balance.
   const collectedSinceOpening = received
@@ -419,7 +430,7 @@ export function computeClientMonthlyAccount(
   };
 
   const byProperty = new Map<string, { name: string; payments: number; collected: number }>();
-  for (const p of inMonth) {
+  for (const p of forMonth) {
     const name = propertyName(p);
     const row = byProperty.get(name) || { name, payments: 0, collected: 0 };
     row.payments += 1;
@@ -443,6 +454,7 @@ export function computeClientMonthlyAccount(
 
   return {
     collectedThisMonth,
+    otherReceivedThisMonth,
     totalInAccount: openingBalance + collectedSinceOpening,
     openingBalance,
     openingBalanceAsOf: cutoff,
