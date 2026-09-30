@@ -318,6 +318,7 @@ interface ClientMonthlyReportData {
   landlordName: string;
   month: string;
   collectedThisMonth: number;
+  otherReceivedThisMonth: number;
   totalInAccount: number;
   openingBalance: number;
   openingBalanceAsOf: string | null;
@@ -327,10 +328,11 @@ interface ClientMonthlyReportData {
 }
 
 /**
- * End-of-month statement sent to a client. Two headline figures — what came in
- * this month and what has come in altogether — plus the per-property split that
- * adds up to the first. Sent alongside a bank statement, so every figure is
- * cash actually received into the LandyKE account.
+ * End-of-month statement sent to a client. Two headline figures — rent
+ * collected for this month and what has come in altogether — plus the
+ * per-property split that adds up to the first. Late rent for earlier months
+ * that arrived this month is shown on its own line so the figures still
+ * reconcile with the bank statement.
  */
 export function generateClientMonthlyReport(data: ClientMonthlyReportData) {
   const doc = new jsPDF();
@@ -411,7 +413,21 @@ export function generateClientMonthlyReport(data: ClientMonthlyReportData) {
   });
   y = (doc as jsPDF & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 10;
 
-  // Only footnote the exclusion when there is something to explain.
+  // Only footnote what's outside the headline when there is something to explain.
+  if (data.otherReceivedThisMonth > 0) {
+    doc.setFillColor(...COLORS.cream);
+    doc.roundedRect(20, y, pageWidth - 40, 12, 2, 2, "F");
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7);
+    doc.setTextColor(...COLORS.ink);
+    doc.text(
+      `Also received in ${data.month.split(" ")[0]}: KES ${data.otherReceivedThisMonth.toLocaleString()} for other months (e.g. late rent), included in the account total.`,
+      25,
+      y + 7.5
+    );
+    y += 16;
+  }
+
   if (data.excludedThisMonth > 0) {
     doc.setFillColor(...COLORS.cream);
     doc.roundedRect(20, y, pageWidth - 40, 12, 2, 2, "F");

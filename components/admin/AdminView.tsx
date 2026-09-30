@@ -327,6 +327,32 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
     window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, "_blank");
   }
 
+  // Default Rent Period for a new payment: last month if the tenant still
+  // owes on it, so late payments recorded after month-end land in the month
+  // they cover instead of the current one. Only looks back one month — older
+  // history has gaps that aren't real arrears. Null when both are settled.
+  function defaultRentPeriod(tenant: Tenant): { period: string; balance: number } | null {
+    const rent = Number(tenant.rent_amount);
+    if (!(rent > 0)) return null;
+    const joined = tenant.created_at?.slice(0, 7);
+    const collectFrom = properties.find((p) => p.id === tenant.property_id)?.collection_start_month;
+    const paidByPeriod = new Map<string, number>();
+    payments
+      .filter((p) => p.tenant_id === tenant.id && p.status === "paid" && (p.payment_type || "rent") === "rent")
+      .forEach((p) => {
+        const period = periodOf(p);
+        if (period) paidByPeriod.set(period, (paidByPeriod.get(period) || 0) + Number(p.amount));
+      });
+    const oldestFirst = getAvailableMonths().map((m) => m.value).slice(0, 2).reverse();
+    for (const period of oldestFirst) {
+      if (joined && period < joined) continue;
+      if (collectFrom && period < collectFrom) continue;
+      const paid = paidByPeriod.get(period) || 0;
+      if (paid < rent) return { period, balance: rent - paid };
+    }
+    return null;
+  }
+
   function formatMonthLabel(key: string) {
     const [year, month] = key.split("-");
     const d = new Date(Number(year), Number(month) - 1);
@@ -1625,10 +1651,12 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
                         value={paymentForm.tenant_id}
                         onChange={(e) => {
                           const tenant = tenants.find((t) => t.id === e.target.value);
+                          const due = tenant ? defaultRentPeriod(tenant) : null;
                           setPaymentForm((f) => ({
                             ...f,
                             tenant_id: e.target.value,
-                            amount: tenant ? String(tenant.rent_amount) : f.amount,
+                            amount: due ? String(due.balance) : tenant ? String(tenant.rent_amount) : f.amount,
+                            rent_period: due?.period || new Date().toISOString().slice(0, 7),
                           }));
                         }}
                         style={inputStyle}
