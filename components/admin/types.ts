@@ -30,6 +30,7 @@ export interface Tenant {
   landlord_id: string;
   unit_number: string | null;
   unit_type: string | null;
+  created_at?: string | null;
   properties?: { name: string };
 }
 
