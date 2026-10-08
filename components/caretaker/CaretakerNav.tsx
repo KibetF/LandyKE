@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LayoutDashboard, LogOut } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { COMPANY, currentYear } from "@/lib/company";
 
 const navItems = [
   { href: "/caretaker/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -161,7 +162,7 @@ export default function CaretakerNav({ caretakerName, propertyNames }: Caretaker
             color: "rgba(245,240,232,0.2)",
           }}
         >
-          LandyKe &copy; 2026
+          {COMPANY.tradingName} &copy; {currentYear()}
         </div>
       </aside>
 

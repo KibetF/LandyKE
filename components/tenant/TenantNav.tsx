@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LayoutDashboard, Wrench, FileIcon, User, LogOut, Wifi } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { COMPANY, currentYear } from "@/lib/company";
 
 const navItems = [
   { href: "/my/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -153,7 +154,7 @@ export default function TenantNav({ tenantName, propertyName, unitNumber }: Tena
             color: "rgba(245,240,232,0.2)",
           }}
         >
-          LandyKe © 2026
+          {COMPANY.tradingName} © {currentYear()}
         </div>
       </aside>
 

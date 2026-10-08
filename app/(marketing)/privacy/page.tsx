@@ -1,6 +1,11 @@
 import Footer from "@/components/marketing/Footer";
+import { COMPANY, DEFINITIONS_CLAUSE } from "@/lib/company";
 
 const sections = [
+  {
+    title: "Who We Are",
+    content: `${DEFINITIONS_CLAUSE} ${COMPANY.legalName} is the data controller for personal data processed through ${COMPANY.tradingName}'s services.`,
+  },
   {
     title: "Data Collection",
     content:
@@ -82,7 +87,7 @@ export default function PrivacyPage() {
               marginBottom: "3rem",
             }}
           >
-            Last updated: March 2026
+            Last updated: {COMPANY.effectiveDate}
           </p>
 
           <p

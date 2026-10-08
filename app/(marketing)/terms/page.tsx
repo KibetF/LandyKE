@@ -1,6 +1,11 @@
 import Footer from "@/components/marketing/Footer";
+import { COMPANY, DEFINITIONS_CLAUSE } from "@/lib/company";
 
 const sections = [
+  {
+    title: "Definitions",
+    content: DEFINITIONS_CLAUSE,
+  },
   {
     title: "Service Description",
     content:
@@ -92,7 +97,7 @@ export default function TermsPage() {
               marginBottom: "3rem",
             }}
           >
-            Last updated: March 2026
+            Last updated: {COMPANY.effectiveDate}
           </p>
 
           <p
