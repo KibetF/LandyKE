@@ -18,6 +18,7 @@ import {
   X,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { COMPANY, currentYear } from "@/lib/company";
 
 const primaryNavItems = [
   { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
@@ -191,7 +192,7 @@ export default function Sidebar({ userName, isAdmin }: SidebarProps) {
             color: "rgba(245,240,232,0.2)",
           }}
         >
-          LandyKe © 2026 · v1.0
+          {COMPANY.tradingName} © {currentYear()} · v1.0
         </div>
       </aside>
 

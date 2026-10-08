@@ -1,10 +1,12 @@
 import Navbar from "@/components/marketing/Navbar";
+import { COMPANY } from "@/lib/company";
 
 // LocalBusiness structured data for Google local search / rich results.
 const businessJsonLd = {
   "@context": "https://schema.org",
   "@type": "RealEstateAgent",
-  name: "LandyKe Property Management",
+  name: COMPANY.tradingName,
+  legalName: COMPANY.legalName,
   url: "https://www.landyke.com",
   email: "yafredkibet@gmail.com",
   telephone: "+254759342765",

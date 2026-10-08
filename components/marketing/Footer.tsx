@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { MapPin, Phone, Mail } from "lucide-react";
+import { COMPANY, currentYear } from "@/lib/company";
 
 const companyLinks: { label: string; href: string }[] = [
   { label: "About Us", href: "/about" },
@@ -189,7 +190,9 @@ export default function Footer() {
           letterSpacing: "0.05em",
         }}
       >
-        <span>&copy; 2026 LandyKe Property Management &mdash; operated by Fred Kibet. All rights reserved.</span>
+        <span>
+          &copy; {currentYear()} {COMPANY.tradingName}. {COMPANY.tradingName} is a trading name of {COMPANY.legalName}, a company registered in {COMPANY.country} (No. {COMPANY.companyNumber}). Registered office: {COMPANY.registeredOfficeShort}.
+        </span>
         <span>
           <Link href="/privacy" className="no-underline" style={{ color: "rgba(245,240,232,0.25)", transition: "color 0.2s" }}>
             Privacy Policy

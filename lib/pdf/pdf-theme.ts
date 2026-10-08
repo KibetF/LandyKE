@@ -1,4 +1,5 @@
 import jsPDF from "jspdf";
+import { COMPANY, LEGAL_ISSUER } from "@/lib/company";
 
 // Brand colors matching the design system
 export const COLORS = {
@@ -85,6 +86,16 @@ export function addFooter(doc: jsPDF, pageNum: number, totalPages: number) {
   // Branding
   doc.setTextColor(...COLORS.gold);
   doc.text("LandyKE", pageWidth / 2, pageHeight - 12, { align: "center" });
+
+  // Legal issuer
+  doc.setFontSize(6);
+  doc.setTextColor(...COLORS.muted);
+  doc.text(
+    `Issued by ${LEGAL_ISSUER} (Company No. ${COMPANY.companyNumber})`,
+    pageWidth / 2,
+    pageHeight - 7,
+    { align: "center" }
+  );
 }
 
 export function addSectionTitle(doc: jsPDF, title: string, y: number) {

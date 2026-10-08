@@ -1,5 +1,6 @@
 import jsPDF from "jspdf";
 import { COLORS } from "./pdf-theme";
+import { LEGAL_ISSUER } from "@/lib/company";
 
 export interface ReceiptData {
   receiptNumber: string;
@@ -274,11 +275,11 @@ function buildReceipt(data: ReceiptData): jsPDF {
     fx += 5;
   }
 
-  // "LandyKE · Eldoret, Kenya"
+  // "YaFred Holdings Limited t/a LandyKe · Eldoret, Kenya"
   doc.setFont("helvetica", "normal");
   doc.setFontSize(7.5);
   doc.setTextColor(...COLORS.ink);
-  doc.text("LandyKE · Eldoret, Kenya", pageWidth / 2, footerY + 8, { align: "center" });
+  doc.text(`${LEGAL_ISSUER} · Eldoret, Kenya`, pageWidth / 2, footerY + 8, { align: "center" });
 
   // "landyke.com · Registered Property Managers"
   doc.setFont("helvetica", "normal");

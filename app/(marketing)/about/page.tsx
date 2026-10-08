@@ -5,6 +5,7 @@ import StatsBelt from "@/components/marketing/StatsBelt";
 import ValuesList from "@/components/marketing/ValuesList";
 import PropertyCard from "@/components/marketing/PropertyCard";
 import { portfolioProperties } from "@/components/marketing/portfolioData";
+import { COMPANY } from "@/lib/company";
 
 const team = [
   {
@@ -113,7 +114,7 @@ export default function AboutPage() {
             <div className="paper-ledger tilt" style={{ width: "100%", maxWidth: "440px" }}>
               <div className="hero-statement-label uppercase">Company File</div>
               <h3 className="hero-statement-title font-serif">
-                LandyKe Property Management
+                {COMPANY.legalName}
               </h3>
               <div className="ledger-row">
                 <span className="ledger-row-label">Founded</span>
@@ -201,6 +202,12 @@ export default function AboutPage() {
                 vetted contractor networks, and a digital-first approach to reporting and
                 communication. Our client portal gives landlords real-time visibility into
                 their investments from anywhere in the world.
+              </p>
+              <p style={{ fontSize: "0.9rem", color: "var(--muted)", lineHeight: 1.8, fontWeight: 300 }}>
+                {COMPANY.tradingName} is owned and operated by {COMPANY.legalName}. Your
+                management agreement, statements and receipts are issued by{" "}
+                {COMPANY.legalName}, trading as {COMPANY.tradingName}. Nothing changes in
+                how your property is managed or who you deal with day to day.
               </p>
               <p style={{ fontSize: "0.9rem", color: "var(--muted)", lineHeight: 1.8, fontWeight: 300 }}>
                 We are registered with the Estate Agents Registration Board (EARB) and
