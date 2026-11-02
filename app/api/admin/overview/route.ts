@@ -3,10 +3,10 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
   getMonthRange,
-  getMonthStart,
   getMonthEnd,
   getShortMonth,
   LAUNCH_MONTH,
+  periodOf,
 } from "@/lib/queries";
 
 async function verifyAdmin() {
@@ -24,7 +24,6 @@ export async function GET() {
 
   const adminClient = createAdminClient();
   const currentMonth = new Date().toISOString().slice(0, 7);
-  const monthStart = getMonthStart(currentMonth);
   const monthEnd = getMonthEnd(currentMonth);
 
   // Fetch all data in parallel
@@ -32,7 +31,7 @@ export async function GET() {
     adminClient.schema("landyke").from("landlords").select("id, full_name, email"),
     adminClient.schema("landyke").from("properties").select("id, name, location, total_units, landlord_id, collection_start_month"),
     adminClient.schema("landyke").from("tenants").select("id, full_name, rent_amount, status, property_id, landlord_id, unit_number, unit_type, created_at"),
-    adminClient.schema("landyke").from("payments").select("id, amount, paid_date, status, tenant_id, landlord_id").gte("paid_date", monthStart).lte("paid_date", monthEnd),
+    adminClient.schema("landyke").from("payments").select("id, amount, paid_date, rent_period, payment_type, status, tenant_id, landlord_id").eq("rent_period", currentMonth),
   ]);
 
   // Exclude the admin/owner's own landlord row (kept only so the admin can
@@ -42,7 +41,10 @@ export async function GET() {
   const landlords = allLandlords.filter((l) => l.email !== adminEmail);
   const properties = propertyRes.data || [];
   const tenants = tenantRes.data || [];
-  const payments = paymentRes.data || [];
+  // Rent *for* the current month (bucketed by rent_period, like the reports),
+  // so late rent for last month recorded this month doesn't count here.
+  const isRentPayment = (p: { payment_type?: string | null }) => !p.payment_type || p.payment_type === "rent";
+  const payments = (paymentRes.data || []).filter((p) => isRentPayment(p) && periodOf(p) === currentMonth);
 
   // Build per-landlord overview
   const landlordOverviews = landlords.map((l) => {
@@ -114,13 +116,12 @@ export async function GET() {
   const months = getMonthRange(currentMonth, 6);
 
   // Fetch all payments for chart (not just current month)
-  const chartStart = getMonthStart(months[0] || LAUNCH_MONTH);
   const { data: allPayments } = await adminClient
     .schema("landyke")
     .from("payments")
-    .select("amount, paid_date, status")
-    .gte("paid_date", chartStart)
-    .lte("paid_date", monthEnd);
+    .select("amount, paid_date, rent_period, payment_type, status")
+    .gte("rent_period", months[0] || LAUNCH_MONTH)
+    .lte("rent_period", currentMonth);
 
   const totalExpectedAll = tenants
     .filter((t) => {
@@ -133,10 +134,8 @@ export async function GET() {
     .reduce((s, t) => s + Number(t.rent_amount), 0);
 
   const incomeChart = months.map((key) => {
-    const start = getMonthStart(key);
-    const end = getMonthEnd(key);
     const collected = (allPayments || [])
-      .filter((p) => p.paid_date && p.paid_date >= start && p.paid_date <= end && p.status === "paid")
+      .filter((p) => p.status === "paid" && isRentPayment(p) && periodOf(p) === key)
       .reduce((s, p) => s + Number(p.amount), 0);
     return { month: getShortMonth(key), collected, expected: totalExpectedAll };
   });
