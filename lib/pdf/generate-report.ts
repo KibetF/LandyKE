@@ -325,6 +325,9 @@ interface ClientMonthlyReportData {
   collectedSinceOpening: number;
   excludedThisMonth: number;
   properties: { name: string; payments: number; collected: number }[];
+  /** Non-rent funds held for the client (e.g. a fixed-deposit lump sum). */
+  clientFunds?: { purpose: string; amount: number; receivedDate: string; sentDate: string | null; sentTo: string | null }[];
+  clientFundsHeld?: number;
 }
 
 /**
@@ -341,11 +344,24 @@ export function generateClientMonthlyReport(data: ClientMonthlyReportData) {
 
   // Two headline figures, given the full width so they read as the point of
   // the document rather than as one tile among many.
+  // Client funds (non-rent) get their own tile so they're visible without
+  // being folded into the rent total.
+  const clientFunds = data.clientFunds || [];
+  const fundsHeld = data.clientFundsHeld || 0;
+  const hasFunds = clientFunds.length > 0;
+  const purposes = [...new Set(clientFunds.map((f) => f.purpose))];
   const headline: { label: string; value: string; color: [number, number, number] }[] = [
     { label: `Collected in ${data.month.split(" ")[0]}`, value: `KES ${data.collectedThisMonth.toLocaleString()}`, color: COLORS.green },
-    { label: "Total in our account", value: `KES ${data.totalInAccount.toLocaleString()}`, color: COLORS.ink },
+    { label: hasFunds ? "Rent total in our account" : "Total in our account", value: `KES ${data.totalInAccount.toLocaleString()}`, color: COLORS.ink },
   ];
-  const boxWidth = (pageWidth - 40 - 6) / 2;
+  if (fundsHeld > 0) {
+    headline.push({
+      label: purposes.length === 1 ? `Held for ${purposes[0]}` : "Other funds held",
+      value: `KES ${fundsHeld.toLocaleString()}`,
+      color: COLORS.gold,
+    });
+  }
+  const boxWidth = (pageWidth - 40 - 6 * (headline.length - 1)) / headline.length;
   headline.forEach((item, i) => {
     const x = 20 + i * (boxWidth + 6);
     doc.setFillColor(...COLORS.cream);
@@ -399,7 +415,7 @@ export function generateClientMonthlyReport(data: ClientMonthlyReportData) {
     body: [
       [asOf ? `Opening balance (to ${asOf})` : "Opening balance", `KES ${data.openingBalance.toLocaleString()}`],
       [asOf ? `Received since ${asOf}` : "Received since", `KES ${data.collectedSinceOpening.toLocaleString()}`],
-      ["Total in our account", `KES ${data.totalInAccount.toLocaleString()}`],
+      [hasFunds ? "Rent total in our account" : "Total in our account", `KES ${data.totalInAccount.toLocaleString()}`],
     ],
     theme: "plain",
     styles: { font: "helvetica", fontSize: 9, cellPadding: 4, textColor: COLORS.ink },
@@ -412,6 +428,34 @@ export function generateClientMonthlyReport(data: ClientMonthlyReportData) {
     },
   });
   y = (doc as jsPDF & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 10;
+
+  // Non-rent funds, listed apart from rent so neither figure muddies the other.
+  if (hasFunds) {
+    y += 2;
+    y = addSectionTitle(doc, "Funds held for you", y);
+    const fmtDate = (d: string) =>
+      new Date(d).toLocaleDateString("en-KE", { day: "numeric", month: "short", year: "numeric" });
+    autoTable(doc, {
+      startY: y,
+      head: [["Received", "Purpose", "Amount", "Status"]],
+      body: clientFunds.map((f) => [
+        fmtDate(f.receivedDate),
+        f.purpose,
+        `KES ${f.amount.toLocaleString()}`,
+        f.sentDate ? `Sent${f.sentTo ? ` to ${f.sentTo}` : ""} on ${fmtDate(f.sentDate)}` : "Held in our account",
+      ]),
+      theme: "plain",
+      styles: { font: "helvetica", fontSize: 9, cellPadding: 4, textColor: COLORS.ink },
+      headStyles: { fillColor: COLORS.cream, textColor: COLORS.ink, fontStyle: "bold", fontSize: 7 },
+      columnStyles: { 2: { halign: "right" } },
+    });
+    y = (doc as jsPDF & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 4;
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7);
+    doc.setTextColor(...COLORS.muted);
+    doc.text("These funds are not rent and are not included in the rent figures above.", 20, y + 3);
+    y += 10;
+  }
 
   // Only footnote what's outside the headline when there is something to explain.
   if (data.otherReceivedThisMonth > 0) {

@@ -10,6 +10,7 @@ import {
   computeArrears,
   countTenantsFullyPaid,
   computeClientMonthlyAccount,
+  computeClientFundsForMonth,
 } from "@/lib/queries";
 
 async function verifyAdmin() {
@@ -33,11 +34,12 @@ export async function GET(request: NextRequest) {
   const adminClient = createAdminClient();
 
   // Fetch all data for this landlord
-  const [propertyRes, tenantRes, paymentRes, landlordRes] = await Promise.all([
+  const [propertyRes, tenantRes, paymentRes, landlordRes, fundsRes] = await Promise.all([
     adminClient.schema("landyke").from("properties").select("id, name, location, total_units, collection_start_month").eq("landlord_id", landlordId),
     adminClient.schema("landyke").from("tenants").select("id, full_name, rent_amount, status, property_id, unit_number, unit_type, created_at, properties(name)").eq("landlord_id", landlordId).eq("status", "active"),
     adminClient.schema("landyke").from("payments").select("id, amount, paid_date, rent_period, payment_type, status, notes, from_carryover, tenant_id, landlord_id, tenants(full_name, property_id, properties(name))").eq("landlord_id", landlordId).order("paid_date", { ascending: false }),
     adminClient.schema("landyke").from("landlords").select("full_name, carryover_amount, carryover_as_of").eq("id", landlordId).single(),
+    adminClient.schema("landyke").from("client_funds").select("amount, received_date, purpose, sent_date, sent_to").eq("landlord_id", landlordId),
   ]);
 
   const properties = propertyRes.data || [];
@@ -164,6 +166,9 @@ export async function GET(request: NextRequest) {
       carryoverAmount: landlord?.carryover_amount,
       carryoverAsOf: landlord?.carryover_as_of,
     }),
+    // Non-rent funds (e.g. fixed-deposit lump sums) — shown separately,
+    // never added to the rent figures above.
+    ...computeClientFundsForMonth(fundsRes.data || [], selectedMonth),
   };
 
   return NextResponse.json({

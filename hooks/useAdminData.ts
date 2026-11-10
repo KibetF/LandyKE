@@ -3,6 +3,7 @@
 import useSWR from "swr";
 import type {
   AdminReportData,
+  ClientFund,
   OverviewData,
   Payment,
   Property,
@@ -124,5 +125,19 @@ export function useTenantPaymentsAdmin(tenantId: string | null) {
   return {
     tenantPayments: data?.payments ?? [],
     tenantPaymentsLoading: isLoading,
+  };
+}
+
+// Non-rent funds held for a client (fixed-deposit lump sums etc.).
+export function useClientFunds(landlordId: string | null) {
+  const { data, isLoading, mutate } = useSWR<{ funds: ClientFund[] }>(
+    landlordId ? `/api/admin/client-funds?landlord_id=${landlordId}` : null,
+    fetcher,
+    swrOptions
+  );
+  return {
+    funds: data?.funds ?? [],
+    fundsLoading: isLoading,
+    revalidateFunds: () => mutate(),
   };
 }
