@@ -10,6 +10,7 @@ import dynamic from "next/dynamic";
 import { normalizePhone } from "@/lib/sms/phone";
 import Skeleton from "@/components/ui/Skeleton";
 import Message from "@/components/ui/Message";
+import ClientFundsPanel from "@/components/admin/ClientFundsPanel";
 
 // Code-split: recharts and the tab-specific managers only load when rendered.
 const chartLoading = () => <Skeleton height="100%" />;
@@ -1327,6 +1328,7 @@ export default function AdminView({ landlords: initialLandlords }: AdminViewProp
                             {l.carryover_as_of ? ` as of ${l.carryover_as_of}` : ""}
                           </div>
                         )}
+                        <ClientFundsPanel landlordId={l.id} />
                       </div>
                       <div className="flex items-center" style={{ gap: "0.75rem" }}>
                         <span style={{ fontSize: "0.65rem", color: "var(--muted)" }}>

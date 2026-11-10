@@ -95,6 +95,32 @@ export interface ClientMonthlyAccount {
   collectedSinceOpening: number;
   excludedThisMonth: number;
   properties: { name: string; payments: number; collected: number }[];
+  clientFunds: ClientFundLine[];
+  clientFundsHeld: number;
+}
+
+/** Non-rent money held for a client (landyke.client_funds). */
+export interface ClientFund {
+  id: string;
+  landlord_id: string;
+  amount: number;
+  received_date: string;
+  purpose: string;
+  status: "held" | "sent";
+  sent_date: string | null;
+  sent_to: string | null;
+  notes: string | null;
+  created_at: string;
+}
+
+/** A client-fund row as it stood at the end of a statement month. */
+export interface ClientFundLine {
+  purpose: string;
+  amount: number;
+  receivedDate: string;
+  /** Sent on within or before the month; null = still held at month end. */
+  sentDate: string | null;
+  sentTo: string | null;
 }
 
 export interface OverviewProperty {

@@ -465,6 +465,42 @@ export function computeClientMonthlyAccount(
 }
 
 /**
+ * Client funds (non-rent money held for a client, e.g. a lump sum awaiting a
+ * fixed-deposit placement) as they stood at the end of `monthKey`.
+ *
+ * Shown on the statement separately and never added to rent totals. A fund
+ * appears from the month it arrived through the month it was sent on; after
+ * that it has left the account and drops off. `held` is what was still in the
+ * account at month end.
+ */
+export function computeClientFundsForMonth(
+  funds: Array<{ amount: number; received_date: string; purpose: string; sent_date: string | null; sent_to: string | null }>,
+  monthKey: string
+) {
+  const monthStart = getMonthStart(monthKey);
+  const monthEnd = getMonthEnd(monthKey);
+
+  const lines = funds
+    .filter((f) => f.received_date <= monthEnd && !(f.sent_date && f.sent_date < monthStart))
+    .sort((a, b) => a.received_date.localeCompare(b.received_date))
+    .map((f) => {
+      const sentInMonth = !!f.sent_date && f.sent_date <= monthEnd;
+      return {
+        purpose: f.purpose,
+        amount: Number(f.amount),
+        receivedDate: f.received_date,
+        sentDate: sentInMonth ? f.sent_date : null,
+        sentTo: sentInMonth ? f.sent_to : null,
+      };
+    });
+
+  return {
+    clientFunds: lines,
+    clientFundsHeld: lines.filter((l) => !l.sentDate).reduce((s, l) => s + l.amount, 0),
+  };
+}
+
+/**
  * Count tenants whose rent for the period is *fully* covered. A partial payer
  * is deliberately not counted — the "X of Y paid" figure must not be inflated
  * by someone who still owes a balance.
