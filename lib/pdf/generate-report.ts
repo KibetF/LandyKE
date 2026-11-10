@@ -344,23 +344,24 @@ export function generateClientMonthlyReport(data: ClientMonthlyReportData) {
 
   // Two headline figures, given the full width so they read as the point of
   // the document rather than as one tile among many.
-  // Client funds (non-rent) get their own tile so they're visible without
-  // being folded into the rent total.
-  const clientFunds = data.clientFunds || [];
-  const fundsHeld = data.clientFundsHeld || 0;
-  const hasFunds = clientFunds.length > 0;
-  const purposes = [...new Set(clientFunds.map((f) => f.purpose))];
-  const headline: { label: string; value: string; color: [number, number, number] }[] = [
-    { label: `Collected in ${data.month.split(" ")[0]}`, value: `KES ${data.collectedThisMonth.toLocaleString()}`, color: COLORS.green },
-    { label: hasFunds ? "Rent total in our account" : "Total in our account", value: `KES ${data.totalInAccount.toLocaleString()}`, color: COLORS.ink },
-  ];
-  if (fundsHeld > 0) {
-    headline.push({
-      label: purposes.length === 1 ? `Held for ${purposes[0]}` : "Other funds held",
-      value: `KES ${fundsHeld.toLocaleString()}`,
-      color: COLORS.gold,
-    });
-  }
+  // A client deposit (non-rent lump sum, e.g. for a fixed deposit) gets its
+  // own tile, and the account total becomes rent + deposit. Only funds still
+  // held at month end count; once sent on they've left the account.
+  const heldFunds = (data.clientFunds || []).filter((f) => !f.sentDate);
+  const sentFunds = (data.clientFunds || []).filter((f) => f.sentDate);
+  const deposit = data.clientFundsHeld || 0;
+  const hasDeposit = deposit > 0;
+  const grandTotal = data.totalInAccount + deposit;
+  const headline: { label: string; value: string; color: [number, number, number] }[] = hasDeposit
+    ? [
+        { label: `Collected in ${data.month.split(" ")[0]}`, value: `KES ${data.collectedThisMonth.toLocaleString()}`, color: COLORS.green },
+        { label: "Deposit", value: `KES ${deposit.toLocaleString()}`, color: COLORS.gold },
+        { label: "Total in our account", value: `KES ${grandTotal.toLocaleString()}`, color: COLORS.ink },
+      ]
+    : [
+        { label: `Collected in ${data.month.split(" ")[0]}`, value: `KES ${data.collectedThisMonth.toLocaleString()}`, color: COLORS.green },
+        { label: "Total in our account", value: `KES ${data.totalInAccount.toLocaleString()}`, color: COLORS.ink },
+      ];
   const boxWidth = (pageWidth - 40 - 6 * (headline.length - 1)) / headline.length;
   headline.forEach((item, i) => {
     const x = 20 + i * (boxWidth + 6);
@@ -410,18 +411,31 @@ export function generateClientMonthlyReport(data: ClientMonthlyReportData) {
   const asOf = data.openingBalanceAsOf
     ? new Date(data.openingBalanceAsOf).toLocaleDateString("en-KE", { day: "numeric", month: "long", year: "numeric" })
     : null;
+  const fmtDate = (d: string) =>
+    new Date(d).toLocaleDateString("en-KE", { day: "numeric", month: "short", year: "numeric" });
+  const breakdown: string[][] = [
+    [asOf ? `Opening balance (to ${asOf})` : "Opening balance", `KES ${data.openingBalance.toLocaleString()}`],
+    [asOf ? `Received since ${asOf}` : "Received since", `KES ${data.collectedSinceOpening.toLocaleString()}`],
+  ];
+  if (hasDeposit) {
+    breakdown.push(["Rent total", `KES ${data.totalInAccount.toLocaleString()}`]);
+    for (const f of heldFunds) {
+      breakdown.push([`Deposit (received ${fmtDate(f.receivedDate)})`, `KES ${f.amount.toLocaleString()}`]);
+    }
+  }
+  breakdown.push(["Total in our account", `KES ${grandTotal.toLocaleString()}`]);
+  const subtotalRow = hasDeposit ? 2 : -1;
   autoTable(doc, {
     startY: y,
-    body: [
-      [asOf ? `Opening balance (to ${asOf})` : "Opening balance", `KES ${data.openingBalance.toLocaleString()}`],
-      [asOf ? `Received since ${asOf}` : "Received since", `KES ${data.collectedSinceOpening.toLocaleString()}`],
-      [hasFunds ? "Rent total in our account" : "Total in our account", `KES ${data.totalInAccount.toLocaleString()}`],
-    ],
+    body: breakdown,
     theme: "plain",
     styles: { font: "helvetica", fontSize: 9, cellPadding: 4, textColor: COLORS.ink },
     columnStyles: { 0: {}, 1: { halign: "right" } },
     didParseCell: (hookData) => {
-      if (hookData.row.index === 2) {
+      if (hookData.row.index === subtotalRow) {
+        hookData.cell.styles.fontStyle = "bold";
+      }
+      if (hookData.row.index === breakdown.length - 1) {
         hookData.cell.styles.fontStyle = "bold";
         hookData.cell.styles.fillColor = COLORS.cream;
       }
@@ -429,32 +443,18 @@ export function generateClientMonthlyReport(data: ClientMonthlyReportData) {
   });
   y = (doc as jsPDF & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 10;
 
-  // Non-rent funds, listed apart from rent so neither figure muddies the other.
-  if (hasFunds) {
-    y += 2;
-    y = addSectionTitle(doc, "Funds held for you", y);
-    const fmtDate = (d: string) =>
-      new Date(d).toLocaleDateString("en-KE", { day: "numeric", month: "short", year: "numeric" });
-    autoTable(doc, {
-      startY: y,
-      head: [["Received", "Purpose", "Amount", "Status"]],
-      body: clientFunds.map((f) => [
-        fmtDate(f.receivedDate),
-        f.purpose,
-        `KES ${f.amount.toLocaleString()}`,
-        f.sentDate ? `Sent${f.sentTo ? ` to ${f.sentTo}` : ""} on ${fmtDate(f.sentDate)}` : "Held in our account",
-      ]),
-      theme: "plain",
-      styles: { font: "helvetica", fontSize: 9, cellPadding: 4, textColor: COLORS.ink },
-      headStyles: { fillColor: COLORS.cream, textColor: COLORS.ink, fontStyle: "bold", fontSize: 7 },
-      columnStyles: { 2: { halign: "right" } },
-    });
-    y = (doc as jsPDF & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 4;
+  // A deposit forwarded on this month has left the account; note it so the
+  // drop in the total is explained.
+  for (const f of sentFunds) {
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(7);
+    doc.setFontSize(7.5);
     doc.setTextColor(...COLORS.muted);
-    doc.text("These funds are not rent and are not included in the rent figures above.", 20, y + 3);
-    y += 10;
+    doc.text(
+      `Deposit of KES ${f.amount.toLocaleString()} sent${f.sentTo ? ` to ${f.sentTo}` : ""} on ${fmtDate(f.sentDate!)}.`,
+      20,
+      y + 3
+    );
+    y += 8;
   }
 
   // Only footnote what's outside the headline when there is something to explain.
